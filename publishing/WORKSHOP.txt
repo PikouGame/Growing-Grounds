@@ -1,0 +1,24 @@
+Growing Grounds — Steam Workshop preparation
+
+Package content is built by: python3 tools/release.py
+The upload content directory is build/workshop-0.1.0-alpha/.
+Its Info.json is at the root, not under a BaseRangeGrowth wrapper.
+Manual installations must use the separate Growing-Grounds-0.1.0-alpha.zip.
+
+Official uploader:
+https://github.com/pocketpairjp/PalworldModUploader/releases
+https://github.com/pocketpairjp/PalworldModUploader/blob/main/PalworldModUploader/docs/en/03-ModUploader.md
+
+Outstanding Steam checks
+1. Verify UE4SS Experimental (Palworld) item 3625223587 uses the PackageName
+   UE4SSExperimentalPW in its installed Info.json. The dependency is configured
+   for that package; do not publish with an unverified dependency.
+2. Create a Lua item through the official uploader while signed into Steam.
+   Preserve its .workshop.json and published ID when copying the prepared files.
+3. Test the local package through Palworld's official mod manager, including
+   the dedicated-server rule. Do not run alongside a second manual copy.
+4. Upload the content, use description.txt and changelog.txt, and add the actual
+   level-8 screenshot. Mark the release as alpha in its description.
+
+No Steam item has been created yet. Workshop deployment is unverified.
+The uploader is a Windows WPF application; its documentation exposes no CLI.

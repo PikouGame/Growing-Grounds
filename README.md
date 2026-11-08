@@ -29,8 +29,18 @@ Run from this directory:
 lua tests/test_range.lua ./
 lua tests/test_ui.lua ./
 python3 tools/package.py
+python3 tools/release.py
 ```
 
 The packager writes `build/BaseRangeGrowth-0.1.0-dev.zip` and a SHA-256 checksum.
 It includes only an explicit list of mod files. Local inspection libraries in
 `lib/` are not required to run the Lua tests or create the mod ZIP.
+
+`release.py` creates the manual alpha ZIP and a separate Workshop preparation
+ZIP, with SHA-256 checksums. The Workshop route is not yet verified; see
+[publishing/WORKSHOP.txt](publishing/WORKSHOP.txt). Neither archive bundles UE4SS.
+
+## Permissions
+
+All rights reserved. Downloading and using the mod is allowed; redistribution,
+published modifications and reuse require permission. See [LICENSE.txt](LICENSE.txt).

@@ -1,4 +1,4 @@
-BaseRangeGrowth 0.1.0 — development candidate
+Growing Grounds 0.1.0-alpha — internal mod ID BaseRangeGrowth
 
 Adds 5% of the original base radius per base level after level 1.
 The Base Upgrade screen adds a native reward row with a circle/four-arrow
@@ -18,6 +18,8 @@ Install
 1. Save and exit the game/server normally. Keep a world backup.
 2. Copy BaseRangeGrowth into the existing UE4SS Mods folder.
    Manual loader: Pal/Binaries/Win64/ue4ss/Mods/BaseRangeGrowth
+   Existing Workshop loader: Mods/NativeMods/UE4SS/Mods/BaseRangeGrowth
+   Use your existing loader location; do not install a second UE4SS copy.
    The folder contains enabled.txt, Scripts, src, assets and config.lua.
 3. Start the server and clients. No edits to other mods are needed.
 4. In UE4SS.log, look for BaseRangeGrowth, role=authority on the server,
@@ -50,6 +52,7 @@ SERVER's config.lua, restart, verify 3500 cm (or your original setting) in
 the log, then save and remove BaseRangeGrowth on server and clients.
 Objects built in the added area may be outside the base after shrinking.
 Restore the pre-install world backup for an exact rollback.
+Restoring a backup also rolls back progress made since that backup.
 
 Sources used for API research (no third-party mod implementation copied)
 https://github.com/localcc/PalworldModdingKit

@@ -1,0 +1,10 @@
+0.1.0-alpha — first public test build
+
+- Adds 5% of the original radius per base level after level 1.
+- Server-controlled radius with client boundary updates.
+- Native Base Range reward row, percentages and original four-arrow icon.
+- Repairs label/icon resets when the native widget reconstructs.
+- Includes opt-in resetToVanilla configuration.
+
+Alpha: expanded-ring gameplay, lifecycle/reset and Workshop deployment remain
+unverified. Back up your world before testing. See the description for details.
