@@ -1,0 +1,21 @@
+# Local investigation, save data, deployment details and machine-specific notes.
+**/.local/
+**/STATUS.txt
+**/*.log
+**/*.sav
+.env
+.env.*
+**/__pycache__/
+
+# Third-party development tools stay on the developer machine.
+**/lib/*
+!**/lib/.gitkeep
+
+# Build locally; upload selected archives through GitHub Releases.
+**/build/*
+!**/build/.gitkeep
+**/*.uasset
+**/*.uexp
+**/*.ubulk
+**/*.pak
+**/*.usmap

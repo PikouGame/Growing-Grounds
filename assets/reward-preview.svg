@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420">
+<title>Base Range Growth — reward panel design preview</title>
+<rect width="1000" height="420" rx="4" fill="#202c30"/>
+<path d="M42 76H958" stroke="#00c5a2" stroke-width="2"/>
+<g font-family="DejaVu Sans, sans-serif" fill="#f5f8f8">
+<text x="42" y="42" font-size="15" letter-spacing="2" fill="#aabcbf">BASE LEVEL 8 → 9</text>
+<text x="958" y="42" font-size="12" text-anchor="end" fill="#aabcbf">DESIGN PREVIEW · NOT IN-GAME</text>
+<text x="500" y="116" font-size="19" text-anchor="middle" fill="#f4e69a">Base Level Reward</text>
+<path d="M65 134H935" stroke="#b4a66e"/>
+<rect x="82" y="150" width="836" height="47" fill="#454e51"/>
+<rect x="82" y="201" width="836" height="47" fill="#454e51"/>
+<rect x="82" y="252" width="836" height="57" fill="#354e4c"/>
+<text x="143" y="180" font-size="19">Max Pals Working at Base</text>
+<text x="143" y="231" font-size="19">Max Number of Bases</text>
+<text x="143" y="288" font-size="19">Base Range</text>
+<g text-anchor="middle" font-size="21">
+<text x="704" y="180">8</text><text x="774" y="180" fill="#aab3b5">»</text><text x="853" y="180" fill="#aab3b5">9</text>
+<text x="704" y="231">1</text><text x="774" y="231" fill="#aab3b5">»</text><text x="853" y="231" fill="#aab3b5">1</text>
+<text x="704" y="288">135%</text><text x="774" y="288" fill="#00dfad">»</text><text x="853" y="288" fill="#00dfad">140%</text>
+</g>
+<text x="82" y="350" font-size="15" fill="#b7c7c8">Each upgrade adds 5% of the original radius.</text>
+<text x="82" y="377" font-size="13" fill="#94aaae">100% at level 1 · Linear growth · Server controls the range</text>
+</g>
+<g fill="#ffffff"><path d="M104 165l5 -6 5 6 7 -2 -3 9 3 11h-19l3 -11 -3 -9z"/><path d="M102 225v-12h8v-6h8v10h7v16h-7v-7h-8v7h-8z"/></g>
+<g transform="translate(96 263) scale(.52)">  <g stroke="#ffffff" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+    <circle cx="32" cy="32" r="14"/>
+    <path d="M32 18V5M25 12L32 5L39 12 M46 32H59M52 25L59 32L52 39 M32 46V59M25 52L32 59L39 52 M18 32H5M12 25L5 32L12 39"/>
+  </g>
+</g>
+</svg>

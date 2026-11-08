@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <title>Base range: circle with four outward arrows</title>
+  <g stroke="#ffffff" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
+    <circle cx="32" cy="32" r="14"/>
+    <path d="M32 18V5M25 12L32 5L39 12 M46 32H59M52 25L59 32L52 39 M32 46V59M25 52L32 59L39 52 M18 32H5M12 25L5 32L12 39"/>
+  </g>
+</svg>

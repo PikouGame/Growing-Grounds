@@ -1,0 +1,64 @@
+BaseRangeGrowth 0.1.0 — development candidate
+
+Adds 5% of the original base radius per base level after level 1.
+The Base Upgrade screen adds a native reward row with a circle/four-arrow
+icon and percentages, for example 135% -> 140%. No +5% label.
+
+Target inspected
+Palworld v1.0.5.102999. Client Steam build 25246127; Windows dedicated
+server build 25247047. UE4SS Palworld fork 2281fa31 is already installed
+on both test machines. Local setup runs Windows executables through Wine/
+Proton. Native Windows compatibility still needs a native Windows test.
+
+Requirements
+UE4SS Palworld fork, installed once on BOTH server/host and each client
+that needs the UI and boundary. This package does not replace your loader.
+
+Install
+1. Save and exit the game/server normally. Keep a world backup.
+2. Copy BaseRangeGrowth into the existing UE4SS Mods folder.
+   Manual loader: Pal/Binaries/Win64/ue4ss/Mods/BaseRangeGrowth
+   The folder contains enabled.txt, Scripts, src, assets and config.lua.
+3. Start the server and clients. No edits to other mods are needed.
+4. In UE4SS.log, look for BaseRangeGrowth, role=authority on the server,
+   and the changed base radius. Clients should log role=client.
+5. Open Base Upgrade. Allow up to five seconds for the initial row.
+   Ctrl+Shift+F10 logs a diagnostic check and requests an immediate refresh.
+
+Expected level-8 test
+Server changes 3500 cm to 4725 cm (47.25 m). Client receives the same
+radius and shows 135% -> 140%. The boundary follows the received radius.
+Reopening the panel must not add duplicate rows. Rejoining/restarting must
+not increase radius again. Level 9 must be 4900 cm, not 4961.25 cm.
+
+Server authority and limitations
+The growth curve is fixed at 5%; clients read the actual replicated radius.
+If the current server radius does not match the curve, next range shows --.
+At level 1 a remote client also shows -- for next range: vanilla radius alone
+cannot establish that the server runs the mod. A future explicit protocol
+handshake could remove this ambiguity. At max level the next value is hidden.
+Changes reconcile every five seconds, with additional level/creation hooks.
+Temporary raid bases are excluded. World decay settings, unrelated collision
+boxes, spawning and raid configuration are not modified.
+Expanded Pal work coverage, placement, resource use and building membership
+must be verified live. Standalone tests do not prove these engine behaviors.
+
+Remove/reset
+The game can save the expanded radius. Simply removing the mod does not
+guarantee that saved bases shrink. First set resetToVanilla=true in the
+SERVER's config.lua, restart, verify 3500 cm (or your original setting) in
+the log, then save and remove BaseRangeGrowth on server and clients.
+Objects built in the added area may be outside the base after shrinking.
+Restore the pre-install world backup for an exact rollback.
+
+Sources used for API research (no third-party mod implementation copied)
+https://github.com/localcc/PalworldModdingKit
+SDK reference commit e6632458b97af0083eb81715775651b08104ef6a
+https://docs.ue4ss.com/lua-api.html
+Installed game reflection and selected cooked UI/Palbox assets.
+The distributed code and icon are original; game assets remain in the excluded local research directory.
+
+Verification status
+Lua syntax and standalone behavior checks pass. Radius replication and the
+menu row were observed in game. Expanded-ring gameplay and lifecycle checks
+remain outstanding. This is a development candidate until live checks pass.
