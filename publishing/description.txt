@@ -1,59 +1,30 @@
 Growing Grounds
 Room to grow. A moment to celebrate.
 
-Give your base a little more space each time it levels up. Growing Grounds adds
-5% of the original radius per level, starting at level 2, with a default cap of
-200%. The Base Upgrade screen shows your current and next range in a native
-reward row with an original four-arrow icon.
+Give your base room to grow: +5% of its original radius per level from level 2, up to 200% by default. See your current and next range in the Base Upgrade menu, then watch a blue wave travel from the Palbox to the expanding boundary.
 
-Watch your base grow
-A blue wave travels from the Palbox across the terrain. It meets the boundary,
-which expands with a gentle bounce, then a glowing contour rises and fades with
-its trail. If Base Upgrade is open, the effect prepares after the upgrade and
-waits for you to close the screen, so you can see the celebration.
+Animation: https://raw.githubusercontent.com/PikouGame/Growing-Grounds/e38ca7230c31f1d73453178c17e04f3f64f3b0fb/assets/showcase/growing-grounds-upgrade-web.gif
+Gameplay excerpt at original speed; initial wait trimmed.
 
-Make it fit your world
-Growth per level is adjustable from 0–20%; the cap from 100–200%. Local worlds
-have two Growing Grounds sliders at the bottom of custom World Settings.
-Dedicated-server owners use config.lua. Nearby bases can limit growth further,
-and new Palboxes reserve space for future expansion. A standard 35 m base reaches
-49 m at level 9 and, with default settings, the 70 m cap at level 21.
+Make it your own
+Choose 0–20% growth per level and a 100–200% cap. Local hosts get sliders in World Settings; dedicated-server owners use config.lua. Nearby bases can limit expansion, and new Palboxes reserve room for future growth.
 
 Getting started
-Requires a compatible UE4SS loader for Palworld, installed separately. Install
-Growing Grounds on the host/server and clients. Close the game/server, keep a
-world backup, and copy BaseRangeGrowth into your existing UE4SS Mods folder.
-Update both sides and preserve config.lua preferences and world-settings.ini.
-Full paths and reset instructions are included in INSTALL.txt.
+Requires a compatible Palworld UE4SS loader on the host/server and clients.
 
-Updating from 0.1.1? The new 200% ceiling and spacing limits can reduce a previously
-expanded base. Buildings outside the new boundary may lose base coverage, so
-please keep a backup before updating.
+1. Close the game/server and back up your world.
+2. Copy BaseRangeGrowth into your existing UE4SS Mods folder on both sides.
+3. Keep your config.lua and world-settings.ini when updating.
 
-An evolving alpha
-Known visual issue: the celebration can still start late after closing the Palbox. This does not postpone the actual base-radius upgrade. A new lightweight change observer is included; its improvement during a natural upgrade has not yet been verified in game.
+Updating from an older version? The 200% cap and spacing limits may reduce an existing base’s range. See INSTALL.txt for full instructions.
 
-Tested on Palworld v1.0.5.102999 with UE4SS fork 2281fa31, using Windows builds
-through Proton/Wine. Radius replication, the 140% -> 145% reward preview, and
-the screen-close animation replay were checked in game. This update also replaces
-the repeated object searches behind the reported five-second freezes on the test setup.
-
-We are still gathering feedback on World Settings save flows, new-base placement,
-Pal work and resource access in expanded areas, the full reset lifecycle, other
-range mods, and native Windows OS/hardware combinations. Workshop deployment
-remains unverified. The added row is currently English. When the server's next
-range is unavailable, the row shows only the current value.
+A small note
+This is an alpha. The celebration can still start late after closing the Palbox. Tested on Palworld v1.0.5.102999 using Windows builds through Proton/Wine; see the README for compatibility notes.
 
 Share your experience
-We'd love to see your growing base! Leave a comment, share a clip, or report a bug
-so we can investigate and improve Growing Grounds. Include your game/UE4SS
-versions, host/client setup and reproduction steps; remove personal details from logs.
-Source: https://github.com/PikouGame/Growing-Grounds
-Bug reports: https://github.com/PikouGame/Growing-Grounds/issues
+We’d love to hear how it feels in your world! Share your base, leave a comment, or report a bug so we can investigate and improve it together.
 
-Credits and permissions
-Built with OpenAI Codex under PikouGame's direction, including code,
-documentation and original icon/glow assets. Gameplay media is recorded in game;
-no generated gameplay imagery or third-party game files are bundled.
-Free to download and use. All rights reserved: reuploads, published modifications
-and reuse require PikouGame's permission. This is an unofficial Palworld mod.
+Bug reports: https://github.com/PikouGame/Growing-Grounds/issues
+Source and compatibility notes: https://github.com/PikouGame/Growing-Grounds
+
+Made with OpenAI Codex under PikouGame’s direction. Footage is recorded in game. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.
