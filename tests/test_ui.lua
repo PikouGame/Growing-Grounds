@@ -62,8 +62,15 @@ reconstruct(vanilla)
 assert(vanilla.Text_Efefct.value=='None', 'must not modify native reward rows')
 snapshot.currentPercent=140; snapshot.nextPercent=145
 UI.refresh(); assert(children[1].Text_Num_Pre.value=='140%' and children[1].Text_Num_Aft.value=='145%')
+snapshot.nextPercent=nil
+UI.refresh()
+assert(children[1].Text_Num_Aft.value=='' and children[1].Image_Arrow.visibility==2
+    and children[1].SizeBox_Aft.visibility==2,'unavailable preview preserves both native column widths without a placeholder')
+snapshot.nextPercent=145
+UI.refresh()
+assert(children[1].Image_Arrow.visibility==4 and children[1].SizeBox_Aft.visibility==4)
 snapshot.atMaximum=true
-UI.refresh(); assert(children[1].SizeBox_Aft.visibility==1)
+UI.refresh(); assert(children[1].SizeBox_Aft.visibility==2)
 children={} -- Same screen name with a newly rebuilt widget tree.
 UI.refresh(); assert(created==2 and #children==1 and children[1].Text_Efefct.value=='Base Range')
 print('PASS: initial/deferred reconstruction, icon retention, stable refresh, isolated native rows, level/max updates, rebuilt tree')

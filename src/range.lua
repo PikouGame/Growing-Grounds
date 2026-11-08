@@ -13,34 +13,85 @@ local function validLevel(level)
         "base level must be a positive integer")
 end
 
-function Range.percent(level)
-    validLevel(level)
-    return 100 + 5 * (level - 1)
+-- 200% is a hard ceiling as well as the default. Invalid administrator input
+-- falls back to defaults; neither a corrupt file nor NaN can disable the cap.
+function Range.settings(settings)
+    settings = settings or {}
+    local growth, cap = settings.growthPercentPerLevel, settings.maxRangePercent
+    if not finite(growth) then growth = 5 end
+    if not finite(cap) then cap = 200 end
+    return {growthPercentPerLevel=math.max(0, math.min(20, growth)),
+        maxRangePercent=math.max(100, math.min(200, cap))}
 end
 
-function Range.radius(originalRadius, level)
+function Range.percent(level, settings)
+    validLevel(level)
+    local policy = Range.settings(settings)
+    return math.min(policy.maxRangePercent, 100 + policy.growthPercentPerLevel * (level - 1))
+end
+
+function Range.radius(originalRadius, level, settings)
     assert(finite(originalRadius) and originalRadius > 0,
         "original radius must be finite and positive")
-    local result = originalRadius * (Range.percent(level) / 100)
+    local result = originalRadius * (Range.percent(level, settings) / 100)
     assert(finite(result), "calculated radius overflow")
     return result
 end
 
-function Range.reward(originalRadius, level, maximumLevel)
+function Range.reward(originalRadius, level, maximumLevel, settings)
     validLevel(level)
     validLevel(maximumLevel)
     assert(level <= maximumLevel, "base level exceeds game maximum")
-    local current = Range.radius(originalRadius, level)
+    local current = Range.radius(originalRadius, level, settings)
     local nextLevel = math.min(level + 1, maximumLevel)
-    local nextRadius = Range.radius(originalRadius, nextLevel)
+    local nextRadius = Range.radius(originalRadius, nextLevel, settings)
     return {
         label = "Base Range",
         currentRadius = current,
         nextRadius = nextRadius,
-        currentPercent = Range.percent(level),
-        nextPercent = Range.percent(nextLevel),
+        currentPercent = Range.percent(level, settings),
+        nextPercent = Range.percent(nextLevel, settings),
         atMaximum = level == maximumLevel,
     }
+end
+
+-- Reserve full-sized bases, including future upgrades, at placement time.
+function Range.placementDistance(originalRadius, settings)
+    assert(finite(originalRadius) and originalRadius > 0, 'invalid original radius')
+    return originalRadius * Range.settings(settings).maxRangePercent / 100 * 2
+end
+
+-- Legacy worlds can already contain nearby bases. Share only the free space
+-- between their vanilla circles, proportionally to maximum possible growth.
+-- Reserve future growth too: one guild upgrading cannot shrink its neighbour.
+-- Never use previous results: order/reloads cannot ratchet the radius down.
+-- XY distance is intentional: vertically stacked bases must not bypass spacing.
+function Range.separate(bases)
+    local targets, conflicts = {}, {}
+    for i, b in ipairs(bases) do
+        assert(finite(b.baseline) and b.baseline > 0 and finite(b.desired)
+            and b.desired >= b.baseline and finite(b.maximum) and b.maximum >= b.desired
+            and finite(b.x) and finite(b.y), 'invalid base geometry')
+        targets[i] = b.desired
+    end
+    for i = 1, #bases do
+        for j = i + 1, #bases do
+            local a, b = bases[i], bases[j]
+            local dx, dy = a.x - b.x, a.y - b.y
+            local distance = math.sqrt(dx * dx + dy * dy)
+            local free = distance - a.baseline - b.baseline
+            local ga, gb = a.maximum - a.baseline, b.maximum - b.baseline
+            if free < 0 then
+                -- Never shrink below vanilla or destroy/move somebody's base.
+                targets[i], targets[j] = a.baseline, b.baseline
+                conflicts[#conflicts + 1] = {i=i, j=j, distance=distance}
+            elseif ga + gb > free then
+                targets[i] = math.min(targets[i], a.baseline + free * ga / (ga + gb))
+                targets[j] = math.min(targets[j], b.baseline + free * gb / (ga + gb))
+            end
+        end
+    end
+    return targets, conflicts
 end
 
 return Range

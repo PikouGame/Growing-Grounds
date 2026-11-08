@@ -3,7 +3,10 @@ return function(E, Runtime)
     local rowPath = '/Game/Pal/Blueprint/UI/UserInterface/IngameMenu/Task/WBP_IngameMenu_MissionLevelEffect.WBP_IngameMenu_MissionLevelEffect_C'
     local attached, owned, lastWritten = {}, {}, {}
     local constructHookInstalled = false
-    local function object(path) return StaticFindObject(path) end
+    local function object(path)
+        if E.objects then return E.objects.find(path) end
+        return StaticFindObject(path)
+    end
     local function text(value) return FText(value) end
     local function percent(value) return string.format('%.0f%%', value) end
     local function paint(row, state)
@@ -12,9 +15,11 @@ return function(E, Runtime)
         row.Image_Icon:SetBrushFromTexture(row.Texture, false)
         row.Text_Efefct:SetText(text('Base Range'))
         row.Text_Num_Pre:SetText(text(percent(state.currentPercent)))
-        row.Text_Num_Aft:SetText(text(state.nextPercent and percent(state.nextPercent) or '--'))
-        row.Image_Arrow:SetVisibility(state.atMaximum and 1 or 4)
-        row.SizeBox_Aft:SetVisibility(state.atMaximum and 1 or 4)
+        local showNext=not state.atMaximum and state.nextPercent~=nil
+        row.Text_Num_Aft:SetText(text(state.nextPercent and percent(state.nextPercent) or ''))
+        -- Hidden preserves the game's two value columns while replication catches up.
+        row.Image_Arrow:SetVisibility(showNext and 4 or 2)
+        row.SizeBox_Aft:SetVisibility(showNext and 4 or 2)
     end
     local function installConstructHook()
         if constructHookInstalled then return end
@@ -84,7 +89,8 @@ return function(E, Runtime)
     end
     function UI.refresh()
         local live = {}
-        for _, screen in ipairs(FindAllOf('WBP_IngameMenu_Mission_C') or {}) do
+        local screens=E.objects and E.objects.all('WBP_IngameMenu_Mission_C') or FindAllOf('WBP_IngameMenu_Mission_C') or {}
+        for _, screen in ipairs(screens) do
             if E.valid(screen) then
                 live[screen:GetFullName()] = true
                 E.guard('reward row', function() UI.update(screen) end)

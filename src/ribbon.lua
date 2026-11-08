@@ -1,6 +1,11 @@
--- Terrain-shaped rising contour: one component, no Niagara simulations.
+-- Palbox ground wave, then the accepted rising contour. One component;
+-- sampled geometry stays fixed and a material offset moves the ground light.
 return function(E,A)
-    local R={layers=2,duration=2.8}
+    local R={layers=2,duration=2.8,sampleLimit=64,sampleBudget=0.003}
+    local Wave=dofile(E.root..'src/wave.lua')
+    -- Discard data held by earlier development builds when hot reloading.
+    -- Each animation owns its own terrain samples until cleanup.
+    E.boundaryTerrain=nil
     local materialPath='/Game/Pal/Effect/Material_Instances/Particle_basic_color/MI_LightUpGlow.MI_LightUpGlow'
     local function smooth(t) t=math.max(0,math.min(1,t));return t*t*(3-2*t) end
     function R.envelope(elapsed,height)
@@ -41,11 +46,15 @@ return function(E,A)
     function R.prepare(s,actor)
         if E.config.upgradeRibbon==false then return end
         local v=actor.AreaRange:K2_GetComponentLocation()
-        local height=tonumber(E.config.upgradeEffectHeight) or 800
-        if height~=height then height=800 end
-        s.ribbon={radius=s.radius,count=math.ceil(math.max(64,2*math.pi*s.radius/300)/8)*8,
+        local height=tonumber(E.config.upgradeEffectHeight) or 600
+        if height~=height then height=600 end
+        s.ribbon={radius=s.radius,count=math.min(160,math.ceil(math.max(64,2*math.pi*s.radius/300)/8)*8),
             center={X=v.X,Y=v.Y,Z=v.Z},points={},nextPoint=0,nextLayer=0,
             height=math.max(100,math.min(2000,height)),materials={},hits=0}
+        -- Meet the currently visible boundary, then bounce it to the new radius.
+        if E.config.upgradeWave~=false then
+            s.ribbon.wave=Wave.new(s.ribbon,s.animation and s.animation.from or s.radius)
+        end
     end
     function R.cleanup(s)
         local job=s.ribbon
@@ -60,6 +69,7 @@ return function(E,A)
         end
         if job.component then A.forget(job.component) end
         if job.texture then A.forget(job.texture) end
+        if job.wave and job.wave.texture then A.forget(job.wave.texture) end
         for _,p in ipairs(job.materials) do A.forget(p) end
         s.ribbon=nil
     end
@@ -80,76 +90,144 @@ return function(E,A)
             Scale3D={X=1,Y=1,Z=1}},false,{},true)
         return c
     end
-    function R.step(s,actor,time,budget)
+    local function material(job,actor,c,layer,ground)
+        local parent=A.resolve(materialPath)
+        if not parent then LoadAsset(materialPath);parent=A.resolve(materialPath) end
+        assert(parent,'Native glow material unavailable')
+        local mid=c:CreateDynamicMaterialInstance(layer,parent,FName('None'))
+        assert(E.valid(mid),'Contour material unavailable')
+        job.materials[layer+1]=A.path(mid)
+        local tint=ground and {R=0.10,G=1.5,B=4.0,A=1}
+            or layer==0 and {R=0.7,G=2.0,B=3.5,A=1} or {R=0.05,G=1.4,B=3.0,A=1}
+        mid:SetVectorParameterValue(FName('Color01'),tint)
+        mid:SetVectorParameterValue(FName('Color02'),{R=0,G=0.9,B=2.5,A=1})
+        local holder=ground and job.wave or job
+        local texture=A.resolve(holder.texture)
+        if not texture then
+            texture=A.resolve('/Script/Engine.Default__KismetRenderingLibrary'):ImportFileAsTexture2D(
+                actor,E.root..(ground and 'assets/ground-wave.png' or 'assets/contour-gradient.png'))
+            assert(E.valid(texture),'Glow gradient unavailable')
+            holder.texture=A.path(texture)
+        end
+        mid:SetTextureParameterValue(FName('Texture01'),texture)
+        for _,suffix in ipairs({'01','02'}) do
+            for _,name in ipairs({'OffsetU_','OffsetV_','ScrollingU_','ScrollingV_',
+                'DistortionScaleU_','DistortionScaleV_'}) do
+                mid:SetScalarParameterValue(FName(name..suffix),0)
+            end
+            mid:SetScalarParameterValue(FName('TilingU_'..suffix),1)
+            mid:SetScalarParameterValue(FName('TilingV_'..suffix),1)
+        end
+        mid:SetScalarParameterValue(FName('DistortionScale'),0)
+        mid:SetScalarParameterValue(FName('RGBScale02'),0)
+        mid:SetScalarParameterValue(FName('AlphaScale01'),0)
+        mid:SetScalarParameterValue(FName('AlphaScale02'),0)
+        if ground then mid:SetScalarParameterValue(FName('SoftEdge'),8) end
+        return mid
+    end
+    local function terrain(lib,job,actor,x,y)
+        local color={R=0,G=0,B=0,A=0}
+        local out={}
+        x,y=x+job.center.X,y+job.center.Y
+        local found=lib:LineTraceSingleForObjects(actor,{X=x,Y=y,Z=job.center.Z+5000},
+            {X=x,Y=y,Z=job.center.Z-5000},{0},true,{actor},0,out,true,color,color,0)
+        local hit=out.OutHit or out
+        if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+12 end
+    end
+    function R.sample(s,actor,time,budget,deadline)
         local job=s.ribbon
         if not job then return 0 end
+        deadline=deadline or os.clock()+R.sampleBudget
+        if budget<1 or os.clock()>=deadline then return 0 end
+        -- Validate this stable library once per batch, not for every sample.
+        local lib=A.resolve('/Script/Engine.Default__KismetSystemLibrary')
+        local used=0
         if job.nextPoint<job.count then
-            local lib=A.resolve('/Script/Engine.Default__KismetSystemLibrary')
-            local color={R=0,G=0,B=0,A=0}
-            local used=0
-            while job.nextPoint<job.count and used<budget do
+            while job.nextPoint<job.count and used<budget and os.clock()<deadline do
                 local i=job.nextPoint
                 job.nextPoint,used=i+1,used+1
                 local angle=2*math.pi*i/job.count
-                local x,y=job.center.X+job.radius*math.cos(angle),job.center.Y+job.radius*math.sin(angle)
-                local out={}
-                local found=lib:LineTraceSingleForObjects(actor,{X=x,Y=y,Z=job.center.Z+5000},
-                    {X=x,Y=y,Z=job.center.Z-5000},{0},true,{actor},0,out,true,color,color,0)
-                local hit=out.OutHit or out
-                if found and hit.ImpactPoint then
-                    job.points[i+1]={Z=hit.ImpactPoint.Z-job.center.Z+12}
+                local z=terrain(lib,job,actor,job.radius*math.cos(angle),job.radius*math.sin(angle))
+                if z then
+                    job.points[i+1]={Z=z}
                     job.hits=job.hits+1
                 else job.points[i+1]=false end
             end
-            return used
+            if job.nextPoint<job.count then return used end
         end
+        if job.wave and not job.wave.ready then
+            used=used+Wave.sample(job.wave,job,function(x,y) return terrain(lib,job,actor,x,y) end,budget-used,deadline)
+        end
+        if not job.wave or job.wave.ready then
+            job.sampled=true
+        end
+        return used
+    end
+    function R.step(s,actor,time,budget,deadline)
+        local job=s.ribbon
+        if not job then return 0 end
+        deadline=deadline or os.clock()+R.sampleBudget
+        if not job.sampled then return R.sample(s,actor,time,budget,deadline) end
         if job.nextLayer<R.layers then
-            if budget<1 then return 0 end
+            if budget<1 or os.clock()>=deadline then return 0 end
             local c=A.resolve(job.component) or create(job,actor)
-            local parent=A.resolve(materialPath)
-            if not parent then LoadAsset(materialPath);parent=A.resolve(materialPath) end
-            assert(parent,'Native glow material unavailable')
             local layer=job.nextLayer
             local vertices,indices,normals,uv=R.geometry(job,layer)
             -- Stable eight-argument reflected API; no collision cooking.
             c:CreateMeshSection(layer,vertices,indices,normals,uv,{},{},false)
-            local mid=c:CreateDynamicMaterialInstance(layer,parent,FName('None'))
-            assert(E.valid(mid),'Contour material unavailable')
-            job.materials[#job.materials+1]=A.path(mid)
-            -- Brighter pale-cyan core, saturated cyan trail for daylight contrast.
-            local tint=layer==0 and {R=0.7,G=2.0,B=3.5,A=1} or {R=0.05,G=1.4,B=3.0,A=1}
-            mid:SetVectorParameterValue(FName('Color01'),tint)
-            mid:SetVectorParameterValue(FName('Color02'),{R=0,G=0.9,B=2.5,A=1})
-            local texture=A.resolve(job.texture)
-            if not texture then
-                local rendering=A.resolve('/Script/Engine.Default__KismetRenderingLibrary')
-                texture=rendering:ImportFileAsTexture2D(actor,E.root..'assets/contour-gradient.png')
-                assert(E.valid(texture),'Contour gradient unavailable')
-                job.texture=A.path(texture)
-            end
-            -- Material reference retains the imported texture across GC. Disable
-            -- the native scrolling/line layers that broke the trail into stripes.
-            mid:SetTextureParameterValue(FName('Texture01'),texture)
-            for _,suffix in ipairs({'01','02'}) do
-                for _,name in ipairs({'OffsetU_','OffsetV_','ScrollingU_','ScrollingV_',
-                    'DistortionScaleU_','DistortionScaleV_'}) do
-                    mid:SetScalarParameterValue(FName(name..suffix),0)
-                end
-                mid:SetScalarParameterValue(FName('TilingU_'..suffix),1)
-                mid:SetScalarParameterValue(FName('TilingV_'..suffix),1)
-            end
-            mid:SetScalarParameterValue(FName('DistortionScale'),0)
-            mid:SetScalarParameterValue(FName('RGBScale02'),0)
-            mid:SetScalarParameterValue(FName('AlphaScale01'),0)
-            mid:SetScalarParameterValue(FName('AlphaScale02'),0)
+            material(job,actor,c,layer,false)
+            if job.wave then c:SetMeshSectionVisible(layer,false) end
             job.nextLayer=layer+1
             return budget -- at most one mesh section created per update
+        end
+        if job.wave then
+            local w=job.wave
+            local c=A.resolve(job.component)
+            assert(c,'Wave component expired')
+            if not w.mesh then
+                if budget<1 or os.clock()>=deadline then return 0 end
+                local vertices,indices,normals,uv=Wave.geometry(w,job)
+                assert(#indices>0,'No continuous terrain available for Palbox wave')
+                c:CreateMeshSection(2,vertices,indices,normals,uv,{},{},false)
+                material(job,actor,c,2,true)
+                w.mesh=true
+                if s.upgradeScreens then E.log('effect setup ready; waiting for Base Upgrade to close') end
+                return budget
+            end
+            if not w.started and s.upgradeScreens then return 0 end
+            local mid=assert(A.resolve(job.materials[3]),'Wave material expired')
+            if not w.started then
+                w.started=time
+                c:SetHiddenInGame(false,false);c:SetVisibility(true,false)
+                E.log(string.format('Palbox wave started: %d/%d ground samples; wave -> bounce -> rise',w.hits,#w.points))
+            end
+            if not w.arrived then
+                local p,done=Wave.progress(time-w.started)
+                mid:SetScalarParameterValue(FName('OffsetV_01'),0.45*p)
+                mid:SetScalarParameterValue(FName('AlphaScale01'),smooth((time-w.started)/0.12))
+                mid:SetScalarParameterValue(FName('RGBScale01'),5)
+                if done then
+                    w.arrived=time
+                    if s.animation then s.animation.waiting=nil;s.animation.start=time end
+                    E.log('Palbox wave reached boundary; bounce started')
+                end
+                return 0
+            elseif not w.hidden then
+                local fade=1-smooth((time-w.arrived)/Wave.fade)
+                mid:SetScalarParameterValue(FName('AlphaScale01'),fade)
+                mid:SetScalarParameterValue(FName('RGBScale01'),5*fade)
+                if fade==0 then c:SetMeshSectionVisible(2,false);w.hidden=true end
+            end
         end
         if s.animation then return 0 end -- hidden until the bounce fully settles
         local c=A.resolve(job.component)
         if not c then R.cleanup(s);return 0 end
         if not job.started then
             job.started=time
+            if job.wave then
+                c:SetMeshSectionVisible(2,false)
+                c:SetMeshSectionVisible(0,true);c:SetMeshSectionVisible(1,true)
+            end
             c:SetHiddenInGame(false,false)
             c:SetVisibility(true,false)
             E.log(string.format('contour rise started: %d/%d terrain samples, %d continuous sections, %.0f cm height',
@@ -159,7 +237,8 @@ return function(E,A)
         if elapsed<0 or elapsed>=R.duration then R.cleanup(s);return 0 end
         local rise,headAlpha,trailAlpha,headLight=R.envelope(elapsed,job.height)
         c:K2_SetWorldLocation({X=job.center.X,Y=job.center.Y,Z=job.center.Z+rise},false,{},true)
-        for i,p in ipairs(job.materials) do
+        for i=1,R.layers do
+            local p=job.materials[i]
             local mid=A.resolve(p)
             if mid then
                 local alpha=i==1 and headAlpha or trailAlpha*0.95

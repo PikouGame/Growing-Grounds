@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
-  <title>Base range: circle with four outward arrows</title>
-  <g stroke="#ffffff" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter">
-    <circle cx="32" cy="32" r="14"/>
-    <path d="M32 18V5M25 12L32 5L39 12 M46 32H59M52 25L59 32L52 39 M32 46V59M25 52L32 59L39 52 M18 32H5M12 25L5 32L12 39"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <title>Base range: circle with four integrated outward arrows</title>
+  <g fill="#ffffff">
+    <path fill-rule="evenodd" d="M12 4.5a7.5 7.5 0 1 1 0 15a7.5 7.5 0 1 1 0-15ZM12 6.75a5.25 5.25 0 1 0 0 10.5a5.25 5.25 0 1 0 0-10.5Z"/>
+    <path d="M12 1 15.75 5.5H8.25ZM23 12 18.5 15.75V8.25ZM12 23 8.25 18.5H15.75ZM1 12 5.5 8.25V15.75Z"/>
   </g>
 </svg>

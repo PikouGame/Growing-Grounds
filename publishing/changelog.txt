@@ -1,3 +1,28 @@
+0.1.2-alpha — room to grow, a moment to celebrate
+
+Known visual issue: the celebration can still start late after closing the Palbox. This does not postpone the actual base-radius upgrade. A new lightweight change observer is included; its improvement during a natural upgrade has not yet been verified in game.
+
+- A terrain-following blue wave travels from the Palbox to the old boundary, then triggers the expansion/bounce and rising glow.
+- The outward wave now takes 2.4 seconds; the rising effect defaults to 6 metres.
+- After an upgrade, preparation runs while Base Upgrade is open. Playback waits for the screen to close and setup to finish, with no fixed countdown.
+- Fresh terrain is sampled for every animation. No terrain cache between plays or speculative menu/nearby preloading.
+- Faster bounded preparation and event-maintained engine-object lists address the reported animation setup delay and five-second freezes on the test setup.
+- A lightweight 250 ms check of tracked base levels/radii avoids waiting for the five-second reconciliation when native hooks miss a change.
+- Configurable growth and cap, per-world settings, a hard 200% ceiling, and spacing-aware growth across guilds.
+- Server-authored next-range preview, preserved native value columns, and a refined circle/four-arrow icon.
+
+Update both host/server and clients. Preserve your config.lua preferences and
+world-settings.ini files. New cap/spacing rules may shrink older expanded bases,
+so please keep a world backup before updating. UE4SS is required separately.
+
+Checked in game: radius replication, 140% -> 145% preview and screen-close replay.
+World Settings flows, placement, expanded-area work/resources, full reset lifecycle,
+other range mods and broader hardware/OS combinations still need more testing.
+
+We'd love to hear how it feels in your world. Leave a comment, share a clip or
+report a bug so we can investigate and improve it:
+https://github.com/PikouGame/Growing-Grounds/issues
+
 0.1.1-alpha — upgrade celebration
 
 - Smooth boundary expansion with a slight bounce after a server-confirmed base upgrade.

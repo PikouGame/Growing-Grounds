@@ -1,23 +1,65 @@
-Growing Grounds 0.1.1-alpha — internal mod ID BaseRangeGrowth
+Growing Grounds 0.1.2-alpha — internal mod ID BaseRangeGrowth
 
-Upgrade animation update. Existing 0.1.0 servers remain compatible with the
-new client presentation; the server-authoritative growth formula is unchanged.
-After the radius expands and settles, one terrain-shaped line rises 8m with a
+ALPHA RELEASE: configurable growth, a 200% ceiling, spacing-aware limits and
+an upgrade celebration. Update host/server and clients together. Keep a world
+backup: new caps/spacing can reduce previously expanded bases. Native World
+Settings flows, placement rejection and full expanded-area gameplay still need
+broader live verification. The server-supplied 140% -> 145% preview and screen-
+close visual replay were confirmed in game.
+
+Configuration
+growthPercentPerLevel=5: 0..20% of the original radius per level after level 1.
+maxRangePercent=200: total radius, 100..200%. Values above 200 are clamped.
+Default 35m radius reaches 70m at level21, then stops growing.
+For local/co-op worlds, two Growing Grounds rows at the end of custom World
+Settings save per world after successful native confirmation. Keep the generated
+world-settings.ini alongside config.lua when updating. Do not copy another
+player's sidecar file over your own. Dedicated servers use config.lua defaults;
+an existing per-world override takes precedence if one was saved on that host.
+
+Native Palbox spacing is raised to two maximum radii (140m by default), for
+both PvE and PvP. Stronger existing restrictions are retained. Existing nearby
+bases reserve free growth space between their original circles, across guilds
+and regardless of height; they may stop growing below the cap. Already-
+overlapping vanilla circles are logged and receive no extra growth. Neighbours'
+future upgrades are reserved for, so upgrading cannot shrink another guild's
+base. The mod
+does not move or remove bases. Shrinking an old radius can leave buildings
+outside the base, so retain a world backup when upgrading.
+
+Upgrade animation
+Known visual issue: the celebration can still start late after closing the Palbox. This does not postpone the actual base-radius upgrade. A new lightweight change observer is included; its improvement during a natural upgrade has not yet been verified in game.
+
+Sequence: a blue wave travels from the Palbox across sampled ground
+to the currently visible boundary. Arrival starts the boundary expansion/bounce.
+After the radius expands and settles, one terrain-shaped line rises 6m with a
 soft 2.4m trailing glow. The climb starts fast and slows down. The trail softens
 before the leading edge flashes, retaining a glow through the finish. Both
 fade together during the last 1.2s of movement, without a stopped hold.
-The contour uses one procedural mesh and a native Palworld glow material.
-Terrain sampling and mesh setup are spread over updates. No particle systems.
+The wave and contour share one procedural mesh and a native Palworld glow material.
+After a confirmed upgrade, terrain sampling and mesh setup are spread across
+updates. If the matching Base Upgrade screen is active, setup runs hidden and
+playback waits for that screen to close. There is no fixed one-second countdown.
+Closing early waits only for unfinished setup. Each run samples fresh terrain;
+no terrain data is kept between animations and no speculative scans run.
+Sampling uses up to 64 points under a shared 3ms deadline per update. Individual
+native calls cannot be interrupted; this is not a guarantee of hitch-free frames.
+The ground mesh stays fixed during the sweep; a material offset moves the light.
+Missing ground and sharp cliffs are not filled with invented flat patches.
 Initial login does not animate. The actual gameplay radius never bounces.
 Ctrl+Shift+F7 replays visible boundaries without changing gameplay/base level.
-Use build mode near the Palbox to preview. Debug logging/hot reload is off by
+Use build mode near the Palbox to preview, or press F7 inside Base Upgrade and
+close it after setup to test the screen-close trigger. Debug logging/hot reload is off by
 default; developers can enable debug=true in config.lua.
-upgradeRibbon=false disables the rising effect. upgradeEffectHeight=800 is its
+upgradeWave=false skips the ground wave. upgradeRibbon=false disables both glow
+effects. upgradeEffectHeight=600 is the rising effect's
 height in centimetres. upgradeAnimation=false disables automatic animation.
-The effect was tuned through in-game replay and approved by the author.
+The author approved the Palbox wave speed and screen-close behavior through
+in-game replay. A natural upgrade with this exact screen-close build has not
+yet been observed.
 Performance has not been benchmarked across hardware.
 
-Adds 5% of the original base radius per base level after level 1.
+Defaults to 5% of the original base radius per base level after level 1, capped at 200%.
 The Base Upgrade screen adds a native reward row with a circle/four-arrow
 icon and percentages, for example 135% -> 140%. No +5% label.
 
@@ -38,6 +80,8 @@ Install
    Existing Workshop loader: Mods/NativeMods/UE4SS/Mods/BaseRangeGrowth
    Use your existing loader location; do not install a second UE4SS copy.
    The folder contains enabled.txt, Scripts, src, assets and config.lua.
+   Preserve config.lua preferences and any world-settings.ini (and its .bak).
+   Add newly introduced defaults without overwriting your chosen values.
 3. Start the server and clients. No edits to other mods are needed.
 4. In UE4SS.log, look for BaseRangeGrowth, role=authority on the server,
    and the changed base radius. Clients should log role=client.
@@ -46,17 +90,26 @@ Install
 
 Expected level-8 test
 Server changes 3500 cm to 4725 cm (47.25 m). Client receives the same
-radius and shows 135% -> 140%. The boundary follows the received radius.
+radius and shows 135% -> 140% after the server's preview arrives.
+If no matching preview is available, only the current percentage appears.
+The boundary follows the received radius.
 Reopening the panel must not add duplicate rows. Rejoining/restarting must
 not increase radius again. Level 9 must be 4900 cm, not 4961.25 cm.
 
 Server authority and limitations
-The growth curve is fixed at 5%; clients read the actual replicated radius.
-If the current server radius does not match the curve, next range shows --.
-At level 1 a remote client also shows -- for next range: vanilla radius alone
-cannot establish that the server runs the mod. A future explicit protocol
-handshake could remove this ambiguity. At max level the next value is hidden.
-Changes reconcile every five seconds, with additional level/creation hooks.
+Clients read the actual replicated radius and the server's computed next value.
+Preview data uses one unrendered native scene component per loaded Palbox, without
+collision, ticking, saved Pal models, chat messages or extra network ports.
+The component's replicated relative transform carries version-marked numeric
+UI data over the Palbox's existing channel. Clients reject stale levels/radii
+and foreign components. Components leave with their bases/world and are recreated on
+load. They never write a client gameplay radius. At max game level the next
+value is hidden. Configure dedicated-server gameplay on the host.
+Tracked base levels and radii are checked every 250 ms; only a change requests
+a full refresh. Native level/creation hooks and a five-second reconciliation
+remain as additional paths. The frequent check never performs a global object
+search. If construction notifications are unavailable, it yields to the slow
+reconciliation. Terrain preparation starts only after a confirmed change.
 Temporary raid bases are excluded. World decay settings, unrelated collision
 boxes, spawning and raid configuration are not modified.
 Expanded Pal work coverage, placement, resource use and building membership

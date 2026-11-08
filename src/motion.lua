@@ -4,6 +4,7 @@ local function smooth(t) return t*t*(3-2*t) end
 function M.sample(s, now)
     if not s.animation then return s.radius, 1 end
     local a = s.animation
+    if a.waiting then return a.from,0 end -- the Palbox wave reaches the edge first
     local t = math.max(0, math.min(1, (now-a.start)/M.duration))
     if now >= a.start+M.duration then t=1 end
     local k

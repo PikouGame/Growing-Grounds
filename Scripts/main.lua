@@ -1,4 +1,4 @@
--- BaseRangeGrowth 0.1.1-alpha: upgrade animation release.
+-- BaseRangeGrowth 0.1.2-alpha: prompt change detection and a Palbox-to-boundary wave.
 local script = debug.getinfo(1, 'S').source:gsub('^@', '')
 local root = assert(script:match('^(.*[/\\])Scripts[/\\]main%.lua$'), 'Cannot resolve mod folder')
 local Range = dofile(root .. 'src/range.lua')
@@ -15,16 +15,36 @@ local function guard(label, fn)
 end
 local function valid(object) return object and object:IsValid() end
 local env = {root=root, range=Range, config=Config, log=log, guard=guard, valid=valid}
+env.objects=dofile(root..'src/objects.lua')(env)
+env.settings = dofile(root .. 'src/settings.lua')(root, Range, Config)
+env.worldId = function()
+    local instance = env.objects.first('PalGameInstance')
+    if not valid(instance) then return end
+    local value = instance:GetSelectedWorldSaveDirectoryName()
+    return env.settings.key(type(value)=='string' and value or value:ToString())
+end
+env.policy = function() return env.settings.get(env.worldId()) end
 env.boundary = dofile(root .. 'src/boundary.lua')(env,dofile(root .. 'src/motion.lua'))
 local Runtime = dofile(root .. 'src/runtime.lua')(env)
+env.runtime=Runtime
+env.preview=dofile(root .. 'src/preview.lua')(env)
 local UI = dofile(root .. 'src/ui.lua')(env, Runtime)
+local WorldSettings = dofile(root .. 'src/world_settings.lua')(env)
 local pending = false
+local profileSamples=0
 local function refresh()
     if pending then return end
     pending = true
     ExecuteInGameThread(function()
+        local started=env.config.debug and os.clock()
         guard('runtime refresh', Runtime.refresh)
         guard('UI refresh', UI.refresh)
+        guard('World Settings refresh', WorldSettings.refresh)
+        if started and profileSamples<10 and #env.objects.all('PalBaseCampModel')>0 then
+            profileSamples=profileSamples+1
+            log(string.format('PERF refresh %d: %.1f ms (includes runtime, menus and settings)',
+                profileSamples,(os.clock()-started)*1000))
+        end
         pending = false
     end)
 end
@@ -37,16 +57,21 @@ end)
 guard('client level hook', function()
     RegisterHook('/Script/Pal.PalBaseCampModel:OnRep_Level_InGuildProperty', function() end, refresh)
 end)
-guard('base creation notification', function()
-    NotifyOnNewObject('/Script/Pal.PalBaseCampModel', function()
-        ExecuteWithDelay(500, refresh)
+env.objects.install(function(name)
+    if name=='PalBaseCampModel' then ExecuteWithDelay(500,refresh)
+    elseif name=='BP_BuildObject_PalBoxV2_C' or name=='WBP_IngameMenu_Mission_C' then
+        ExecuteWithDelay(100,refresh)
+    end
+end)
+-- Keep the slow reconciliation, but do not make a real upgrade wait for it.
+-- No terrain work or full runtime refresh occurs while level/radius are stable.
+dofile(root..'src/changes.lua')(env).install(refresh)
+guard('world settings notification', function()
+    NotifyOnNewObject('/Script/Pal.PalUIWorldSettingBase', function()
+        guard('World Settings hooks',WorldSettings.installHooks)
     end)
 end)
-guard('UI creation notification', function()
-    NotifyOnNewObject('/Script/Pal.PalUIBaseCampTaskBase', function()
-        ExecuteWithDelay(100, refresh)
-    end)
-end)
+guard('World Settings hooks',WorldSettings.installHooks)
 -- A low-frequency reconciliation also handles late join, load order, streamed
 -- Palboxes and radius replication arriving after the base-level notification.
 LoopAsync(5000, function() refresh(); return false end)
@@ -73,4 +98,4 @@ RegisterKeyBind(Key.F7, {ModifierKey.CONTROL, ModifierKey.SHIFT}, function()
         end)
     end)
 end)
-log('v0.1.1-alpha loaded; server owns gameplay, clients animate replicated radius; reset=' .. tostring(Config.resetToVanilla))
+log('v0.1.2-alpha loaded; tracked base changes every 250ms; Palbox wave; radius capped at 200%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))

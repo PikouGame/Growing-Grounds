@@ -5,6 +5,7 @@
 **/*.sav
 .env
 .env.*
+world-settings.ini*
 **/__pycache__/
 
 # Third-party development tools stay on the developer machine.

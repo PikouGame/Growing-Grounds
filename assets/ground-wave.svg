@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="8" height="1024" viewBox="0 0 8 1024">
+  <!-- Original radial pulse mask. Black padding keeps the full UV sweep in one tile. -->
+  <defs><linearGradient id="wave" x1="0" y1="0" x2="0" y2="1" color-interpolation="sRGB">
+    <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="0.445" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="0.45" stop-color="#ffffff" stop-opacity="1"/>
+    <stop offset="0.47" stop-color="#dddddd" stop-opacity="0.87"/>
+    <stop offset="0.52" stop-color="#aaaaaa" stop-opacity="0.65"/>
+    <stop offset="0.60" stop-color="#666666" stop-opacity="0.42"/>
+    <stop offset="0.75" stop-color="#333333" stop-opacity="0.22"/>
+    <stop offset="0.90" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+  </linearGradient></defs>
+  <rect width="8" height="1024" fill="url(#wave)"/>
+</svg>
