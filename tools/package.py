@@ -4,12 +4,13 @@ import hashlib
 import zipfile
 
 root = Path(__file__).resolve().parents[1]
-output = root / 'build' / 'BaseRangeGrowth-0.1.0-dev.zip'
+output = root / 'build' / 'BaseRangeGrowth-0.1.1-alpha.zip'
 output.parent.mkdir(parents=True, exist_ok=True)
 files = [root / name for name in ('enabled.txt', 'config.lua', 'INSTALL.txt')]
 files += sorted((root / 'Scripts').glob('*.lua'))
 files += sorted((root / 'src').glob('*.lua'))
-files += [root / 'assets/base-range.svg', root / 'assets/base-range.png']
+files += [root / name for name in ('assets/base-range.svg', 'assets/base-range.png',
+                                  'assets/contour-gradient.svg', 'assets/contour-gradient.png')]
 files += sorted((root / 'tests').glob('*.lua'))
 with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
     for path in files:

@@ -1,3 +1,16 @@
+0.1.1-alpha — upgrade celebration
+
+- Smooth boundary expansion with a slight bounce after a server-confirmed base upgrade.
+- Terrain-shaped rising cyan line with a continuous glow trail, an earlier flash, and a shared fade while still moving.
+- Cached game-object lookups and bounded terrain/mesh setup reduce replay overhead.
+- Visual-only Ctrl+Shift+F7 preview; debug logging/hot reload disabled by default.
+- Original 5% growth formula, server authority and percentage reward row retained.
+
+Update the BaseRangeGrowth folder and restart the client. Existing 0.1.0 servers
+remain compatible with the client animation. No UE4SS loader is bundled.
+Tested through in-game replay; wider hardware performance, expanded-ring gameplay,
+new-base/reset lifecycle and native Windows OS execution remain unverified.
+
 0.1.0-alpha — first public test build
 
 - Adds 5% of the original radius per base level after level 1.
@@ -8,3 +21,6 @@
 
 Alpha: expanded-ring gameplay, lifecycle/reset and Workshop deployment remain
 unverified. Back up your world before testing. See the description for details.
+
+We’d love to hear your experience! Leave a comment or report bugs so we can
+investigate and improve Growing Grounds: https://github.com/PikouGame/Growing-Grounds/issues

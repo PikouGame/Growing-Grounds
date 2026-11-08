@@ -1,4 +1,21 @@
-Growing Grounds 0.1.0-alpha — internal mod ID BaseRangeGrowth
+Growing Grounds 0.1.1-alpha — internal mod ID BaseRangeGrowth
+
+Upgrade animation update. Existing 0.1.0 servers remain compatible with the
+new client presentation; the server-authoritative growth formula is unchanged.
+After the radius expands and settles, one terrain-shaped line rises 8m with a
+soft 2.4m trailing glow. The climb starts fast and slows down. The trail softens
+before the leading edge flashes, retaining a glow through the finish. Both
+fade together during the last 1.2s of movement, without a stopped hold.
+The contour uses one procedural mesh and a native Palworld glow material.
+Terrain sampling and mesh setup are spread over updates. No particle systems.
+Initial login does not animate. The actual gameplay radius never bounces.
+Ctrl+Shift+F7 replays visible boundaries without changing gameplay/base level.
+Use build mode near the Palbox to preview. Debug logging/hot reload is off by
+default; developers can enable debug=true in config.lua.
+upgradeRibbon=false disables the rising effect. upgradeEffectHeight=800 is its
+height in centimetres. upgradeAnimation=false disables automatic animation.
+The effect was tuned through in-game replay and approved by the author.
+Performance has not been benchmarked across hardware.
 
 Adds 5% of the original base radius per base level after level 1.
 The Base Upgrade screen adds a native reward row with a circle/four-arrow
@@ -64,4 +81,4 @@ The distributed code and icon are original; game assets remain in the excluded l
 Verification status
 Lua syntax and standalone behavior checks pass. Radius replication and the
 menu row were observed in game. Expanded-ring gameplay and lifecycle checks
-remain outstanding. This is a development candidate until live checks pass.
+remain outstanding. This remains an alpha release.

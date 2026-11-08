@@ -93,6 +93,12 @@ return function(E)
         if not E.valid(base) then return end
         local radius = base:GetRange()
         if not positive(radius) then return end
+        if E.boundary then
+            local ok = E.guard('boundary presentation',function()
+                E.boundary.update(actor,base,guid(concrete.BaseCampId),radius)
+            end)
+            if ok then return end -- unsupported presentation API: exact old path below
+        end
         -- Installed game's Cylinder mesh is 100 cm across. Its two authored
         -- rings are 70 and 70.01 XY at the original 3500 cm radius. Preserve Z.
         for _, field in ipairs({'AreaRange', 'AreaRange1'}) do
@@ -112,6 +118,7 @@ return function(E)
         end
     end
     function R.refresh()
+        if E.boundary then E.boundary.beginRefresh() end
         local byId, live = {}, {}
         for _, model in ipairs(FindAllOf('PalBaseCampModel') or {}) do
             E.guard('base sync', function()
@@ -133,6 +140,7 @@ return function(E)
                 E.guard('boundary sync', function() R.updateRing(actor, byId) end)
             end
         end
+        if E.boundary then E.boundary.endRefresh() end
     end
     function R.report()
         for _, model in ipairs(FindAllOf('PalBaseCampModel') or {}) do

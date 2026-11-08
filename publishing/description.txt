@@ -7,11 +7,21 @@ At level 8, a default 35 m base becomes 47.25 m. The native Base Upgrade
 screen gains a Base Range reward row with a four-arrow icon and current/next
 percentages, for example 135% -> 140%.
 
-ALPHA 0.1.0 — please back up your world before testing.
+ALPHA 0.1.1 — please back up your world before testing.
 
 The server owns the radius. Install the mod on the server/host and on clients
 that need the UI and boundary display. UE4SS for Palworld is required and is
 not bundled. This is a Lua mod; PalSchema is not required.
+
+NEW IN 0.1.1
+After a server-confirmed upgrade, the boundary expands with a slight bounce.
+A terrain-shaped cyan line then rises with a smooth glow trail, flashes, and
+fades together with the remaining trail while slowing down. The effect is visual
+only. Ctrl+Shift+F7 previews it without changing your level or gameplay radius.
+Cached object lookups and bounded setup reduce animation overhead. Debug logging
+and hot reload are off by default. Existing 0.1.0 servers remain compatible with
+the new client animation. The author approved the effect after in-game replay;
+performance has not been benchmarked across hardware.
 
 MANUAL INSTALL
 Close the game/server normally. Extract the BaseRangeGrowth folder into your
@@ -27,11 +37,12 @@ Observed on Palworld v1.0.5.102999, UE4SS Palworld fork 2281fa31, with Windows
 executables running through Wine/Proton. The level-8 server radius, replicated
 client radius and boundary were observed. The player confirmed that the reward
 label and icon remain correct after repeated menu reopening. Lua regression
-tests pass. Native Windows OS execution has not been tested in this project.
+tests pass. A real base upgrade was observed updating the radius, and the
+upgrade celebration was tested through in-game replay. Native Windows OS execution has not been tested in this project.
 
 NOT YET VERIFIED
 Building placement, stored-resource use and Pal work throughout the expanded
-ring; live base upgrades and new Palboxes; complete reset/uninstall lifecycle;
+ring; new Palboxes; complete reset/uninstall lifecycle;
 other mods that change base radius; the Workshop deployment route.
 This alpha is not a claim of fully tested expanded-base gameplay.
 
@@ -51,6 +62,8 @@ shrinking. Keep a backup; the full reset lifecycle remains unverified.
 SOURCE AND FEEDBACK
 https://github.com/PikouGame/Growing-Grounds
 https://github.com/PikouGame/Growing-Grounds/issues
+We’d love to hear how Growing Grounds fits into your world! Leave a comment,
+share your experience, or report a bug so we can investigate and improve it.
 Please include your game and UE4SS versions, server/client setup, and steps to
 reproduce a problem. Remove personal data before sharing logs.
 
@@ -60,6 +73,6 @@ code or original assets require PikouGame's permission. All rights reserved.
 
 AI DISCLOSURE
 Developed with OpenAI Codex: AI generated code, tests, documentation and original
-SVG range icon from the author's direction. The author selected the behavior,
+SVG range icon and glow mask from the author's direction. The author selected the behavior,
 tested the mod in game and supplied the in-game screenshot. No AI-generated
 Palworld gameplay imagery is used.

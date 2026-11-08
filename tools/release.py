@@ -6,11 +6,13 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.1.0-alpha'
+VERSION = '0.1.1-alpha'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',
+    'src/motion.lua', 'src/boundary.lua', 'src/ribbon.lua',
     'assets/base-range.svg', 'assets/base-range.png',
+    'assets/contour-gradient.svg', 'assets/contour-gradient.png',
 ]
 DOCS = ['INSTALL.txt', 'LICENSE.txt', 'README.md']
 BUILD = ROOT / 'build'

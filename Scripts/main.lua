@@ -1,4 +1,4 @@
--- BaseRangeGrowth 0.1.0: Windows Palworld/PalServer, UE4SS Palworld fork.
+-- BaseRangeGrowth 0.1.1-alpha: upgrade animation release.
 local script = debug.getinfo(1, 'S').source:gsub('^@', '')
 local root = assert(script:match('^(.*[/\\])Scripts[/\\]main%.lua$'), 'Cannot resolve mod folder')
 local Range = dofile(root .. 'src/range.lua')
@@ -15,6 +15,7 @@ local function guard(label, fn)
 end
 local function valid(object) return object and object:IsValid() end
 local env = {root=root, range=Range, config=Config, log=log, guard=guard, valid=valid}
+env.boundary = dofile(root .. 'src/boundary.lua')(env,dofile(root .. 'src/motion.lua'))
 local Runtime = dofile(root .. 'src/runtime.lua')(env)
 local UI = dofile(root .. 'src/ui.lua')(env, Runtime)
 local pending = false
@@ -54,4 +55,22 @@ RegisterKeyBind(Key.F10, {ModifierKey.CONTROL, ModifierKey.SHIFT}, function()
     refresh()
     ExecuteInGameThread(function() guard('diagnostic', Runtime.report) end)
 end)
-log('v0.1.0 loaded; server owns gameplay, clients read replicated radius; reset=' .. tostring(Config.resetToVanilla))
+RegisterKeyBind(Key.F7, {ModifierKey.CONTROL, ModifierKey.SHIFT}, function()
+    ExecuteInGameThread(function()
+        guard('animation replay',function()
+            -- Development replay reloads only presentation code, after restoring
+            -- owned materials/components. Further visual tuning needs no restart.
+            if env.config.debug then
+                local candidate=dofile(root .. 'src/boundary.lua')(env,dofile(root .. 'src/motion.lua'))
+                local config=dofile(root .. 'config.lua')
+                env.boundary.shutdown()
+                env.boundary=candidate
+                env.config=config
+                Runtime.refresh()
+                log('presentation reloaded for visual test')
+            end
+            env.boundary.replay()
+        end)
+    end)
+end)
+log('v0.1.1-alpha loaded; server owns gameplay, clients animate replicated radius; reset=' .. tostring(Config.resetToVanilla))
