@@ -2,6 +2,9 @@ Growing Grounds
 
 Room to grow. A moment to celebrate.
 
+Base Upgrade shows current and next range and chest-slot bonuses
+https://raw.githubusercontent.com/PikouGame/Growing-Grounds/74243a1634c3351cde3ca9d6ed37050249886b07/assets/showcase/growing-grounds-rewards.png
+
 Give your base room to grow
 
 Gain 5% of your original base radius per level, starting at level 2, up to double the radius by default. Celebrate each expansion with a blue wave from the Palbox, a gentle bounce, and a rising glow.
@@ -10,13 +13,6 @@ A blue wave travels from the Palbox to the expanding boundary
 https://raw.githubusercontent.com/PikouGame/Growing-Grounds/999a446fffa9b154cb22e040a253101908e7cd89/assets/showcase/growing-grounds-upgrade-web.gif
 
 Gameplay excerpt at original speed; initial wait trimmed.
-
-See your next upgrade
-
-Your current and next range bonus, distance in metres, and extra chest slots appear right in the Base Upgrade menu.
-
-Base Upgrade shows current and next range and chest-slot bonuses
-https://raw.githubusercontent.com/PikouGame/Growing-Grounds/74243a1634c3351cde3ca9d6ed37050249886b07/assets/showcase/growing-grounds-rewards.png
 
 More room for your supplies
 
