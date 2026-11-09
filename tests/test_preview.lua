@@ -47,13 +47,13 @@ local function box(name)
 end
 local host,remote=box('serverPalbox'),box('clientPalbox')
 boxes={host}
-local E={runtime={baseline=function() return 3500 end},valid=function(o) return o and o:IsValid() end,log=function() end}
+local E={runtime={baseline=function() return 3500 end, bonuses=function() return {rangeEnabled=true,chestCap=20} end},valid=function(o) return o and o:IsValid() end,log=function() end}
 local make=dofile(root..'src/preview.lua')
 local publisher=make(E)
 publisher.refresh();publisher.publish(host,base,145);publisher.finish()
 local c=host.components[1]
 assert(created==1 and c.replicates)
-assert(c.RelativeLocation.X==14000 and c.RelativeLocation.Y==14500 and c.RelativeLocation.Z==232009)
+assert(c.RelativeLocation.X==14000 and c.RelativeLocation.Y==14500 and c.RelativeLocation.Z==441050)
 assert(wakes==1 and updates==1,'new component wakes the existing Palbox channel once')
 publisher.refresh();publisher.publish(host,base,145);publisher.finish()
 assert(created==1 and wakes==1 and updates==1,'unchanged metadata does not create or wake anything')
@@ -107,3 +107,25 @@ client.refresh();assert(client.read(base,3500,9,13825)==400,'+300% bonus can be 
 cc.RelativeLocation.Y=40100
 client.refresh();assert(client.read(base,3500,9,13825)==nil,'oversized server preview rejected')
 print('PASS: expanded preview range, +300% boundary accepted and out-of-range values rejected')
+
+cc.RelativeLocation={X=14000,Y=14500,Z=400000+9+1001*41}
+client.refresh()
+local nextValue,metadata=client.read(base,3500,9,4900)
+assert(nextValue==145 and metadata.rangeEnabled and metadata.chestCap==20)
+for _,cap in ipairs({0,20,40}) do
+    for _,enabled in ipairs({false,true}) do
+        cc.RelativeLocation.Z=400000+9+1001*(cap*2+(enabled and 1 or 0))
+        client.refresh()
+        local _,value=client.read(base,3500,9,4900)
+        assert(value and value.chestCap==cap and value.rangeEnabled==enabled)
+    end
+end
+cc.RelativeLocation.Z=232009
+client.refresh()
+local _,legacy=client.read(base,3500,9,4900)
+assert(legacy and legacy.chestCap==nil and legacy.rangeEnabled==nil,'never infer missing settings from an older server')
+for _,invalid in ipairs({400000,400000+1001*82+9,400009.5}) do
+    cc.RelativeLocation.Z=invalid;client.refresh()
+    assert(client.read(base,3500,9,4900)==nil)
+end
+print('PASS: authoritative bonus policy, independent disabled flags, 0..40 chest cap and legacy compatibility')

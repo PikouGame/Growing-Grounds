@@ -30,6 +30,11 @@ return function(E)
     function R.policy(model)
         return E.range.settings(E.policy and E.policy(model) or E.config)
     end
+    function R.bonuses(model)
+        local policy=R.policy(model)
+        return {rangeEnabled=not E.config.resetToVanilla and policy.maxRangeBonusPercent>0 and policy.growthPercentPerLevel>0,
+            chestCap=E.config.resetToVanilla and 0 or policy.maxChestBonusSlots}
+    end
     function R.updatePlacement(context)
         local settings = utility():GetGameSetting(context)
         assert(E.valid(settings), 'Placement settings unavailable')
@@ -47,7 +52,7 @@ return function(E)
         for field, original in pairs(originalSpacing[key]) do
             assert(type(original)=='number' and original==original and original>=0
                 and original<math.huge, 'Invalid native placement distance')
-            local target = E.config.resetToVanilla and original or math.max(original, required)
+            local target = not R.bonuses(context).rangeEnabled and original or math.max(original, required)
             if settings[field] ~= target then
                 settings[field] = target
                 assert(math.abs(settings[field]-target)<0.1, 'Placement setting write did not stick')
@@ -97,18 +102,23 @@ return function(E)
         -- growth settings or nearby-base limits. Use a server-authored preview.
         local nextRadius
         local nextPercent
+        local bonuses
         if authority then
+            bonuses=R.bonuses(model)
             local models = all('PalBaseCampModel')
             if #models == 0 then models = {model} end
             nextRadius = R.targets(models, guid(model:GetGroupIdBelongTo()), math.min(level+1,maximum))[guid(model:GetId())]
             nextPercent=not E.config.resetToVanilla and nextRadius and nextRadius/baseline*100 or nil
         elseif E.preview then
-            nextPercent=E.preview.read(model,baseline,level,radius)
+            nextPercent,bonuses=E.preview.read(model,baseline,level,radius)
         end
         return {
             level=level, maximum=maximum, radius=radius, baseline=baseline,
             currentPercent=radius / baseline * 100,
             nextPercent=nextPercent,
+            rangeEnabled=bonuses and bonuses.rangeEnabled,
+            chestCurrent=bonuses and bonuses.chestCap and bonuses.chestCap>0 and math.min(level-1,bonuses.chestCap) or nil,
+            chestNext=bonuses and bonuses.chestCap and bonuses.chestCap>0 and math.min(level,bonuses.chestCap) or nil,
             atMaximum=level >= maximum, authority=authority,
         }
     end

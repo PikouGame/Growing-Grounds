@@ -37,7 +37,7 @@ local function panel(width)
     p.GetChildAt=function(self,i) return self.children[i+1] end
     p.AddChild=function(self,child)
         child:RemoveFromParent();child.parent=self;self.children[#self.children+1]=child
-        child.Slot={SetPadding=function(slot,v) slot.padding=v end,
+        child.Slot={Padding={Left=0,Right=0,Top=0,Bottom=0},SetPadding=function(slot,v) slot.padding=v;slot.Padding=v end,
             SetVerticalAlignment=function(slot,v) slot.vertical=v end,
             SetHorizontalAlignment=function(slot,v) slot.horizontal=v end}
         return child.Slot
@@ -55,6 +55,13 @@ local function panel(width)
 end
 local hook,created,writes,prepasses=nil,0,0,0
 local parent=panel()
+local rewardSection=widget({Slot=obj({position={X=0,Y=148},size={X=656,Y=152},
+    GetSize=function(self) return self.size end, SetSize=function(self,s) self.size=s end,
+    IsA=function(_,p) return p=='/Script/UMG.CanvasPanelSlot' end,
+    GetPosition=function(self) return self.position end,
+    SetPosition=function(self,p) self.position=p end})})
+local rowStack=widget({parent=rewardSection})
+parent.parent=rowStack
 local texture=obj({})
 local function row(name)
     local pre,aft=label(),label()
@@ -64,6 +71,7 @@ local function row(name)
         Text_Efefct=label(),Text_Num_Pre=pre,Text_Num_Aft=aft,
         Image_Icon=widget({SetBrushFromTexture=function(self,v) self.texture=v end}),
         Image_Arrow=widget(),SizeBox_Aft=aftBox,
+        GetDesiredSize=function() return {X=588,Y=32} end,
         ForceLayoutPrepass=function() prepasses=prepasses+1 end,
         SetEffectInfo=function(self,_,_,_,canLevelup)
             writes=writes+1
@@ -84,7 +92,7 @@ local nativePal,nativeBase=row('vanilla-pal'),row('vanilla-base')
 parent:AddChild(nativePal);parent:AddChild(nativeBase)
 local model=obj({IsAvailable=function() return true end})
 local screen=obj({CanLevelup=false,active=true,IsActivated=function(self) return self.active end,
-    GetFullName=function() return 'screen' end,
+    ForceLayoutPrepass=function() end,GetFullName=function() return 'screen' end,
     GetBaseCampModel=function() return model end,GetOwningPlayer=function() return obj({}) end,
     WBP_IngameMenu_MissionLevelEffect=nativePal,WBP_IngameMenu_MissionLevelEffect_1=nativeBase})
 local library={Create=function() created=created+1;return row('row'..created) end}
@@ -262,11 +270,37 @@ assert(w.Image_Arrow.visibility==2 and w.SizeBox_Aft.visibility==2, 'missing pre
 snapshot.nextPercent=145;screen.CanLevelup=true
 UI.refresh();assert(w.Image_Arrow.visibility==4 and w.SizeBox_Aft.visibility==4)
 assert(unit(w,'Text_Num_Aft').value=='%' and unit(w,'Text_Num_Aft').RenderOpacity==1)
+assert(note(w,'Text_Num_Aft').color==w.Text_Num_Aft.ColorAndOpacity,
+    'ready next metres inherit native upgrade turquoise')
+assert(note(w,'Text_Num_Pre').color.SpecifiedColor.R==0.27,'current metres stay mint')
+screen.CanLevelup=false;UI.refresh()
+assert(note(w,'Text_Num_Aft').color.SpecifiedColor.R==0.27,'next metres return to mint when not ready')
 snapshot.atMaximum=true
 UI.refresh();assert(w.SizeBox_Aft.visibility==2)
 w:RemoveFromParent()
 UI.refresh()
 assert(created==2 and #parent.children==3 and current().Text_Efefct.value=='Base Range Bonus', 'rebuild only a missing mod row')
+snapshot.atMaximum=false;snapshot.chestCurrent=9;snapshot.chestNext=10
+UI.refresh()
+local chest=parent.children[4]
+assert(created==3 and constructed==16 and chest.Text_Efefct.value=='Bonus Chest Slots')
+assert(chest.Text_Num_Pre.value=='9' and chest.Text_Num_Aft.value=='10')
+assert(rewardSection.Slot.position.Y+rewardSection.Slot.size.Y==300,'bottom separator stays fixed')
+assert(rewardSection.Slot.position.Y==112,'fourth row shifts the complete title/reward group by one native row')
+assert(chest.Image_Icon.texture==texture and chest.SizeBox_Aft.WidthOverride==nativeBase.SizeBox_Aft.WidthOverride)
+snapshot.chestCurrent=20;snapshot.chestNext=20;UI.refresh()
+assert(chest.Text_Num_Pre.value=='20' and chest.Text_Num_Aft.value=='20','cap stops slot growth')
+snapshot.atMaximum=true;UI.refresh();assert(chest.SizeBox_Aft.visibility==2)
+snapshot.rangeEnabled=false;snapshot.chestCurrent=nil;snapshot.chestNext=nil
+UI.refresh()
+assert(current().visibility==1 and chest.visibility==1,'disabled bonuses collapse their reward rows')
+assert(rewardSection.Slot.position.Y==148,'disabled bonuses restore the original section position')
+assert(nativeBase.SizeBox_Aft.WidthOverride==72,'disabled annotations restore native columns')
+reconstruct(chest)
+snapshot.rangeEnabled=true;snapshot.chestCurrent=9;snapshot.chestNext=10;snapshot.atMaximum=false
+UI.refresh()
+assert(current().visibility==4 and chest.visibility==4 and created==3,'reenable without duplicating widgets')
+reconstruct(chest);assert(chest.Text_Efefct.value=='Bonus Chest Slots' and chest.Text_Num_Aft.value=='10')
 FindAllOf=function() return {} end
 UI.refresh();reconstruct(current())
 assert(current().Text_Efefct.value=='None', 'release ownership after the screen disappears')

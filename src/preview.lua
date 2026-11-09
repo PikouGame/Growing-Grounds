@@ -1,12 +1,12 @@
 -- Server-authored UI data on a mod-owned native SceneComponent. It replicates
 -- through the existing Palbox actor channel; a standalone TargetPoint was not
 -- delivered to the live client. No game component is repurposed.
--- Relative X/Y are hundredths of current/next percent; Z is a version marker
--- plus level. This unrendered, unattached component has no gameplay or save model.
+-- X/Y are hundredths of current/next percent. Z carries a version marker, level,
+-- range-enabled flag and chest cap as exact integers. No extra replicated object.
 return function(E)
     local P = {}
     local marker, records, reported = {}, {}, {}
-    local MAGIC, MAX_LEVEL = 232000, 1000
+    local MAGIC, LEGACY, MAX_LEVEL = 400000, 232000, 1000
     local componentPath='/Script/Engine.SceneComponent'
     local function find(path)
         if E.objects then return E.objects.find(path) end
@@ -21,10 +21,21 @@ return function(E)
         if not location then return end
         local x,y,z=location.X,location.Y,location.Z
         if not finite(x) or not finite(y) or not finite(z) then return end
-        local level=math.floor(z-MAGIC+0.5)
-        if level<1 or level>MAX_LEVEL or math.abs(z-MAGIC-level)>0.01 then return end
+        local payload=z-MAGIC
+        local level,rangeEnabled,chestCap
+        if payload>=1 then
+            local flags=math.floor(payload/(MAX_LEVEL+1))
+            if flags<0 or flags>81 then return end
+            level=payload-flags*(MAX_LEVEL+1)
+            rangeEnabled,chestCap=flags%2==1,math.floor(flags/2)
+        else
+            level=z-LEGACY -- older servers provide radius preview only
+        end
+        if level<1 or level>MAX_LEVEL or math.abs(level-math.floor(level+0.5))>0.01 then return end
+        level=math.floor(level+0.5)
         if x<9999 or x>40001 or (y~=-100 and (y<9999 or y>40001)) then return end
-        return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil}
+        return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil,
+            rangeEnabled=rangeEnabled,chestCap=chestCap}
     end
     local function ownerBase(actor)
         local owner=actor:GetOwner()
@@ -59,7 +70,7 @@ return function(E)
             E.log(string.format('received server preview: level=%d current=%.2f next=%s',
                 level,value.current,tostring(value.nextPercent)))
         end
-        return value.nextPercent
+        return value.nextPercent,value
     end
     function P.refresh()
         records={}
@@ -88,8 +99,10 @@ return function(E)
         if not authority(model) then return end
         local id=guid(model:GetId())
         local baseline=E.runtime.baseline(model)
+        local bonuses=E.runtime.bonuses(model)
         local location={X=model:GetRange()/baseline*10000,
-            Y=nextPercent and nextPercent*100 or -100,Z=MAGIC+model:GetLevel()}
+            Y=nextPercent and nextPercent*100 or -100,
+            Z=MAGIC+model:GetLevel()+(MAX_LEVEL+1)*(bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0))}
         assert(decode(location),'Invalid server preview')
         local state=marker[id]
         local actor=state and state.actor

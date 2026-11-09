@@ -3,7 +3,8 @@ return {
     -- Each level after 1 adds this percentage of the ORIGINAL radius (0..20).
     growthPercentPerLevel = 5,
     -- Maximum radius BONUS: +100% doubles the radius (35m -> 70m).
-    -- World Settings: +50..+300%. +300% means 4x radius, not area.
+    -- World Settings: 0..+300%. +300% means 4x radius, not area.
+    -- Set either cap to 0 to disable that bonus. Occupied extra chest slots are preserved.
     -- Old maxRangePercent totals remain supported without changing their effect.
     maxRangeBonusPercent = 100,
     -- +1 chest slot per upgrade, starting at level 2. Bonus cap: 0..40.

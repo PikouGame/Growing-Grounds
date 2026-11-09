@@ -1,0 +1,12 @@
+Growing Grounds 0.1.5-alpha
+
+- Base Upgrade previews bonus chest slots, with a compact chest icon.
+- Set the range or chest cap to 0 (Off) to disable that bonus and hide its row.
+- Next-radius metres turn turquoise when the upgrade is ready; current metres stay mint.
+- Reward spacing expands upward to fit all four rows.
+- World Settings retains the live menu correctly and preserves Off/bonus labels after slider changes.
+
+Update the host/server and clients together. Occupied extra chest slots remain accessible until emptied when lowering the cap. No developer replay shortcuts are included.
+
+We'd love to hear how it works in your world. Share your experience or report bugs so we can investigate and improve Growing Grounds together:
+https://github.com/PikouGame/Growing-Grounds/issues

@@ -6,7 +6,7 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.1.4-alpha'
+VERSION = '0.1.5-alpha'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',
@@ -15,6 +15,7 @@ RUNTIME = [
     'src/preview.lua', 'src/objects.lua', 'src/changes.lua',
     'src/motion.lua', 'src/boundary.lua', 'src/ring.lua', 'src/ribbon.lua', 'src/wave.lua',
     'assets/base-range.svg', 'assets/base-range.png',
+    'assets/chest-bonus.svg', 'assets/chest-bonus.png',
     'assets/contour-gradient.svg', 'assets/contour-gradient.png',
     'assets/ground-wave.svg', 'assets/ground-wave.png',
 ]

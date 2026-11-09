@@ -8,7 +8,10 @@ return function(E, Runtime)
         return StaticFindObject(path)
     end
     local function text(value) return FText(value) end
-    local label = 'Base Range Bonus'
+    local specs = {
+        {key='range', label='Base Range Bonus', icon='base-range.png'},
+        {key='chest', label='Bonus Chest Slots', icon='chest-bonus.png'},
+    }
     local function gain(value) return string.format('%.0f', value - 100) end
     local mint = {SpecifiedColor={R=0.27,G=0.78,B=0.60,A=1},ColorUseRule=0}
     local metreGap = 3
@@ -53,7 +56,7 @@ return function(E, Runtime)
         if not color then suffix:SetRenderOpacity(main.RenderOpacity) end
         suffix:SetText(text(value))
     end
-    local function fitColumns(screen, row, state)
+    local function fitColumns(screen, row, state, rows)
         -- Balance BOTH suffixes with equal empty space on the left. Only the
         -- digits sit on the native value centre; '%' and metres extend right.
         -- Only changed presentation triggers measurement, never an idle tick.
@@ -63,7 +66,7 @@ return function(E, Runtime)
         -- width. Shorter annotations can then move the arrows back right.
         local width = grid.minimum
         local measured = {}
-        for _, field in ipairs({'Text_Num_Pre','Text_Num_Aft'}) do
+        for _, field in ipairs(row and {'Text_Num_Pre','Text_Num_Aft'} or {}) do
             if field=='Text_Num_Pre' or (not state.atMaximum and state.nextPercent~=nil) then
                 local main = row[field]
                 local group = main:GetParent()
@@ -85,29 +88,56 @@ return function(E, Runtime)
         -- value must not alter the current value's already balanced spacer.
         for _, value in ipairs(measured) do value.group:GetChildAt(0):SetSize({X=value.side,Y=0}) end
         width = math.ceil(width)
-        for _, reward in ipairs({screen.WBP_IngameMenu_MissionLevelEffect, example, row}) do
+        local rewards={screen.WBP_IngameMenu_MissionLevelEffect, example}
+        for _,spec in ipairs(specs) do if E.valid(rows[spec.key]) then rewards[#rewards+1]=rows[spec.key] end end
+        for _, reward in ipairs(rewards) do
             if E.valid(reward) then
                 for _, field in ipairs({'Text_Num_Pre','Text_Num_Aft'}) do
                     local box = reward[field]:GetParent()
-                    if reward == row then box = box:GetParent() end
+                    if reward == rows.range then box = box:GetParent() end
                     if box.WidthOverride ~= width then box:SetWidthOverride(width) end
                 end
             end
         end
         return true
     end
-    local function paint(row, state)
+    local function fitHeight(parent, grid, rows)
+        local stack=parent:GetParent()
+        if not E.valid(stack) then return end
+        stack=stack:GetParent()
+        if not E.valid(stack) or not E.valid(stack.Slot) or not stack.Slot:IsA('/Script/UMG.CanvasPanelSlot') then return end
+        if not grid.position then
+            local p=stack.Slot:GetPosition()
+            grid.position={X=p.X,Y=p.Y}
+            local size=stack.Slot:GetSize()
+            grid.size={X=size.X,Y=size.Y}
+        end
+        -- Keep the established three-row spacing. A fourth reward grows upward
+        -- by its own native row height, leaving the button/separator untouched.
+        local extra=0
+        if grid.visible.range and grid.visible.chest then
+            local row=rows.chest
+            local padding=row.Slot.Padding
+            extra=row:GetDesiredSize().Y+padding.Top+padding.Bottom
+        end
+        local y=grid.position.Y-extra
+        if stack.Slot:GetPosition().Y~=y then stack.Slot:SetPosition({X=grid.position.X,Y=y}) end
+        -- Bottom-anchored separator stays put as the section expands upward.
+        if stack.Slot:GetSize().Y~=grid.size.Y+extra then stack.Slot:SetSize({X=grid.size.X,Y=grid.size.Y+extra}) end
+    end
+    local function paintRange(row, state)
         local before = math.floor(state.currentPercent + 0.5)
         row:SetEffectInfo(before, state.nextPercent or before, state.atMaximum, state.canLevelup)
         row.Image_Icon:SetBrushFromTexture(row.Texture, false)
-        row.Text_Efefct:SetText(text(label))
+        row.Text_Efefct:SetText(text(specs[1].label))
         row.Text_Num_Pre:SetText(text(gain(state.currentPercent)))
         local showNext=not state.atMaximum and state.nextPercent~=nil
         row.Text_Num_Aft:SetText(text(state.nextPercent and gain(state.nextPercent) or ''))
         paintSuffix(row.Text_Num_Pre, 2, 2/3, '%')
         paintSuffix(row.Text_Num_Aft, 2, 2/3, state.nextPercent and '%' or '')
         paintSuffix(row.Text_Num_Pre, 3, metreScale, metres(state.radius), mint)
-        paintSuffix(row.Text_Num_Aft, 3, metreScale, state.nextPercent and metres(state.baseline * state.nextPercent / 100) or '', mint)
+        paintSuffix(row.Text_Num_Aft, 3, metreScale, state.nextPercent and metres(state.baseline * state.nextPercent / 100) or '',
+            state.canLevelup and row.Text_Num_Aft.ColorAndOpacity or mint)
         -- Hidden preserves the game's two value columns while replication catches up.
         row.Image_Arrow:SetVisibility(showNext and 4 or 2)
         row.SizeBox_Aft:SetVisibility(showNext and 4 or 2)
@@ -115,6 +145,19 @@ return function(E, Runtime)
         -- Construct can rebuild Slate outside UI.update. Its post-hook uses
         -- this same current painter; the next visible update must remeasure.
         lastWritten[row:GetFullName()] = nil
+    end
+    local function paint(row, entry)
+        local state=entry.state
+        if entry.kind=='range' then paintRange(row,state);return end
+        row:SetEffectInfo(state.chestCurrent,state.chestNext or state.chestCurrent,state.atMaximum,state.canLevelup)
+        row.Image_Icon:SetBrushFromTexture(row.Texture,false)
+        row.Text_Efefct:SetText(text(specs[2].label))
+        row.Text_Num_Pre:SetText(text(tostring(state.chestCurrent)))
+        row.Text_Num_Aft:SetText(text(state.chestNext and tostring(state.chestNext) or ''))
+        local showNext=not state.atMaximum and state.chestNext~=nil
+        row.Image_Arrow:SetVisibility(showNext and 4 or 2)
+        row.SizeBox_Aft:SetVisibility(showNext and 4 or 2)
+        lastWritten[row:GetFullName()]=nil
     end
     local function installConstructHook()
         if constructHookInstalled then return end
@@ -126,67 +169,85 @@ return function(E, Runtime)
                 local row = context:get()
                 if not E.valid(row) then return end
                 local state = owned[row:GetFullName()]
-                if state then paint(row, state) end
+                if state and (state.kind=='range' or state.state.chestCurrent~=nil) then paint(row, state) end
             end)
         end)
         constructHookInstalled = true
     end
     function UI.update(screen)
-        if not E.valid(screen) then return end
-        if not screen:IsActivated() then return end
-        local model = screen:GetBaseCampModel()
+        if not E.valid(screen) or not screen:IsActivated() then return end
+        local model=screen:GetBaseCampModel()
         if not E.valid(model) or not model:IsAvailable() then return end
-        local example = screen.WBP_IngameMenu_MissionLevelEffect_1
+        local example=screen.WBP_IngameMenu_MissionLevelEffect_1
         if not E.valid(example) then return end
-        local parent = example:GetParent()
+        local parent=example:GetParent()
         if not E.valid(parent) then return end
-        local key = screen:GetFullName()
+        local key=screen:GetFullName()
         if not columns[key] then
-            columns[key] = {minimum=math.max(example.Text_Num_Pre:GetParent().WidthOverride,
-                example.Text_Num_Aft:GetParent().WidthOverride)}
+            columns[key]={minimum=math.max(example.Text_Num_Pre:GetParent().WidthOverride,
+                example.Text_Num_Aft:GetParent().WidthOverride),visible={}}
+            attached[key]={}
         end
-        local state = Runtime.snapshot(model)
-        state.canLevelup = screen.CanLevelup
-        local row
-        -- Resolve through the live widget tree instead of holding raw UObject
-        -- references across GC, close/reopen or travel.
-        if attached[key] then
-            for index = 0, parent:GetChildrenCount() - 1 do
-                local child = parent:GetChildAt(index)
-                if child:GetFullName() == attached[key] then row = child; break end
+        local grid=columns[key]
+        local state=Runtime.snapshot(model)
+        state.canLevelup=screen.CanLevelup
+        local rows,signatures={},{}
+        local needsLayout=false
+        local enabled={range=state.rangeEnabled~=false,chest=state.chestCurrent~=nil}
+        for _,spec in ipairs(specs) do
+            local row
+            for index=0,parent:GetChildrenCount()-1 do
+                local child=parent:GetChildAt(index)
+                if child:GetFullName()==attached[key][spec.key] then row=child;break end
+            end
+            if enabled[spec.key] and not E.valid(row) then
+                local old=attached[key][spec.key]
+                if old then owned[old],lastWritten[old]=nil,nil end
+                local class=object(rowPath)
+                if not E.valid(class) then return end
+                installConstructHook()
+                row=object('/Script/UMG.Default__WidgetBlueprintLibrary'):Create(screen,class,screen:GetOwningPlayer())
+                assert(E.valid(row),'Reward widget creation failed')
+                local texture=object('/Script/Engine.Default__KismetRenderingLibrary'):ImportFileAsTexture2D(screen,E.root..'assets/'..spec.icon)
+                assert(E.valid(texture),'Cannot load reward icon: '..spec.icon)
+                row.Texture=texture
+                if spec.key=='range' then
+                    wrapValue(row,'Text_Num_Pre');wrapValue(row,'Text_Num_Aft')
+                end
+                attached[key][spec.key]=row:GetFullName()
+                owned[row:GetFullName()]={kind=spec.key,state=state}
+                parent:AddChildToVerticalBox(row):SetPadding({Left=0,Top=4,Right=0,Bottom=0})
+                needsLayout=true
+                E.log(spec.label..' row added')
+            end
+            if E.valid(row) then
+                rows[spec.key]=row
+                local name=row:GetFullName()
+                owned[name]={kind=spec.key,state=state}
+                if grid.visible[spec.key]~=enabled[spec.key] then
+                    row:SetVisibility(enabled[spec.key] and 4 or 1)
+                    grid.visible[spec.key]=enabled[spec.key]
+                    lastWritten[name]=nil
+                    needsLayout=true
+                end
+                if enabled[spec.key] then
+                    local signature=spec.key=='range'
+                        and table.concat({state.currentPercent,tostring(state.nextPercent),state.radius,state.baseline,
+                            tostring(state.atMaximum),tostring(state.canLevelup)},':')
+                        or table.concat({state.chestCurrent,tostring(state.chestNext),tostring(state.atMaximum),tostring(state.canLevelup)},':')
+                    signatures[name]=signature
+                    if lastWritten[name]~=signature or row.Text_Efefct:GetText():ToString()~=spec.label then
+                        paint(row,owned[name]);needsLayout=true
+                    end
+                end
             end
         end
-        if not E.valid(row) then
-            local oldName = attached[key]
-            if oldName then owned[oldName], lastWritten[oldName] = nil, nil end
-            local class = object(rowPath)
-            if not E.valid(class) then return end
-            installConstructHook()
-            local library = object('/Script/UMG.Default__WidgetBlueprintLibrary')
-            row = library:Create(screen, class, screen:GetOwningPlayer())
-            assert(E.valid(row), 'Reward widget creation failed')
-            local rendering = object('/Script/Engine.Default__KismetRenderingLibrary')
-            local texture = rendering:ImportFileAsTexture2D(screen, E.root .. 'assets/base-range.png')
-            assert(E.valid(texture), 'Cannot load four-arrow icon')
-            -- Set the Blueprint's backing property before attaching: its
-            -- Construct event copies Texture into Image_Icon. The reflected
-            -- reference also retains the runtime texture across collection.
-            row.Texture = texture
-            wrapValue(row, 'Text_Num_Pre')
-            wrapValue(row, 'Text_Num_Aft')
-            attached[key] = row:GetFullName()
-            owned[row:GetFullName()] = state
-            local slot = parent:AddChildToVerticalBox(row)
-            slot:SetPadding({Left=0, Top=4, Right=0, Bottom=0})
-            E.log('Base Range Bonus row added')
+        if needsLayout then
+            screen:ForceLayoutPrepass()
+            fitHeight(parent,grid,rows)
         end
-        local name = row:GetFullName()
-        owned[name] = state
-        local signature = table.concat({state.currentPercent, tostring(state.nextPercent), state.radius, state.baseline,
-            tostring(state.atMaximum), tostring(state.canLevelup)}, ':')
-        if lastWritten[name] ~= signature or row.Text_Efefct:GetText():ToString() ~= label then
-            paint(row, state)
-            if fitColumns(screen, row, state) then lastWritten[name] = signature end
+        if needsLayout and fitColumns(screen,enabled.range and rows.range or nil,state,rows) then
+            for name,signature in pairs(signatures) do lastWritten[name]=signature end
         end
     end
     function UI.refresh()
@@ -200,8 +261,7 @@ return function(E, Runtime)
         end
         for key in pairs(columns) do
             if not live[key] then
-                local name = attached[key]
-                if name then owned[name], lastWritten[name] = nil, nil end
+                for _,name in pairs(attached[key] or {}) do owned[name],lastWritten[name]=nil,nil end
                 attached[key], columns[key] = nil, nil
             end
         end

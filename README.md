@@ -25,7 +25,7 @@ the rising effect lifts 6 metres by default and gradually softens the terrain re
 ## Your world's settings
 
 - **Growth per level:** 0–20% of the original radius; default 5%.
-- **Maximum range bonus:** +50% to +300%; default +100%. A +300% bonus means four times the original radius.
+- **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius.
 - **Bonus chest slots:** +1 per base upgrade from level 2, capped at 20 by default; adjustable from 0 to 40. Guild Chests share one bonus.
 - Local worlds have three Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
@@ -59,6 +59,10 @@ See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
+## What changed in 0.1.5-alpha
+
+Base Upgrade now previews bonus chest slots alongside range. Set either cap to **0 (Off)** to disable that feature and hide its row. When an upgrade is ready, the next radius in metres follows Palworld’s turquoise highlight. Current metres keep their mint tint.
+
 ## What changed in 0.1.4-alpha
 
 The range cap now uses bonus percentages in World Settings and `config.lua`.
@@ -88,7 +92,7 @@ checked in game. The author approved the slower wave and screen-close behavior.
 The former periodic freezes stopped on the test setup; broader hardware
 performance has not been established.
 
-The 0.1.4 build passes ten standalone regression suites. Native tests also
+The 0.1.5 candidate passes ten standalone regression suites. Native tests also
 cover empty-slot removal, garbage collection and shared Guild Chest sizing.
 The three World Settings rows were checked through the normal new-world menu;
 the form was cancelled without creating a world. An earlier intermittent client
@@ -97,7 +101,7 @@ crash remains unattributed; this release is not claimed to fix it.
 This is an alpha. Saving World Settings and starting a new world, placement rejection,
 Pal work and resource access throughout expanded areas, the full reset lifecycle,
 conflicts with other range mods, and native Windows OS execution still need
-broader in-game verification. The extra reward row is currently English.
+broader in-game verification. The added reward and settings labels are currently English.
 If a valid server preview is unavailable, only the current range is shown.
 
 The server owns gameplay radius. Animation changes the visible boundary only.

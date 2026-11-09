@@ -4,7 +4,7 @@ _Room to grow. A moment to celebrate._
 
 Your base gains **5% of its original radius per level**, starting at level 2. See the current and next bonus, with metres beside each value, in the Base Upgrade menu.
 
-![Growing Grounds: native level-10 Base Upgrade menu](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/ee074d1b4cc508f178d5e6cd8b00d639664d92db/assets/showcase/growing-grounds-base-upgrade.png)
+![Growing Grounds: native level-10 Base Upgrade menu](../assets/showcase/growing-grounds-rewards.png)
 
 A blue wave travels from the Palbox to the boundary, followed by a gentle bounce and rising glow.
 
@@ -12,11 +12,11 @@ A blue wave travels from the Palbox to the boundary, followed by a gentle bounce
 
 _Gameplay excerpt at original speed; initial wait trimmed._
 
-Chests gain **one extra slot per upgrade**, up to **20 bonus slots** by default. Guild Chests receive the bonus once for their shared inventory. Lowering the cap keeps occupied extra slots until you empty them.
+Chests gain **one extra slot per upgrade**, up to **20 bonus slots** by default. Guild Chests receive the bonus once for their shared inventory. The upgrade menu previews the current and next slot bonus. Lowering the cap keeps occupied extra slots until you empty them.
 
 ## Make it your own
 
-Choose **0–20% growth per level**, a **+50% to +300% range bonus cap**, and **0–40 bonus chest slots**. The default range cap is +100%: double the original radius. +300% means four times the radius.
+Choose **0–20% growth per level**, a **0 to +300% range bonus cap**, and **0–40 bonus chest slots**. Set either cap to **0 (Off)** to disable it. The default range cap is +100%: double the original radius. +300% means four times the radius.
 
 Local hosts get sliders in World Settings; dedicated-server owners use `config.lua`. Nearby bases can limit expansion, and new Palboxes reserve room for future growth. Existing settings keep their previous effective range cap.
 

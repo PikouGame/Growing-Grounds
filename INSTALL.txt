@@ -1,4 +1,4 @@
-Growing Grounds 0.1.4-alpha — internal mod ID BaseRangeGrowth
+Growing Grounds 0.1.5-alpha — internal mod ID BaseRangeGrowth
 
 Install or update
 1. Save and close the game/server, and back up your world.
@@ -19,10 +19,10 @@ shortcuts entirely; an old debug=true option is ignored. No test hotkey is neede
 Configuration
 - growthPercentPerLevel=5: adds 0..20% of the ORIGINAL radius after level 1.
 - maxRangeBonusPercent=100: radius BONUS. +100% doubles the original radius.
-  The World Settings slider offers +50..+300%; +300% means four times the radius.
+  The World Settings slider offers 0..+300%; +300% means four times the radius.
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
   +100. Do not add the new key beside the old one unless you intend to override it.
-  Old caps below +50% are preserved until you explicitly change that slider.
+  Set either cap to 0 to disable its bonus and hide its reward row.
 - maxChestBonusSlots=20: one extra chest slot per upgrade, starting at level 2.
   Bonus limit 0..40. Guild Chests share one bonus for the whole guild.
   Lower limits retain occupied overflow slots until they are emptied.
