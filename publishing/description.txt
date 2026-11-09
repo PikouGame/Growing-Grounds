@@ -9,12 +9,12 @@ Animation: https://raw.githubusercontent.com/PikouGame/Growing-Grounds/999a446ff
 Gameplay excerpt at original speed; initial wait trimmed.
 
 Make it your own
-Choose 0–20% growth per level and a bonus cap from +50% to +300%. +100% doubles the radius; +300% makes it four times larger. Local hosts get sliders in World Settings; dedicated-server owners use config.lua. Nearby bases can limit expansion, and new Palboxes reserve room for future growth.
+Choose 0–20% growth per level and a bonus cap from 0 to +300%. +100% doubles the radius; +300% makes it four times larger. Local hosts get sliders in World Settings; dedicated-server owners use config.lua. Nearby bases can limit expansion, and new Palboxes reserve room for future growth.
 
-The bonus chest cap is adjustable from 0 to 40. Lowering it keeps occupied extra slots accessible until you empty them.
+The bonus chest cap is adjustable from 0 to 40. Set either cap to 0 (Off) to disable that bonus. Lowering it keeps occupied extra slots accessible until you empty them.
 
 Getting started
-Requires a compatible Palworld UE4SS loader on the host/server and clients.
+Requires a compatible Palworld UE4SS loader on the host/server and clients. Use a build with game-thread timers, such as the tested Palworld fork 2281fa31; exact API requirements are in INSTALL.txt.
 
 1. Close the game/server and back up your world.
 2. Copy BaseRangeGrowth into your existing UE4SS Mods folder on both sides.

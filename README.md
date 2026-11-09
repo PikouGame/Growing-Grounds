@@ -61,6 +61,12 @@ See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
+## What changed in 0.1.6-alpha
+
+- Prevents concurrent Lua timer callbacks from corrupting callback references.
+- Keeps range and chest rewards coherent while an upgrade reaches the client.
+- Preserves the existing gameplay balance, animation and keyboard controls.
+
 ## What changed in 0.1.5-alpha
 
 Base Upgrade now previews bonus chest slots alongside range. Set either cap to **0 (Off)** to disable that feature and hide its row. When an upgrade is ready, the next radius in metres follows Palworld’s turquoise highlight. Current metres keep their mint tint.
@@ -97,8 +103,12 @@ performance has not been established.
 The 0.1.5 candidate passes ten standalone regression suites. Native tests also
 cover empty-slot removal, garbage collection and shared Guild Chest sizing.
 The three World Settings rows were checked through the normal new-world menu;
-the form was cancelled without creating a world. An earlier intermittent client
-crash remains unattributed; this release is not claimed to fix it.
+the form was cancelled without creating a world. For 0.1.6, six targeted regression suites passed. An isolated timer test reproduced
+the invalid-callback error with async scheduling; the same workload completed
+2,000 callbacks without errors using game-thread timers. A real level 10–11
+upgrade, menu close/reopen and full animation also completed without errors.
+The earlier native crash has not been reproduced; long-session stability remains
+unverified.
 
 This is an alpha. Saving World Settings and starting a new world, placement rejection,
 Pal work and resource access throughout expanded areas, the full reset lifecycle,

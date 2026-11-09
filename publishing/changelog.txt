@@ -1,3 +1,16 @@
+Growing Grounds 0.1.6-alpha
+
+- Fixed concurrent Lua timer scheduling that could cause "Ref was not function" errors.
+- Range and chest rewards keep their last complete values while an upgrade synchronizes, then refresh together.
+- No balance changes or development hotkeys.
+
+Update the host/server and clients. Keep your config.lua and world-settings.ini. Your UE4SS loader must support ExecuteInGameThreadWithDelay and LoopInGameThreadWithDelay; the tested Palworld fork 2281fa31 provides both.
+
+Verified with 2,000 native timer callbacks and a real upgrade, menu close/reopen and full animation on an isolated world. The earlier intermittent native crash has not been reproduced; longer play sessions still need testing.
+
+We'd love to hear how it works in your world! Leave a comment, share your experience or report a bug so we can investigate and improve it:
+https://github.com/PikouGame/Growing-Grounds/issues
+
 0.1.3-alpha — a clearer view, a lighter mod
 
 - Base Range Bonus shows the gain above the original radius, with metres beside each value: 45% 50.8m -> 50% 52.5m.

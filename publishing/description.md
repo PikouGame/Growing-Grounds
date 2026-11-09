@@ -22,7 +22,7 @@ Local hosts get sliders in World Settings; dedicated-server owners use `config.l
 
 ## Getting started
 
-Requires a compatible **Palworld UE4SS loader on the host/server and clients**.
+Requires a compatible **Palworld UE4SS loader on the host/server and clients**. Use a build with game-thread timers, such as the tested Palworld fork 2281fa31; exact API requirements are in INSTALL.txt.
 
 1. Close the game/server and back up your world.
 2. Copy `BaseRangeGrowth` into your existing UE4SS `Mods` folder on both sides.

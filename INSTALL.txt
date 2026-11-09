@@ -1,4 +1,4 @@
-Growing Grounds 0.1.5-alpha — internal mod ID BaseRangeGrowth
+Growing Grounds 0.1.6-alpha — internal mod ID BaseRangeGrowth
 
 Install or update
 1. Save and close the game/server, and back up your world.
