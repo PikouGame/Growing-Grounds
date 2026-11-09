@@ -1,8 +1,4 @@
-# Growing Grounds
-
-_Room to grow. A moment to celebrate._
-
-![Base Upgrade shows current and next range and chest-slot bonuses](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/74243a1634c3351cde3ca9d6ed37050249886b07/assets/showcase/growing-grounds-rewards.png)
+![Base Upgrade shows current and next range and chest-slot bonuses](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/0a7d3122ceef97ef2b02cdc09ef7a986f6f8306d/assets/showcase/growing-grounds-hero.png)
 
 ## Give your base room to grow
 
@@ -38,4 +34,4 @@ Install on the **host/server and clients** with a compatible **Palworld UE4SS lo
 
 We’d love to see what you build! Share your base, leave a comment, or [report a bug](https://github.com/PikouGame/Growing-Grounds/issues) so we can keep improving Growing Grounds together.
 
-_Made with OpenAI Codex under lelorax’s direction. In-game media. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod._
+_Made with OpenAI Codex under lelorax’s direction. Gameplay and UI captured in game; AI-assisted title lettering. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod._
