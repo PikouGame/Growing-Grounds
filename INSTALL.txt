@@ -18,8 +18,13 @@ limits. Buildings outside the resulting boundary may lose coverage. Keep a backu
 0.1.3 does not change those gameplay rules. It removes development keyboard
 shortcuts entirely; an old debug=true option is ignored. No test hotkey is needed.
 
+Updating from 0.1.6 or older: the default growth is now 4% per level (was 5%).
+Saved World Settings and a preserved config.lua keep their own value. Adopting
+4% shrinks grown bases a little (level 11: 52.5m -> 49m with a 35m base);
+buildings beyond the new boundary may lose coverage. Keep a backup.
+
 Configuration
-- growthPercentPerLevel=5: adds 0..20% of the ORIGINAL radius after level 1.
+- growthPercentPerLevel=4: adds 0..20% of the ORIGINAL radius after level 1.
 - maxRangeBonusPercent=100: radius BONUS. +100% doubles the original radius.
   The World Settings slider offers 0..+300%; +300% means four times the radius.
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
@@ -39,9 +44,9 @@ Settings. Values save per world after native confirmation, in world-settings.ini
 Dedicated servers use config.lua defaults unless that host has a per-world
 sidecar override. Server settings always control gameplay and the next-value UI.
 
-With the standard 35m radius: level 8 = 47.25m, level 9 = 49m, level 21 = 70m.
+With the standard 35m radius: level 8 = 44.8m, level 11 = 49m, level 26 = 70m.
 Growth is additive. The UI shows the bonus above 100%, with metres rounded to a
-tenth. Level 10 displays 45% 50.8m -> 50% 52.5m. At maximum game level, the next
+tenth. Level 10 displays 36% 47.6m -> 40% 49m. At maximum game level, the next
 value is hidden. A missing/stale server preview also hides the next value.
 
 Spacing and server authority

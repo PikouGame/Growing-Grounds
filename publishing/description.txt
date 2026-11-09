@@ -3,7 +3,7 @@ https://raw.githubusercontent.com/PikouGame/Growing-Grounds/38fd04a96569df61264f
 
 Give your base room to grow
 
-Gain 5% of your original base radius per level, starting at level 2, up to double the radius by default. Celebrate each expansion with a blue wave from the Palbox, a gentle bounce, and a rising glow.
+Gain 4% of your original base radius per level, starting at level 2, up to double the radius by default. Celebrate each expansion with a blue wave from the Palbox, a gentle bounce, and a rising glow.
 
 A blue wave travels from the Palbox to the expanding boundary
 https://raw.githubusercontent.com/PikouGame/Growing-Grounds/999a446fffa9b154cb22e040a253101908e7cd89/assets/showcase/growing-grounds-upgrade-web.gif

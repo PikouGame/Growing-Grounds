@@ -2,9 +2,9 @@
 
 Give your base room to grow—and enjoy the moment it does.
 
-Growing Grounds adds **5% of the original base radius per level**, starting at
+Growing Grounds adds **4% of the original base radius per level**, starting at
 level 2, with a default bonus cap of **+100%** (double the original radius). The Base Upgrade screen shows your
-current and next bonus with metres beside each value: **45% 50.8m → 50% 52.5m**.
+current and next bonus with metres beside each value: **36% 47.6m → 40% 49m**.
 The numbers follow Palworld's own reward-row layout.
 
 Chests gain **one extra slot per base upgrade**, up to **20 bonus slots** by
@@ -24,7 +24,7 @@ the rising effect lifts 6 metres by default and gradually softens the terrain re
 
 ## Your world's settings
 
-- **Growth per level:** 0–20% of the original radius; default 5%.
+- **Growth per level:** 0–20% of the original radius; default 4%.
 - **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius.
 - **Bonus chest slots:** +1 per base upgrade from level 2, capped at 20 by default; adjustable from 0 to 40. Guild Chests share one bonus.
 - Local worlds have three Growing Grounds sliders at the bottom of custom World
@@ -33,7 +33,7 @@ the rising effect lifts 6 metres by default and gradually softens the terrain re
   bases to reach the cap: 140 m between centres with the default 35 m base and
   +100% bonus cap. Stronger native restrictions remain in place.
 
-For a standard 35 m base, level 9 is 49 m (+40%). With default growth, level 21
+For a standard 35 m base, level 11 is 49 m (+40%). With default growth, level 26
 reaches the 70 m cap. Growth is additive, not compounded.
 
 ## Install or update
@@ -60,6 +60,18 @@ old key automatically. Choose a higher cap explicitly if you want more room.
 See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
+
+## What changed in 0.1.7-alpha
+
+A gentler pace, so later base levels still have something to give.
+
+- Range grows **4% per level** by default (was 5%). The +100% cap now arrives
+  at level 26 instead of level 21.
+- **Existing worlds keep their own growth value.** Saved World Settings and a
+  kept `config.lua` are never rewritten; the new default only reaches worlds
+  that never saved one. To adopt it, set growth to 4: a level-11, 35 m base
+  then goes from 52.5 m to 49 m, so check buildings near the edge and keep a
+  backup.
 
 ## What changed in 0.1.6-alpha
 

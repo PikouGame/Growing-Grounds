@@ -22,7 +22,7 @@ function Range.settings(settings)
     if cap == nil and finite(settings.maxRangePercent) then
         cap = math.max(100, math.min(200, settings.maxRangePercent)) - 100
     end
-    if not finite(growth) then growth = 5 end
+    if not finite(growth) then growth = 4 end
     if not finite(cap) then cap = 100 end
     local slots = settings.maxChestBonusSlots
     if not finite(slots) then slots = 20 end

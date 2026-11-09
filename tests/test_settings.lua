@@ -117,6 +117,27 @@ custom=factory('',Range,defaults,fs)
 assert(custom.get(a).maxRangeBonusPercent==150 and custom.get(a).maxChestBonusSlots==0)
 print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..40')
 
+-- The 4% default only reaches a world that never saved its own growth value.
+local saved=files['world-settings.ini']
+local shipped=dofile(root..'config.lua')
+assert(shipped.growthPercentPerLevel==4)
+files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=5\nmaxRangeBonusPercent=100\nmaxChestBonusSlots=20\n'
+local updated=factory('',Range,shipped,fs)
+assert(updated.get(a).growthPercentPerLevel==5,'saved World Settings keep their growth after the update')
+assert(updated.get(b).growthPercentPerLevel==4,'a world without saved settings follows the shipped config')
+assert(updated.get(nil).growthPercentPerLevel==4,'a server reading the shipped config.lua gets the new default')
+-- Saving another world writes every section in full; it must not move world A.
+updated.save(b,{maxChestBonusSlots=30})
+assert(files['world-settings.ini']:find('growthPercentPerLevel=5',1,true),'world A is rewritten with its own 5%')
+updated=factory('',Range,shipped,fs)
+assert(updated.get(a).growthPercentPerLevel==5 and updated.get(b).growthPercentPerLevel==4)
+local kept=factory('',Range,{growthPercentPerLevel=5,maxRangeBonusPercent=100,maxChestBonusSlots=20},fs)
+assert(kept.get(nil).growthPercentPerLevel==5,'a preserved config.lua keeps its explicit 5%')
+assert(factory('',Range,{maxRangeBonusPercent=100},fs).get(nil).growthPercentPerLevel==4,
+    'a config.lua without the key falls back to 4%')
+files['world-settings.ini']=saved
+print('PASS: 4% default reaches only unsaved worlds; saved World Settings and a kept config.lua retain 5%')
+
 W.setup(menu,a,false)
 W.change(panel.children[2],0);W.change(panel.children[3],0)
 for _,i in ipairs({2,3}) do

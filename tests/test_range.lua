@@ -2,12 +2,20 @@ local root = assert(arg[1], 'pass the mod root with trailing slash')
 local Range = dofile(root .. 'src/range.lua')
 local function near(a,b) assert(math.abs(a-b)<0.00001, tostring(a)..' != '..tostring(b)) end
 near(Range.radius(3500,1),3500)
-near(Range.radius(3500,2),3675)
-near(Range.radius(3500,8),4725)
-near(Range.radius(3500,9),4900)
-near(Range.radius(3500,20),6825)
-near(Range.radius(3500,21),7000)
+near(Range.radius(3500,2),3640)
+near(Range.radius(3500,8),4480)
+near(Range.radius(3500,11),4900)
+near(Range.radius(3500,25),6860)
+near(Range.radius(3500,26),7000)
 near(Range.radius(3500,35),7000)
+-- The shipped config and the fallback agree on 4%; the 0..20 setting remains.
+near(Range.settings().growthPercentPerLevel,4)
+near(dofile(root..'config.lua').growthPercentPerLevel,4)
+near(Range.settings({growthPercentPerLevel=99}).growthPercentPerLevel,20)
+near(Range.settings({growthPercentPerLevel=-1}).growthPercentPerLevel,0)
+-- A world that keeps the former 5% keeps the former radii.
+near(Range.radius(3500,11,{growthPercentPerLevel=5}),5250)
+near(Range.radius(3500,21,{growthPercentPerLevel=5}),7000)
 near(Range.percent(35,{maxRangePercent=300}),200)
 near(Range.percent(35,{growthPercentPerLevel=0}),100)
 near(Range.percent(8,{growthPercentPerLevel=10,maxRangePercent=150}),150)
@@ -54,22 +62,22 @@ local eligible=structure(groupId,zero,true)
 mapObjects={eligible,structure({A=8,B=0,C=0,D=0},zero,true),structure(groupId,baseId,true),structure(groupId,zero,false)}
 local Runtime=dofile(root..'src/runtime.lua')(E)
 base=newBase(8,3500,true)
-assert(Runtime.apply(base)); near(base.AreaRange,4725)
+assert(Runtime.apply(base)); near(base.AreaRange,4480)
 assert(#registered==1 and registered[1]==eligible, 'only unassigned same-guild in-range structure qualifies')
-for i=1,20 do assert(not Runtime.apply(base)); near(base.AreaRange,4725) end
-base.level=9; assert(Runtime.apply(base)); near(base.AreaRange,4900)
+for i=1,20 do assert(not Runtime.apply(base)); near(base.AreaRange,4480) end
+base.level=9; assert(Runtime.apply(base)); near(base.AreaRange,4620)
 local reloaded=dofile(root..'src/runtime.lua')(E)
-assert(not reloaded.apply(base)); near(base.AreaRange,4900)
-local second=newBase(2,3500,true); reloaded.apply(second); near(second.AreaRange,3675)
+assert(not reloaded.apply(base)); near(base.AreaRange,4620)
+local second=newBase(2,3500,true); reloaded.apply(second); near(second.AreaRange,3640)
 local client=newBase(8,3500,false)
 assert(not reloaded.apply(client)); near(client.AreaRange,3500)
-assert(reloaded.snapshot(client).nextPercent==nil, 'unmodded server must not advertise 140%')
-client.AreaRange=4725; assert(reloaded.snapshot(client).nextPercent==nil,
+assert(reloaded.snapshot(client).nextPercent==nil, 'unmodded server must not advertise 132%')
+client.AreaRange=4480; assert(reloaded.snapshot(client).nextPercent==nil,
     'matching current radius cannot prove remote cap or overlap rules')
 local levelOne=newBase(1,3500,false)
 assert(reloaded.snapshot(levelOne).nextPercent==nil, 'level-one vanilla radius cannot establish server support')
 base.bTemporary=true; base.level=10
-assert(not reloaded.apply(base)); near(base.AreaRange,4900)
+assert(not reloaded.apply(base)); near(base.AreaRange,4620)
 base.bTemporary=false
 E.config.resetToVanilla=true; assert(reloaded.apply(base)); near(base.AreaRange,3500)
 E.config.resetToVanilla=false

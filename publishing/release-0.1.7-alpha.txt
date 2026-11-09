@@ -1,0 +1,14 @@
+Growing Grounds 0.1.7-alpha — a gentler pace
+
+- Range now grows 4% of the original radius per level by default (was 5%). The +100% cap arrives at level 26 instead of level 21.
+
+What existing worlds will see
+- Your own growth value is kept. Saved World Settings and a preserved config.lua are never rewritten, so those worlds stay at their current pace (5% unless you changed it). Only a world that never saved a value, or a config.lua replaced by the new default file, moves to 4%.
+- To adopt the new pace, set the World Settings slider or growthPercentPerLevel to 4. Grown bases then shrink a little: a level-11 base with the standard 35 m radius goes from 52.5 m to 49 m. Buildings beyond the new boundary may lose coverage, so keep a world backup.
+
+Update the host/server and clients together. Keep your config.lua and world-settings.ini.
+
+The Lua regression suites pass. This pace change has not had an in-game session yet.
+
+We'd love to hear how it works in your world! Leave a comment, share your experience or report a bug so we can investigate and improve it:
+https://github.com/PikouGame/Growing-Grounds/issues

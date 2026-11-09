@@ -8,7 +8,7 @@ return function(E)
     local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
         {key='growthPercentPerLevel', title='Growing Grounds: Range growth per level (%)', min=0, max=20,
-            tip='Adds a percentage of the original radius each level after level 1. Default: 5%.'},
+            tip='Adds a percentage of the original radius each level after level 1. Default: 4%.'},
         {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=300,
             tip='0 disables range growth. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
         {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=40,
