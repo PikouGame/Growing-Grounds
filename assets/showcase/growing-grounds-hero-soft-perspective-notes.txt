@@ -1,0 +1,13 @@
+Growing Grounds — softened title perspective
+
+Requested: slightly less angle on the depth. Retain the selected first
+perspective style, the 10% larger word placement and the original game UI.
+Only the lettering was edited with imagegen; the native SVG composition
+keeps both 330 x 84.414 word boxes at x=12/502, y=5.
+The earlier selected lettering remains available as
+growing-grounds-wordmark-perspective.png.
+
+Edit prompt:
+Make one subtle geometry adjustment to this exact transparent two-word title asset. Exact text GROWING on left, GROUNDS on right.
+Reduce the angle of the mirrored outward PERSPECTIVE by approximately 25 percent: both words should be a little more front-facing, with a gentler change of letter height from the inner end to the outer end. Retain a visible outward perspective; do not make it completely flat. Keep the top/bottom envelope edges straight and the two words balanced. Keep each word's overall width and the maximum letter height essentially unchanged; slightly increase the receding smaller letters toward the existing larger letters so the size transition is less dramatic.
+Keep the existing italic letterform slant, font, exact spelling, white faces, thin turquoise lower stripe, dark teal extrusion depth, lighting, word spacing and transparency. This is NOT a new logo, NOT a color change, NOT reduced font italic slant. No lime, no triangular facets, no extra decoration. Do not exaggerate the 3D. Only soften the perspective angle slightly. Output only the two words in the same broad layout on true transparent background, no UI or other elements.
