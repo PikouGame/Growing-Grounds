@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="870" height="960" viewBox="0 0 870 960">
+  <title>Growing Grounds — Base Upgrade</title>
+  <desc>Original in-game interface with decorative title lettering. The two words sit 2 pixels farther from the central diamond than the initial placement.</desc>
+  <image width="870" height="960" xlink:href="growing-grounds-rewards.png"/>
+  <svg x="78.078125" y="142" width="225.921875" height="38" viewBox="90 304 761 128">
+    <image width="2166" height="726" xlink:href="growing-grounds-wordmark.png"/>
+  </svg>
+  <svg x="540" y="142" width="233.640625" height="38" viewBox="1299 304 787 128">
+    <image width="2166" height="726" xlink:href="growing-grounds-wordmark.png"/>
+  </svg>
+</svg>

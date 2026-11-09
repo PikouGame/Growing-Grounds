@@ -1,0 +1,23 @@
+Growing Grounds storefront hero
+
+The underlying 870 x 960 interface is the original in-game capture,
+growing-grounds-rewards.png. The SVG adds only the two title words.
+The level, reward values, labels, controls and icons are not generated.
+
+Lettering: built-in imagegen, transparent output; selected from the title
+style preview. Layout: native SVG composition, same-sized original capture.
+Final placement moves each word 2 source pixels away from the diamond
+(left word right edge 306 -> 304; right word left edge 538 -> 540).
+
+Final lettering prompt:
+Extract ONLY the two title words GROWING and GROUNDS from the supplied image,
+as a clean transparent lettering asset. Preserve exactly their handsome bold
+white italic angular game lettering and thin turquoise underside accents.
+Remove EVERYTHING else: all Palworld UI, diamond, numbers, rules, text,
+dark background, shadows behind the panel, buttons, frame. Leave only these
+two horizontal words on true alpha transparency, on one row with a large
+empty transparent gap between them. Same size, same baseline, no other marks
+or text. Do not include any rectangular background. This title overlay will
+be placed over an untouched original game capture. The only visible pixels
+in the output must belong to the two words and their very small attached
+letter-edge shadows.
