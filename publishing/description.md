@@ -4,7 +4,7 @@ _Room to grow. A moment to celebrate._
 
 Your base gains **5% of its original radius per level**, starting at level 2. See the current and next bonus, with metres beside each value, in the Base Upgrade menu.
 
-![Growing Grounds: native level-10 Base Upgrade menu](../assets/showcase/growing-grounds-rewards.png)
+![Growing Grounds: native level-10 Base Upgrade menu](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/74243a1634c3351cde3ca9d6ed37050249886b07/assets/showcase/growing-grounds-rewards.png)
 
 A blue wave travels from the Palbox to the boundary, followed by a gentle bounce and rising glow.
 
