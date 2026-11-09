@@ -5,8 +5,8 @@ The user chose the original turquoise lower accent and outward perspective.
 Later lime/colored-sideface experiments were rejected. No triangular facets.
 
 Built-in imagegen created only the title lettering. The SVG preserves the
-original native 870 x 960 menu capture and places each word in a 300 x 76.74
-box above the panel, mirrored around the diamond's x=422 center.
+original native 870 x 960 menu capture and places each word in a 330 x 84.414
+box above the panel (10% enlargement; inner edges stay fixed), mirrored around the diamond's x=422 center.
 
 Selected prompt:
 Use case: logo-brand lettering edit.
