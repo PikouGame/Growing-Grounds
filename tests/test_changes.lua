@@ -21,6 +21,9 @@ E.objects.all('PalBaseCampModel')
 assert(C.check() and not C.check(),'initial base reconciles once')
 for _=1,1000 do assert(not C.check()) end
 assert(scans==1,'stable checks must not search all game objects')
+E.preview={revision=function(model) return model.preview end}
+b.preview='10:145:150:true:20'
+assert(C.check() and not C.check(),'initial preview arrives independently of the base')
 b.level=10
 assert(C.check() and not C.check(),'detect a level before radius replication')
 b.radius=5075
@@ -28,6 +31,12 @@ assert(C.check() and not C.check(),'detect delayed radius without a five-second 
 b.radius=5250
 assert(C.check());b.level=11;assert(C.check(),'radius-before-level also works')
 b.radius=5250.01;assert(not C.check(),'ignore insignificant float noise')
+b.preview='11:150:155:true:20'
+assert(C.check() and not C.check(),'late preview triggers refresh without waiting five seconds')
+b.preview='11:150:155:true:0'
+assert(C.check() and not C.check(),'policy-only changes refresh disabled rewards too')
+b.preview=nil
+assert(C.check() and not C.check(),'invalidated preview reconciles once')
 local late=base('World.Late',0,0)
 hooks['/Script/Pal.PalBaseCampModel'](late)
 assert(not C.check(),'not-ready bases cause no refresh loop')
@@ -41,6 +50,21 @@ local nextWorld=base('OtherWorld.Base',1,3500)
 hooks['/Script/Pal.PalBaseCampModel'](nextWorld)
 assert(C.check(),'new world is discovered from notification')
 assert(scans==1)
+local menu={alive=true,active=false,CanLevelup=false,HasAnyFlags=function() return false end,
+    GetFullName=function() return 'World.Menu' end,IsActivated=function(self) return self.active end}
+live.WBP_IngameMenu_Mission_C={menu}
+E.objects.all('WBP_IngameMenu_Mission_C')
+assert(not C.check(),'a closed menu does not cause a refresh')
+menu.active=true
+assert(C.check() and not C.check(),'opening an existing menu refreshes once')
+menu.active=false;assert(not C.check())
+nextWorld.preview='2:105:110:true:20';assert(C.check())
+menu.active=true
+assert(C.check() and not C.check(),'reopening after closed-screen replication cannot wait for reconciliation')
+menu.CanLevelup=true
+assert(C.check() and not C.check(),'native readiness colors refresh without a level change')
+for _=1,1000 do assert(not C.check()) end
+assert(scans==2,'base/menu observers only use event-maintained sets')
 
 -- Failed native registration keeps the slow fallback, never four scans/second.
 NotifyOnNewObject=function() error('unavailable') end

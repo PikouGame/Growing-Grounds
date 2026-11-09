@@ -182,6 +182,10 @@ return function(E, Runtime)
         if not E.valid(example) then return end
         local parent=example:GetParent()
         if not E.valid(parent) then return end
+        local state=Runtime.snapshot(model)
+        -- Preserve the last coherent rewards while the server's three fields
+        -- arrive separately. A missing packet is not a disabled chest bonus.
+        if state.previewPending then return end
         local key=screen:GetFullName()
         if not columns[key] then
             columns[key]={minimum=math.max(example.Text_Num_Pre:GetParent().WidthOverride,
@@ -189,7 +193,6 @@ return function(E, Runtime)
             attached[key]={}
         end
         local grid=columns[key]
-        local state=Runtime.snapshot(model)
         state.canLevelup=screen.CanLevelup
         local rows,signatures={},{}
         local needsLayout=false

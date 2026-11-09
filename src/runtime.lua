@@ -103,6 +103,7 @@ return function(E)
         local nextRadius
         local nextPercent
         local bonuses
+        local previewPending
         if authority then
             bonuses=R.bonuses(model)
             local models = all('PalBaseCampModel')
@@ -110,12 +111,13 @@ return function(E)
             nextRadius = R.targets(models, guid(model:GetGroupIdBelongTo()), math.min(level+1,maximum))[guid(model:GetId())]
             nextPercent=not E.config.resetToVanilla and nextRadius and nextRadius/baseline*100 or nil
         elseif E.preview then
-            nextPercent,bonuses=E.preview.read(model,baseline,level,radius)
+            nextPercent,bonuses,previewPending=E.preview.read(model,baseline,level,radius)
         end
         return {
             level=level, maximum=maximum, radius=radius, baseline=baseline,
             currentPercent=radius / baseline * 100,
             nextPercent=nextPercent,
+            previewPending=previewPending,
             rangeEnabled=bonuses and bonuses.rangeEnabled,
             chestCurrent=bonuses and bonuses.chestCap and bonuses.chestCap>0 and math.min(level-1,bonuses.chestCap) or nil,
             chestNext=bonuses and bonuses.chestCap and bonuses.chestCap>0 and math.min(level,bonuses.chestCap) or nil,

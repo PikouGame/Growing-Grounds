@@ -67,6 +67,15 @@ local function deliver() cc:K2_SetRelativeLocation(c.RelativeLocation);client.re
 deliver()
 assert(client.read(base,3500,9,4900)==145,'server value decoded without local policy inference')
 assert(client.read(base,3500,10,5075)==nil,'out-of-order level/radius never shows stale next')
+local _,policy,pending=client.read(base,3500,10,5075)
+assert(pending and policy.chestCap==20 and policy.rangeEnabled,
+    'split replication retains server policy and marks the rewards pending')
+local revision=client.revision(base)
+cc.RelativeLocation={X=14500,Y=15000,Z=400000+10+1001*41}
+assert(client.revision(base)~=revision,'observe newly delivered metadata without rediscovery')
+local upgraded,_,waiting=client.read(base,3500,10,5075)
+assert(upgraded==150 and not waiting,'coherent preview releases the pending UI')
+deliver()
 assert(client.read(base,3500,9,5000)==nil,'mismatched replicated current range is rejected')
 client.publish(remote,base,200);assert(cc.RelativeLocation.Y==14500,'client cannot publish')
 server=true;boxes={host}

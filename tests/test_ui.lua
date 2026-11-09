@@ -288,6 +288,26 @@ assert(chest.Text_Num_Pre.value=='9' and chest.Text_Num_Aft.value=='10')
 assert(rewardSection.Slot.position.Y+rewardSection.Slot.size.Y==300,'bottom separator stays fixed')
 assert(rewardSection.Slot.position.Y==112,'fourth row shifts the complete title/reward group by one native row')
 assert(chest.Image_Icon.texture==texture and chest.SizeBox_Aft.WidthOverride==nativeBase.SizeBox_Aft.WidthOverride)
+-- Reproduce upgrade -> close -> reopen before the preview packet. Keep both
+-- complete rewards, then replace them together when metadata catches up.
+local retained=current()
+local beforeUpgradeY=rewardSection.Slot.position.Y
+local pendingSnapshot={}
+for k,v in pairs(snapshot) do pendingSnapshot[k]=v end
+snapshot=pendingSnapshot -- Runtime.snapshot returns a new value, not a mutable singleton.
+snapshot.previewPending=true;snapshot.nextPercent=nil;snapshot.chestCurrent=nil;snapshot.chestNext=nil
+UI.refresh();screen.active=false;UI.refresh();screen.active=true
+reconstruct(retained);reconstruct(chest);UI.refresh()
+assert(chest.visibility==4 and chest.Text_Num_Pre.value=='9' and chest.Text_Num_Aft.value=='10',
+    'a missing preview must not collapse or blank the chest reward on reopening')
+assert(retained.SizeBox_Aft.visibility==4 and rewardSection.Slot.position.Y==beforeUpgradeY,
+    'pending replication preserves the last complete range and section layout')
+snapshot.previewPending=false;snapshot.currentPercent=150;snapshot.nextPercent=155;snapshot.radius=5250
+snapshot.chestCurrent=10;snapshot.chestNext=11
+UI.refresh()
+assert(current()==retained and chest==parent.children[4] and created==3,'upgrade reuses existing reward widgets')
+assert(retained.Text_Num_Pre.value=='50' and retained.Text_Num_Aft.value=='55')
+assert(chest.Text_Num_Pre.value=='10' and chest.Text_Num_Aft.value=='11','both new rewards appear together')
 snapshot.chestCurrent=20;snapshot.chestNext=20;UI.refresh()
 assert(chest.Text_Num_Pre.value=='20' and chest.Text_Num_Aft.value=='20','cap stops slot growth')
 snapshot.atMaximum=true;UI.refresh();assert(chest.SizeBox_Aft.visibility==2)

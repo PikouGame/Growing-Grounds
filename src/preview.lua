@@ -54,16 +54,28 @@ return function(E)
         if component:GetClass():GetFullName()~='Class '..componentPath then return end
         return decode(component.RelativeLocation)
     end
-    function P.read(model,baseline,level,radius)
-        local record=records[guid(model:GetId())]
-        if not record or not E.valid(record.actor) then return end
-        -- Read the latest native transform: level/radius can replicate before
-        -- or after the preview. Never show a value belonging to another state.
-        local value=ours(record.actor)
-        if not value or value.level~=level or math.abs(value.current-radius/baseline*100)>0.05 then return end
-        if record.actor:GetFullName()~=record.path then return end
+    local function state(model)
         local id=guid(model:GetId())
+        local record=records[id]
+        if not record or not E.valid(record.actor) then return end
+        if record.actor:GetFullName()~=record.path then return end
         if ownerBase(record.actor)~=id then return end
+        return ours(record.actor)
+    end
+    function P.revision(model)
+        local value=state(model)
+        if not value then return end
+        return table.concat({value.level,value.current,tostring(value.nextPercent),
+            tostring(value.rangeEnabled),tostring(value.chestCap)},':')
+    end
+    function P.read(model,baseline,level,radius)
+        -- Policy remains server-authored during split replication. The UI must
+        -- wait for a coherent level/radius/preview before replacing its values.
+        local value=state(model)
+        if not value or value.level~=level or math.abs(value.current-radius/baseline*100)>0.05 then
+            return nil,value,true
+        end
+        local id=guid(model:GetId())
         local signature=table.concat({level,value.current,tostring(value.nextPercent)},':')
         if reported[id]~=signature then
             reported[id]=signature
