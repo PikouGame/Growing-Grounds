@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="870" height="960" viewBox="0 0 870 960">
+  <title>Growing Grounds — Base Upgrade</title>
+  <desc>Original game capture with the approved first outward-perspective title, enlarged and raised above the menu.</desc>
+  <image width="870" height="960" xlink:href="growing-grounds-rewards.png"/>
+  <svg x="42" y="5" width="300" height="76.74" viewBox="90 250 821 210" preserveAspectRatio="none">
+    <image width="2167" height="726" xlink:href="growing-grounds-wordmark-perspective.png"/>
+  </svg>
+  <svg x="502" y="5" width="300" height="76.74" viewBox="1246 250 837 210" preserveAspectRatio="none">
+    <image width="2167" height="726" xlink:href="growing-grounds-wordmark-perspective.png"/>
+  </svg>
+</svg>

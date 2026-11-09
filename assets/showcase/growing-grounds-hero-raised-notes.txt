@@ -1,0 +1,16 @@
+Growing Grounds — raised perspective title
+
+Selected: the first perspective lettering after the user's placement sketch.
+The user chose the original turquoise lower accent and outward perspective.
+Later lime/colored-sideface experiments were rejected. No triangular facets.
+
+Built-in imagegen created only the title lettering. The SVG preserves the
+original native 870 x 960 menu capture and places each word in a 300 x 76.74
+box above the panel, mirrored around the diamond's x=422 center.
+
+Selected prompt:
+Use case: logo-brand lettering edit.
+Image 1 is the EXISTING TITLE LETTERING to refine. Image 2 is ONLY the user's perspective/placement sketch; its red rectangles are guides, not artwork to reproduce.
+Create a clean transparent two-word title asset, exact uppercase text GROWING on the LEFT and GROUNDS on the RIGHT, with a large transparent gap between the words. Keep the existing handsome bold angular italic white lettering, subtle bevel and turquoise underside accent.
+Refine the words into a balanced mirrored 3D perspective: each word is a straight rigid plane, with the INNER end near the central gap closer/larger, and the OUTER end receding/smaller. GROWING recedes toward the LEFT, GROUNDS recedes toward the RIGHT. Thus the left word's top and bottom edges gently diverge toward its right end; the right word's top and bottom edges gently converge toward its right end. About 20% difference in letter height from inner to outer end. Both words should have matched visual scale and symmetric straight upper/lower envelope edges, not bowed, arced, wavy or randomly rotated letters. Give a restrained 3D edge depth in dark teal/turquoise outward toward each side. Crisp solid letter faces, clean straight edges, no grainy texture or ragged halos. Keep every letter perfectly readable and correctly spelled.
+ONLY the two words, true transparent background; no rectangles, arrows, UI, central diamond, numbers, borders, extra text or background. This asset will be composited ABOVE the original untouched Palworld UI, so do not generate any game UI.
