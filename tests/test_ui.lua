@@ -308,6 +308,16 @@ UI.refresh()
 assert(current()==retained and chest==parent.children[4] and created==3,'upgrade reuses existing reward widgets')
 assert(retained.Text_Num_Pre.value=='50' and retained.Text_Num_Aft.value=='55')
 assert(chest.Text_Num_Pre.value=='10' and chest.Text_Num_Aft.value=='11','both new rewards appear together')
+-- Slots are spread over the levels, so an upgrade can keep the same number.
+-- Show both values and the arrow, as the game does for an unchanged reward.
+snapshot.chestCurrent=1;snapshot.chestNext=1;UI.refresh()
+assert(chest.Text_Num_Pre.value=='1' and chest.Text_Num_Aft.value=='1')
+assert(chest.Image_Arrow.visibility==4 and chest.SizeBox_Aft.visibility==4,'an unchanged next value stays visible')
+snapshot.chestNext=2;UI.refresh()
+assert(chest.Text_Num_Pre.value=='1' and chest.Text_Num_Aft.value=='2','the following level shows its new slot')
+snapshot.chestCurrent=0;snapshot.chestNext=0;UI.refresh()
+assert(chest.visibility==4 and chest.Text_Num_Pre.value=='0' and chest.Text_Num_Aft.value=='0',
+    'a small cap that starts later keeps its row')
 snapshot.chestCurrent=20;snapshot.chestNext=20;UI.refresh()
 assert(chest.Text_Num_Pre.value=='20' and chest.Text_Num_Aft.value=='20','cap stops slot growth')
 snapshot.atMaximum=true;UI.refresh();assert(chest.SizeBox_Aft.visibility==2)

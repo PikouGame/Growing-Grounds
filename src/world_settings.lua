@@ -12,7 +12,7 @@ return function(E)
         {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=300,
             tip='0 disables range growth. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
         {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=40,
-            tip='0 disables bonus slots. Adds one slot per base upgrade, starting at level 2. Default cap: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
+            tip='0 disables bonus slots. These slots arrive steadily over all base levels; the last level gives them all. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
     }
     local function object(path)
         if E.objects then return E.objects.find(path) end

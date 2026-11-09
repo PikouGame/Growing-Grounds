@@ -113,14 +113,19 @@ return function(E)
         elseif E.preview then
             nextPercent,bonuses,previewPending=E.preview.read(model,baseline,level,radius)
         end
+        -- The server authors the cap; both sides spread it over the same table.
+        local cap=bonuses and bonuses.chestCap
+        local function chest(at)
+            return cap and cap>0 and E.range.storageBonus(at,{maxChestBonusSlots=cap},maximum) or nil
+        end
         return {
             level=level, maximum=maximum, radius=radius, baseline=baseline,
             currentPercent=radius / baseline * 100,
             nextPercent=nextPercent,
             previewPending=previewPending,
             rangeEnabled=bonuses and bonuses.rangeEnabled,
-            chestCurrent=bonuses and bonuses.chestCap and bonuses.chestCap>0 and math.min(level-1,bonuses.chestCap) or nil,
-            chestNext=bonuses and bonuses.chestCap and bonuses.chestCap>0 and math.min(level,bonuses.chestCap) or nil,
+            chestCurrent=chest(level),
+            chestNext=chest(math.min(level+1,maximum)),
             atMaximum=level >= maximum, authority=authority,
         }
     end

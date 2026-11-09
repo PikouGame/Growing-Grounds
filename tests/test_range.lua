@@ -169,11 +169,31 @@ near(Range.placementDistance(3500,{maxRangeBonusPercent=300}),28000)
 near(Range.percent(35,{maxRangePercent=999}),200)
 near(Range.percent(35,{maxRangePercent=200,maxRangeBonusPercent=50}),150)
 near(Range.percent(35,{maxRangeBonusPercent=math.huge}),200)
-for level=1,45 do
- near(Range.storageBonus(level),math.min(level-1,20))
- near(Range.storageBonus(level,{maxChestBonusSlots=40}),math.min(level-1,40))
- near(Range.storageBonus(level,{maxChestBonusSlots=0}),0)
+-- Chest slots: the cap is spread over the game's 35 levels, to the nearest slot.
+local function slots(level,cap,max) return Range.storageBonus(level,{maxChestBonusSlots=cap},max) end
+for level,expected in pairs({[1]=0,[2]=1,[3]=1,[4]=2,[10]=5,[11]=6,[20]=11,[34]=19,[35]=20}) do
+ near(slots(level,20,35),expected)
+ near(Range.storageBonus(level),expected) -- default cap, fallback level table
 end
+for level,expected in pairs({[1]=0,[2]=1,[4]=4,[18]=20,[34]=39,[35]=40}) do near(slots(level,40,35),expected) end
+for level=1,45 do near(slots(level,0,35),0) end
+-- Above the table maximum the bonus stays on the cap, never beyond it.
+for _,level in ipairs({36,45,1000}) do near(slots(level,20,35),20);near(slots(level,40,35),40) end
+-- Every cap and table size: starts at 0, ends on the cap, never steps down.
+for cap=0,40 do
+ for _,max in ipairs({2,35,50}) do
+  local previous=0
+  for level=1,max+3 do
+   local bonus=slots(level,cap,max)
+   assert(bonus>=previous and bonus<=cap and bonus%1==0)
+   previous=bonus
+  end
+  near(slots(1,cap,max),0);near(slots(max,cap,max),cap)
+ end
+end
+-- An unreadable level table falls back to the game's 35 levels.
+for _,bad in ipairs({0,1,2.5,math.huge,0/0,'35'}) do near(Range.storageBonus(10,nil,bad),5) end
+near(Range.storageBonus(10,nil,40),5);near(Range.storageBonus(35,nil,40),17);near(Range.storageBonus(40,nil,40),20)
 near(Range.settings({maxChestBonusSlots=999}).maxChestBonusSlots,40)
 near(Range.settings({maxChestBonusSlots=-1}).maxChestBonusSlots,0)
 near(Range.settings({maxChestBonusSlots=3.9}).maxChestBonusSlots,3)
@@ -186,4 +206,36 @@ near(large[1],10000);near(large[2],10000)
 E.config={growthPercentPerLevel=20,maxRangeBonusPercent=300}
 b.authority=true;b.GetTransform=function()return {Translation={X=20000,Y=0,Z=0}}end
 reloaded.refresh();near(a.AreaRange,10000);near(b.AreaRange,10000)
-print('PASS: bonus cap/migration, fourfold radius and placement, occupied-neighbour protection, slot bonus progression and cap')
+print('PASS: bonus cap/migration, fourfold radius and placement, occupied-neighbour protection, slot spread over the level table and cap')
+
+-- Base Upgrade preview: current and next slots, including an unchanged step.
+E.config={maxChestBonusSlots=20}
+local solo=newBase(2,3640,true)
+collection={solo}
+local function chestRow(model)
+    local shot=reloaded.snapshot(model)
+    return shot.chestCurrent,shot.chestNext,shot.atMaximum
+end
+local function same(model,current,following,maximum)
+    local c,n,m=chestRow(model)
+    assert(c==current and n==following and m==maximum,
+        string.format('level %d: %s -> %s, expected %s -> %s',model.level,tostring(c),tostring(n),tostring(current),tostring(following)))
+end
+same(solo,1,1,false) -- level 2 -> 3 adds no slot, both values are still reported
+solo.level=3;same(solo,1,2,false)
+solo.level=10;same(solo,5,6,false)
+solo.level=34;same(solo,19,20,false)
+solo.level=35;same(solo,20,20,true)
+solo.level=1;same(solo,0,1,false)
+E.config.maxChestBonusSlots=10;same(solo,0,0,false) -- a small cap starts later, the row stays
+E.config.maxChestBonusSlots=0;same(solo,nil,nil,false)
+E.config={maxChestBonusSlots=20,resetToVanilla=true};same(solo,nil,nil,false)
+-- A client spreads the server-authored cap, never its own configuration.
+E.config={maxChestBonusSlots=0}
+E.preview={read=function() return 140,{rangeEnabled=true,chestCap=40} end}
+local remote=newBase(10,4760,false)
+same(remote,11,12,false)
+E.preview={read=function() return 140,{rangeEnabled=true} end} -- older server: radius only
+same(remote,nil,nil,false)
+E.preview=nil
+print('PASS: preview rows follow the spread schedule on host and client, unchanged steps, small caps, off and reset')

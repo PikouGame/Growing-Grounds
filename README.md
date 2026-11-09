@@ -7,8 +7,9 @@ level 2, with a default bonus cap of **+100%** (double the original radius). The
 current and next bonus with metres beside each value: **36% 47.6m → 40% 49m**.
 The numbers follow Palworld's own reward-row layout.
 
-Chests gain **one extra slot per base upgrade**, up to **20 bonus slots** by
-default. Guild Chests receive the bonus once for their shared inventory.
+Chests grow with your base: **20 bonus slots** by default, arriving steadily
+from your first upgrade to the final base level. Guild Chests receive the bonus
+once for their shared inventory.
 
 ## A little celebration for every upgrade
 
@@ -26,7 +27,7 @@ the rising effect lifts 6 metres by default and gradually softens the terrain re
 
 - **Growth per level:** 0–20% of the original radius; default 4%.
 - **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius.
-- **Bonus chest slots:** +1 per base upgrade from level 2, capped at 20 by default; adjustable from 0 to 40. Guild Chests share one bonus.
+- **Bonus chest slots:** 20 by default, spread evenly over all 35 base levels (1 at level 2, 5 at level 10, 11 at level 20, 20 at level 35); adjustable from 0 to 40. Guild Chests share one bonus.
 - Local worlds have three Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
@@ -67,11 +68,18 @@ A gentler pace, so later base levels still have something to give.
 
 - Range grows **4% per level** by default (was 5%). The +100% cap now arrives
   at level 26 instead of level 21.
+- Bonus chest slots are **spread over all base levels** instead of +1 per
+  upgrade: with the default 20, that is 1 at level 2, 5 at level 10, 11 at
+  level 20 and all 20 at level 35. Base Upgrade shows the current and next
+  number even when an upgrade adds none.
 - **Existing worlds keep their own growth value.** Saved World Settings and a
   kept `config.lua` are never rewritten; the new default only reaches worlds
   that never saved one. To adopt it, set growth to 4: a level-11, 35 m base
   then goes from 52.5 m to 49 m, so check buildings near the edge and keep a
   backup.
+- **Existing chests follow the new pace right away:** a level-11 base goes
+  from 10 bonus slots to 6. Extra slots that hold items stay until you empty
+  them; nothing is deleted or moved.
 
 ## What changed in 0.1.6-alpha
 

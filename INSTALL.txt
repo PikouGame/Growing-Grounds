@@ -22,6 +22,9 @@ Updating from 0.1.6 or older: the default growth is now 4% per level (was 5%).
 Saved World Settings and a preserved config.lua keep their own value. Adopting
 4% shrinks grown bases a little (level 11: 52.5m -> 49m with a 35m base);
 buildings beyond the new boundary may lose coverage. Keep a backup.
+Bonus chest slots are now spread over all base levels, so existing chests follow
+the new, slower schedule at once (level 11: 10 bonus slots become 6). Extra
+slots that hold items stay until emptied; nothing is deleted or moved.
 
 Configuration
 - growthPercentPerLevel=4: adds 0..20% of the ORIGINAL radius after level 1.
@@ -30,7 +33,8 @@ Configuration
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
   +100. Do not add the new key beside the old one unless you intend to override it.
   Set either cap to 0 to disable its bonus and hide its reward row.
-- maxChestBonusSlots=20: one extra chest slot per upgrade, starting at level 2.
+- maxChestBonusSlots=20: bonus chest slots at the last base level, spread evenly
+  over all levels (with 20: 1 at level 2, 5 at level 10, 20 at level 35).
   Bonus limit 0..40. Guild Chests share one bonus for the whole guild.
   Lower limits retain occupied overflow slots until they are emptied.
 - resetToVanilla=false: see removal instructions before changing this.

@@ -37,9 +37,16 @@ function Range.percent(level, settings)
     return 100 + math.min(policy.maxRangeBonusPercent, policy.growthPercentPerLevel * (level - 1))
 end
 
-function Range.storageBonus(level, settings)
+-- The chest cap is spread over every base level, the way the game rescales
+-- its own base count: level 1 adds nothing, the last level adds the whole cap.
+-- maxLevel is the size of the game's level table; 35 in Palworld 1.0.
+function Range.storageBonus(level, settings, maxLevel)
     validLevel(level)
-    return math.min(level - 1, Range.settings(settings).maxChestBonusSlots)
+    local cap = Range.settings(settings).maxChestBonusSlots
+    if not (finite(maxLevel) and maxLevel >= 2 and maxLevel % 1 == 0) then maxLevel = 35 end
+    local upgrades = maxLevel - 1
+    -- Nearest whole slot. Integer numerators keep an exact half rounding up.
+    return math.floor((2 * cap * math.min(level - 1, upgrades) + upgrades) / (2 * upgrades))
 end
 
 function Range.radius(originalRadius, level, settings)

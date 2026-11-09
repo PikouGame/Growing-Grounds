@@ -1,12 +1,15 @@
 Growing Grounds 0.1.7-alpha — a gentler pace
 
 - Range now grows 4% of the original radius per level by default (was 5%). The +100% cap arrives at level 26 instead of level 21.
+- Bonus chest slots are now spread over all 35 base levels instead of +1 per upgrade. With the default 20: 1 at level 2, 5 at level 10, 11 at level 20 and all 20 at level 35. The cap you choose (0 to 40) sets the pace.
+- Base Upgrade shows the current and next number of bonus slots, including upgrades that add none.
 
 What existing worlds will see
 - Your own growth value is kept. Saved World Settings and a preserved config.lua are never rewritten, so those worlds stay at their current pace (5% unless you changed it). Only a world that never saved a value, or a config.lua replaced by the new default file, moves to 4%.
 - To adopt the new pace, set the World Settings slider or growthPercentPerLevel to 4. Grown bases then shrink a little: a level-11 base with the standard 35 m radius goes from 52.5 m to 49 m. Buildings beyond the new boundary may lose coverage, so keep a world backup.
+- Chests follow the new pace as soon as the update loads: a level-11 base goes from 10 bonus slots to 6. Extra slots that hold items stay until you empty them; nothing is deleted or moved. A cap of 34 gives one slot per upgrade again.
 
-Update the host/server and clients together. Keep your config.lua and world-settings.ini.
+Update the host/server and clients together: an older client would preview the previous chest numbers. Keep your config.lua and world-settings.ini.
 
 The Lua regression suites pass. This pace change has not had an in-game session yet.
 

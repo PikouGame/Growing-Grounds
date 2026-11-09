@@ -7,7 +7,8 @@ return {
     -- Set either cap to 0 to disable that bonus. Occupied extra chest slots are preserved.
     -- Old maxRangePercent totals remain supported without changing their effect.
     maxRangeBonusPercent = 100,
-    -- +1 chest slot per upgrade, starting at level 2. Bonus cap: 0..40.
+    -- Bonus chest slots at the last base level (0..40), spread evenly over the
+    -- levels before it: with 20, +1 at level 2, 5 at level 10, 20 at level 35.
     maxChestBonusSlots = 20,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- verify restored radii in UE4SS.log, save, then remove the mod.

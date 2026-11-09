@@ -12,7 +12,7 @@ Gameplay excerpt at original speed; initial wait trimmed.
 
 More room for your supplies
 
-Chests gain one extra slot per base upgrade, up to 20 bonus slots by default. Guild Chests benefit too, with the bonus applied once to their shared inventory.
+Chests grow with your base: 20 bonus slots by default, arriving steadily from your first upgrade to the final base level. Guild Chests benefit too, with the bonus applied once to their shared inventory.
 
 A level-11 Metal Chest with 24 original slots and 10 bonus slots outlined in turquoise
 https://raw.githubusercontent.com/PikouGame/Growing-Grounds/3904f41043926d93065c73447a9a8adabfe72dbe/assets/showcase/growing-grounds-chest-slots.png
