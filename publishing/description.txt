@@ -1,5 +1,5 @@
 Base Upgrade shows current and next range and chest-slot bonuses
-https://raw.githubusercontent.com/PikouGame/Growing-Grounds/0a7d3122ceef97ef2b02cdc09ef7a986f6f8306d/assets/showcase/growing-grounds-hero.png
+https://raw.githubusercontent.com/PikouGame/Growing-Grounds/6be528df5d4dfefabfc2c4c901239f89f58e7fb2/assets/showcase/growing-grounds-hero-raised.png
 
 Give your base room to grow
 
