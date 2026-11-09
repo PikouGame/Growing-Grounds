@@ -49,7 +49,8 @@ local function obj(name,data)
     data.GetFullName=function() return name end
     return data
 end
-StaticFindObject=function(path) return objects[path] end
+-- Native transient widget full names cannot be resolved like asset paths.
+StaticFindObject=function(path) return path:sub(1,1)=='/' and objects[path] or nil end
 FText=function(v) return v end
 RegisterHook=function(path,fn) hookCallbacks[path]=fn end
 local panel=obj('panel',{children={}})
@@ -63,7 +64,7 @@ obj('/Script/UMG.Default__WidgetBlueprintLibrary',{
         nextRow=nextRow+1
         return obj('row'..nextRow,{Text_OptionTitle={SetText=function(self,v) self.text=v end},
             SetToolTipText=function() end,
-            WBP_OptionSettings_ListContentSlider={BP_PalTextBlock_Value={SetText=function(self,v) self.text=v end}},
+            WBP_OptionSettings_ListContentSlider=obj("slider"..nextRow,{BP_PalTextBlock_Value={SetText=function(self,v) self.text=v end}}),
             SetupIntValue=function(self,v,min,max) self.value=v; self.min=min; self.max=max end})
     end,
 })
@@ -83,7 +84,7 @@ assert(store.get(a).growthPercentPerLevel==20,'drag is draft only')
 W.saved(outer,false);assert(store.get(a).growthPercentPerLevel==20,'native save failure must not commit')
 W.setup(menu,a,false);assert(#panel.children==3 and panel.children[1].value==20,'cancel/reopen discards draft without duplicates')
 assert(panel.children[3].value==20,'cancel discards chest draft')
-assert(panel.children[2].min==50 and panel.children[2].max==300)
+assert(panel.children[2].min==0 and panel.children[2].max==300)
 assert(panel.children[2].WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text=='+100%')
 W.change(panel.children[1],7);W.change(panel.children[2],65);W.change(panel.children[3],40)
 W.saved(outer,true)
@@ -115,3 +116,24 @@ files['world-settings.ini']='['..a..']\nmaxRangePercent=200\nmaxRangeBonusPercen
 custom=factory('',Range,defaults,fs)
 assert(custom.get(a).maxRangeBonusPercent==150 and custom.get(a).maxChestBonusSlots==0)
 print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..40')
+
+W.setup(menu,a,false)
+W.change(panel.children[2],0);W.change(panel.children[3],0)
+for _,i in ipairs({2,3}) do
+    assert(panel.children[i].WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text=='Off')
+end
+W.saved(outer,true);W.setup(menu,a,false)
+assert(store.get(a).maxRangeBonusPercent==0 and store.get(a).maxChestBonusSlots==0)
+assert(panel.children[2].value==0 and panel.children[3].value==0,'disabled caps persist on reopen')
+print('PASS: both caps explicitly display Off at zero and persist independently')
+
+local slider=panel.children[2].WBP_OptionSettings_ListContentSlider
+slider.BP_PalTextBlock_Value:SetText('0')
+W.sliderUpdated(slider)
+assert(slider.BP_PalTextBlock_Value.text=='Off','native numeric rewrite must not erase Off')
+W.change(panel.children[2],65);slider.BP_PalTextBlock_Value:SetText('65');W.sliderUpdated(slider)
+assert(slider.BP_PalTextBlock_Value.text=='+65%','native numeric rewrite must not erase the range bonus notation')
+W.sliderUpdated(obj('unowned slider'))
+menu.alive=false;W.refresh();slider.BP_PalTextBlock_Value:SetText('native');W.sliderUpdated(slider)
+assert(slider.BP_PalTextBlock_Value.text=='native','cleanup releases slider ownership')
+print('PASS: native post-notification rewrites, keyboard/mouse repaint, unowned slider isolation and cleanup')

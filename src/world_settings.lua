@@ -5,14 +5,14 @@ return function(E)
     local menuPath = '/Game/Pal/Blueprint/UI/UserInterface/Title/WBP_Title_WorldSettings.WBP_Title_WorldSettings_C'
     local rowPath = '/Game/Pal/Blueprint/UI/UserInterface/Title/WBP_Title_WorldSettings_ListContent.WBP_Title_WorldSettings_ListContent_C'
     local outerPath = '/Game/Pal/Blueprint/UI/Title/WBP_WorldSetting.WBP_WorldSetting_C'
-    local screens, owned, hooks = {}, {}, {}
+    local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
         {key='growthPercentPerLevel', title='Growing Grounds: Range growth per level (%)', min=0, max=20,
             tip='Adds a percentage of the original radius each level after level 1. Default: 5%.'},
-        {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=50, max=300,
-            tip='Bonus to the original radius. +100% doubles it; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
+        {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=300,
+            tip='0 disables range growth. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
         {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=40,
-            tip='Adds one slot per base upgrade, starting at level 2, up to this bonus cap. Default: 20. Guild Chests share one bonus.'},
+            tip='0 disables bonus slots. Adds one slot per base upgrade, starting at level 2. Default cap: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
     }
     local function object(path)
         if E.objects then return E.objects.find(path) end
@@ -24,8 +24,9 @@ return function(E)
     local function paint(row, spec, value)
         row.Text_OptionTitle:SetText(FText(spec.title))
         row:SetToolTipText(FText(spec.tip))
-        if spec.key=='maxRangeBonusPercent' and value then
-            row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value:SetText(FText(string.format('+%g%%',value)))
+        if value~=nil and (spec.key=='maxRangeBonusPercent' or spec.key=='maxChestBonusSlots') then
+            local display=value==0 and 'Off' or (spec.key=='maxRangeBonusPercent' and string.format('+%g%%',value) or tostring(value))
+            row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value:SetText(FText(display))
         end
     end
     local function findChild(panel, path)
@@ -50,7 +51,9 @@ return function(E)
                 row.IsOverrideSliderStep, row.OverrideSliderStepValue = true, 1
                 local path = row:GetFullName()
                 state.rows[spec.key] = path
-                owned[path] = {screen=menu:GetFullName(), spec=spec}
+                local slider=row.WBP_OptionSettings_ListContentSlider:GetFullName()
+                owned[path] = {screen=menu:GetFullName(), row=row, spec=spec, slider=slider}
+                sliders[slider]=path
                 -- Append one compact mod group in the custom settings list.
                 -- Avoid reconstructing/reordering native rows with pending edits.
                 local slot = panel:AddChild(row)
@@ -69,7 +72,7 @@ return function(E)
             screens[name] = nil
             error('Cannot identify selected world; no Growing Grounds settings will be saved')
         end
-        local state = {world=id,isNew=isNew,draft=E.settings.get(id),rows=old and old.rows or {},
+        local state = {menu=menu,world=id,isNew=isNew,draft=E.settings.get(id),rows=old and old.rows or {},
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
@@ -88,11 +91,20 @@ return function(E)
         end
         state.draft[entry.spec.key] = normalized
         state.dirty = true
-        local menu = object(entry.screen)
-        assert(E.valid(menu), 'Settings menu closed')
+        local menu = state.menu
+        assert(E.valid(menu) and menu:GetFullName()==entry.screen, 'Settings menu closed')
         menu.IsEditedSettingFlag = true
         menu.IsEditedInCustomSetting = true
         paint(row,entry.spec,normalized)
+    end
+    function W.sliderUpdated(slider)
+        local path=sliders[slider:GetFullName()]
+        local entry=path and owned[path]
+        local state=entry and screens[entry.screen]
+        local row=entry and entry.row
+        if state and not state.initializing and E.valid(row) and row:GetFullName()==path then
+            paint(row,entry.spec,state.draft[entry.spec.key])
+        end
     end
     function W.saved(outer, success)
         if not success then return end
@@ -138,6 +150,15 @@ return function(E)
                 if state then paint(row,entry.spec,state.draft[entry.spec.key]) end
             end) end
         end)
+        -- The native slider rewrites its number AFTER notifying the parent row.
+        -- Restore our suffix/Off label once that mouse or keyboard update ends.
+        local sliderPath='/Game/Pal/Blueprint/UI/UserInterface/MainMenu/Option/WBP_OptionSettings_ListContentSlider.WBP_OptionSettings_ListContentSlider_C:'
+        for _,event in ipairs({'AddConstantValue','AddPercent',
+            'BndEvt__WBP_OptionSettings_ListContentSlider_Slider_K2Node_ComponentBoundEvent_0_OnFloatValueChangedEvent__DelegateSignature'}) do
+            hook(sliderPath..event,function(context)
+                E.guard('world setting display',function() W.sliderUpdated(context:get()) end)
+            end)
+        end
         hook(outerPath..':OnCompletedSaveSetting',function(context,success)
             E.guard('world settings save',function() W.saved(context:get(),success:get()) end)
         end)
@@ -156,9 +177,13 @@ return function(E)
             end
         end
         for name,state in pairs(screens) do
-            local menu = object(name)
-            if not E.valid(menu) then
-                for _,path in pairs(state.rows) do owned[path]=nil end
+            local menu = state.menu
+            if not E.valid(menu) or menu:GetFullName()~=name then
+                for _,path in pairs(state.rows) do
+                    local entry=owned[path]
+                    if entry then sliders[entry.slider]=nil end
+                    owned[path]=nil
+                end
                 screens[name]=nil
             elseif state.initializing then
                 -- An asset can be unavailable on the first construction frame.
