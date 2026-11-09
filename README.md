@@ -127,7 +127,7 @@ Workshop packaging route.
 
 ## Credits and permissions
 
-Built with OpenAI Codex under PikouGame's direction, including code,
+Built with OpenAI Codex under lelorax's direction, including code,
 documentation and the original icon/glow assets. The author chose the behavior,
 tested it in game and supplies real gameplay media. No generated gameplay
 imagery or third-party game files are bundled.

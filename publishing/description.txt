@@ -27,4 +27,4 @@ We’d love to hear how it feels in your world! Share your base, leave a comment
 Bug reports: https://github.com/PikouGame/Growing-Grounds/issues
 Source and compatibility notes: https://github.com/PikouGame/Growing-Grounds
 
-Made with OpenAI Codex under PikouGame’s direction. Footage is recorded in game. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.
+Made with OpenAI Codex under lelorax’s direction. Footage is recorded in game. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.
