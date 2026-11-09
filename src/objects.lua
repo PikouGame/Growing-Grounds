@@ -9,6 +9,8 @@ return function(E)
         WBP_IngameMenu_Mission_C='/Game/Pal/Blueprint/UI/UserInterface/IngameMenu/Task/WBP_IngameMenu_Mission.WBP_IngameMenu_Mission_C',
         PalGameInstance='/Script/Pal.PalGameInstance',
         PalMasterDataTableAccess_BaseCampLevelData='/Script/Pal.PalMasterDataTableAccess_BaseCampLevelData',
+        PalMapObjectItemChestModel='/Script/Pal.PalMapObjectItemChestModel',
+        PalGroupGuild='/Script/Pal.PalGroupGuild',
     }
     local sets,paths={},{}
     local function current(record)

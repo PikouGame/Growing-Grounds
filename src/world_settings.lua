@@ -9,8 +9,10 @@ return function(E)
     local fields = {
         {key='growthPercentPerLevel', title='Growing Grounds: Range growth per level (%)', min=0, max=20,
             tip='Adds a percentage of the original radius each level after level 1. Default: 5%.'},
-        {key='maxRangePercent', title='Growing Grounds: Maximum base radius (%)', min=100, max=200,
-            tip='200% doubles the original radius: 35 m becomes 70 m. Nearby bases can limit growth.'},
+        {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=50, max=300,
+            tip='Bonus to the original radius. +100% doubles it; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
+        {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=40,
+            tip='Adds one slot per base upgrade, starting at level 2, up to this bonus cap. Default: 20. Guild Chests share one bonus.'},
     }
     local function object(path)
         if E.objects then return E.objects.find(path) end
@@ -19,9 +21,12 @@ return function(E)
     local function stringValue(value)
         return type(value)=='string' and value or value:ToString()
     end
-    local function paint(row, spec)
+    local function paint(row, spec, value)
         row.Text_OptionTitle:SetText(FText(spec.title))
         row:SetToolTipText(FText(spec.tip))
+        if spec.key=='maxRangeBonusPercent' and value then
+            row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value:SetText(FText(string.format('+%g%%',value)))
+        end
     end
     local function findChild(panel, path)
         if not path then return end
@@ -52,7 +57,7 @@ return function(E)
                 slot:SetPadding({Left=8,Top=4,Right=5,Bottom=0})
             end
             row:SetupIntValue(state.draft[spec.key],spec.min,spec.max)
-            paint(row,spec)
+            paint(row,spec,state.draft[spec.key])
         end
         state.initializing = false
     end
@@ -68,7 +73,7 @@ return function(E)
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
-        E.log('World Settings: growth and radius cap rows ready')
+        E.log('World Settings: growth, range bonus cap and chest bonus cap rows ready')
     end
     function W.change(row, value)
         local entry = owned[row:GetFullName()]
@@ -76,15 +81,18 @@ return function(E)
         local state = screens[entry.screen]
         if not state or state.initializing then return end
         local normalized = E.range.settings({[entry.spec.key]=value})[entry.spec.key]
-        normalized = math.floor(normalized+0.5)
-        if state.draft[entry.spec.key]==normalized then return end
+        normalized = math.max(entry.spec.min,math.min(entry.spec.max,math.floor(normalized+0.5)))
+        if state.draft[entry.spec.key]==normalized then
+            paint(row,entry.spec,normalized)
+            return
+        end
         state.draft[entry.spec.key] = normalized
         state.dirty = true
         local menu = object(entry.screen)
         assert(E.valid(menu), 'Settings menu closed')
         menu.IsEditedSettingFlag = true
         menu.IsEditedInCustomSetting = true
-        paint(row,entry.spec)
+        paint(row,entry.spec,normalized)
     end
     function W.saved(outer, success)
         if not success then return end
@@ -125,7 +133,10 @@ return function(E)
             local row = context:get()
             if not E.valid(row) then return end
             local entry = owned[row:GetFullName()]
-            if entry then E.guard('world setting label',function() paint(row,entry.spec) end) end
+            if entry then E.guard('world setting label',function()
+                local state=screens[entry.screen]
+                if state then paint(row,entry.spec,state.draft[entry.spec.key]) end
+            end) end
         end)
         hook(outerPath..':OnCompletedSaveSetting',function(context,success)
             E.guard('world settings save',function() W.saved(context:get(),success:get()) end)

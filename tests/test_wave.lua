@@ -1,12 +1,12 @@
 local root=assert(arg[1],'pass root with trailing slash')
 local W=dofile(root..'src/wave.lua')
 local function near(a,b) assert(math.abs(a-b)<0.00001,tostring(a)..' != '..tostring(b)) end
-for _,radius in ipairs({3500,4900,7000}) do
-    local count=math.ceil(math.max(64,2*math.pi*radius/300)/8)*8
+for _,radius in ipairs({3500,4900,7000,14000}) do
+    local count=math.min(160,math.ceil(math.max(64,2*math.pi*radius/300)/8)*8)
     local job={radius=radius,count=count,points={}}
     for i=1,count do job.points[i]={Z=12} end
     local w=W.new(job)
-    assert(#w.points<=1600,'setup size must remain bounded at the 200% cap')
+    assert(#w.points<=1600,'setup size must remain bounded at the +300% bonus cap')
     local calls=0
     while not w.ready do
         local before=calls

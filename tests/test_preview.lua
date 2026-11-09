@@ -100,3 +100,10 @@ remote.IsA=function() return true end
 cc.GetClass=function() return obj('Class /Script/Engine.StaticMeshComponent') end
 client.refresh();assert(client.read(base,3500,9,4900)==nil,'native game meshes never carry mod metadata')
 print('PASS: component lifecycle, separate-client decoding, stale/invalid rejection, cap, reset, reload and cleanup; native delivery requires live proof')
+
+cc.GetClass=function() return class end
+cc.RelativeLocation={X=39500,Y=40000,Z=232009}
+client.refresh();assert(client.read(base,3500,9,13825)==400,'+300% bonus can be previewed as 400% total')
+cc.RelativeLocation.Y=40100
+client.refresh();assert(client.read(base,3500,9,13825)==nil,'oversized server preview rejected')
+print('PASS: expanded preview range, +300% boundary accepted and out-of-range values rejected')

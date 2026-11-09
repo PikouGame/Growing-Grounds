@@ -1,0 +1,22 @@
+Growing Grounds 0.1.4-alpha
+
+More room for your supplies: chests gain one slot per base upgrade from level 2,
+up to 20 bonus slots by default. Guild Chests receive the bonus once for their
+shared inventory. Set the bonus cap from 0 to 40 in World Settings or config.lua.
+Lowering the cap keeps occupied extra slots accessible until you empty them.
+
+The range cap now clearly uses bonuses: +50% to +300%, with +100% as the default.
+Your old settings keep the same effective radius. +100% doubles the radius;
++300% makes it four times larger. The default growth remains 5% per level.
+
+Update both host/server and clients. Back up your world, preserve your existing
+config.lua and world-settings.ini, and add the new options from the supplied
+config as needed. There are no development keyboard shortcuts.
+
+Checked with native inventories: growth, save/reload, garbage collection,
+client/server transfers and occupied-slot protection across a server restart.
+The three World Settings rows were checked in the normal new-world menu.
+Full world-creation/save flows and native Windows OS execution remain unverified.
+
+We'd love your comments, experiences and bug reports so we can investigate and
+improve Growing Grounds: https://github.com/PikouGame/Growing-Grounds/issues

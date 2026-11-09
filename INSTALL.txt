@@ -1,4 +1,4 @@
-Growing Grounds 0.1.3-alpha — internal mod ID BaseRangeGrowth
+Growing Grounds 0.1.4-alpha — internal mod ID BaseRangeGrowth
 
 Install or update
 1. Save and close the game/server, and back up your world.
@@ -18,14 +18,21 @@ shortcuts entirely; an old debug=true option is ignored. No test hotkey is neede
 
 Configuration
 - growthPercentPerLevel=5: adds 0..20% of the ORIGINAL radius after level 1.
-- maxRangePercent=200: total radius, 100..200%; 200 is a hard ceiling.
+- maxRangeBonusPercent=100: radius BONUS. +100% doubles the original radius.
+  The World Settings slider offers +50..+300%; +300% means four times the radius.
+  Existing maxRangePercent totals keep their former effective limit; 200 becomes
+  +100. Do not add the new key beside the old one unless you intend to override it.
+  Old caps below +50% are preserved until you explicitly change that slider.
+- maxChestBonusSlots=20: one extra chest slot per upgrade, starting at level 2.
+  Bonus limit 0..40. Guild Chests share one bonus for the whole guild.
+  Lower limits retain occupied overflow slots until they are emptied.
 - resetToVanilla=false: see removal instructions before changing this.
 - upgradeAnimation=true: enables the automatic upgrade celebration.
 - upgradeRibbon=true: enables glow effects; false disables both wave and rise.
 - upgradeWave=true: enables the Palbox-to-boundary ground wave.
 - upgradeEffectHeight=600: rise height in centimetres (clamped to 100..2000).
 
-Local/co-op hosts can change growth and cap at the bottom of custom World
+Local/co-op hosts can change growth, range bonus cap and chest bonus cap at the bottom of custom World
 Settings. Values save per world after native confirmation, in world-settings.ini.
 Dedicated servers use config.lua defaults unless that host has a per-world
 sidecar override. Server settings always control gameplay and the next-value UI.
@@ -61,7 +68,8 @@ rebuilds, repeated ground scans during playback or speculative idle scans.
 Remove/reset
 Expanded radii can be saved by the game. To shrink before removal, set
 resetToVanilla=true on the SERVER, restart and load the world. Verify the
-original radius in UE4SS.log, save, then remove BaseRangeGrowth on both sides.
+original radius and chest capacities in UE4SS.log, save, then remove BaseRangeGrowth
+on both sides. Empty bonus slots first: occupied overflow slots are never removed.
 Buildings in the added area may lose coverage. An exact rollback requires the
 pre-install world backup, which also rolls back progress since that backup.
 
@@ -71,9 +79,12 @@ UE4SS Palworld fork 2281fa31. Windows executables were tested through Proton/Win
 Native Windows OS execution and Workshop deployment are not verified.
 The UI and radius replication were observed in game. Standalone checks cover
 settings, spacing, authority, preview, UI layout and animation lifecycle.
-This cleanup has not had a fresh full in-game session. An earlier intermittent
-client crash remains unattributed; this release is not claimed to fix it.
-World Settings flows, placement rejection, expanded-area Pal work/resources,
+Chest growth, save/reload, client item transfers, occupied-slot protection across
+a restart, empty-slot removal and garbage collection were checked natively.
+World Settings rows were checked in the normal new-world menu, then cancelled.
+An earlier intermittent client crash remains unattributed; this release is not
+claimed to fix it. Saving World Settings, starting a new world, placement
+rejection, expanded-area Pal work/resources,
 full removal/reset and other range mods still need broader live testing.
 See README.md for credits, licensing and compatibility details.
 

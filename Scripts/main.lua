@@ -1,4 +1,4 @@
--- BaseRangeGrowth 0.1.3-alpha: prompt change detection and a Palbox-to-boundary wave.
+-- BaseRangeGrowth 0.1.4-alpha: prompt change detection and a Palbox-to-boundary wave.
 local script = debug.getinfo(1, 'S').source:gsub('^@', '')
 local root = assert(script:match('^(.*[/\\])Scripts[/\\]main%.lua$'), 'Cannot resolve mod folder')
 local Range = dofile(root .. 'src/range.lua')
@@ -30,12 +30,14 @@ env.runtime=Runtime
 env.preview=dofile(root .. 'src/preview.lua')(env)
 local UI = dofile(root .. 'src/ui.lua')(env, Runtime)
 local WorldSettings = dofile(root .. 'src/world_settings.lua')(env)
+local Storage = dofile(root .. 'src/storage.lua')(env)
 local pending = false
 local function refresh()
     if pending then return end
     pending = true
     ExecuteInGameThread(function()
         guard('runtime refresh', Runtime.refresh)
+        guard('storage refresh', Storage.refresh)
         guard('UI refresh', UI.refresh)
         guard('World Settings refresh', WorldSettings.refresh)
         pending = false
@@ -54,6 +56,8 @@ env.objects.install(function(name)
     if name=='PalBaseCampModel' then ExecuteWithDelay(500,refresh)
     elseif name=='BP_BuildObject_PalBoxV2_C' or name=='WBP_IngameMenu_Mission_C' then
         ExecuteWithDelay(100,refresh)
+    elseif name=='PalMapObjectItemChestModel' or name=='PalGroupGuild' then
+        Storage.changed()
     end
 end)
 -- Keep the slow reconciliation, but do not make a real upgrade wait for it.
@@ -69,4 +73,4 @@ guard('World Settings hooks',WorldSettings.installHooks)
 -- Palboxes and radius replication arriving after the base-level notification.
 LoopAsync(5000, function() refresh(); return false end)
 ExecuteWithDelay(1000, refresh)
-log('v0.1.3-alpha loaded; tracked base changes every 250ms; Palbox wave; radius capped at 200%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))
+log('v0.1.4-alpha loaded; tracked base changes every 250ms; Palbox wave; range bonus cap up to +300%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))

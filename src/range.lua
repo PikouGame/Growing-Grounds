@@ -13,21 +13,33 @@ local function validLevel(level)
         "base level must be a positive integer")
 end
 
--- 200% is a hard ceiling as well as the default. Invalid administrator input
--- falls back to defaults; neither a corrupt file nor NaN can disable the cap.
+-- Public settings use bonuses: +100% doubles the original radius.
+-- Legacy totals retain the old 100..200 clamp before conversion, so updating
+-- cannot enlarge a world whose old config exceeded the former hard ceiling.
 function Range.settings(settings)
     settings = settings or {}
-    local growth, cap = settings.growthPercentPerLevel, settings.maxRangePercent
+    local growth, cap = settings.growthPercentPerLevel, settings.maxRangeBonusPercent
+    if cap == nil and finite(settings.maxRangePercent) then
+        cap = math.max(100, math.min(200, settings.maxRangePercent)) - 100
+    end
     if not finite(growth) then growth = 5 end
-    if not finite(cap) then cap = 200 end
+    if not finite(cap) then cap = 100 end
+    local slots = settings.maxChestBonusSlots
+    if not finite(slots) then slots = 20 end
     return {growthPercentPerLevel=math.max(0, math.min(20, growth)),
-        maxRangePercent=math.max(100, math.min(200, cap))}
+        maxRangeBonusPercent=math.max(0, math.min(300, cap)),
+        maxChestBonusSlots=math.max(0, math.min(40, math.floor(slots)))}
 end
 
 function Range.percent(level, settings)
     validLevel(level)
     local policy = Range.settings(settings)
-    return math.min(policy.maxRangePercent, 100 + policy.growthPercentPerLevel * (level - 1))
+    return 100 + math.min(policy.maxRangeBonusPercent, policy.growthPercentPerLevel * (level - 1))
+end
+
+function Range.storageBonus(level, settings)
+    validLevel(level)
+    return math.min(level - 1, Range.settings(settings).maxChestBonusSlots)
 end
 
 function Range.radius(originalRadius, level, settings)
@@ -41,7 +53,7 @@ end
 -- Reserve full-sized bases, including future upgrades, at placement time.
 function Range.placementDistance(originalRadius, settings)
     assert(finite(originalRadius) and originalRadius > 0, 'invalid original radius')
-    return originalRadius * Range.settings(settings).maxRangePercent / 100 * 2
+    return originalRadius * (1 + Range.settings(settings).maxRangeBonusPercent / 100) * 2
 end
 
 -- Legacy worlds can already contain nearby bases. Share only the free space

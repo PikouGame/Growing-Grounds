@@ -250,6 +250,11 @@ snapshot.radius=7000;snapshot.currentPercent=200;snapshot.nextPercent=200
 UI.refresh()
 assert(w.Text_Num_Pre.value=='100' and note(w,'Text_Num_Pre').value=='70m')
 assertCentred(w)
+snapshot.radius=13825;snapshot.currentPercent=395;snapshot.nextPercent=400
+UI.refresh()
+assert(w.Text_Num_Pre.value=='295' and w.Text_Num_Aft.value=='300')
+assert(note(w,'Text_Num_Pre').value=='138.3m' and note(w,'Text_Num_Aft').value=='140m')
+assertCentred(w)
 snapshot.nextPercent=nil
 UI.refresh()
 assert(w.Text_Num_Aft.value=='' and unit(w,'Text_Num_Aft').value=='' and note(w,'Text_Num_Aft').value=='')

@@ -135,7 +135,7 @@ for trial=1,100 do
         end
     end
 end
-print('PASS: 200% hard ceiling, capped configuration, future placement spacing, symmetric overlap protection')
+print('PASS: legacy 200% ceiling, capped configuration, future placement spacing, symmetric overlap protection')
 
 -- Exercise the engine adapter with two different guilds and both enumeration
 -- orders, rather than only testing the geometry helper.
@@ -153,3 +153,29 @@ near(a.AreaRange,5250);near(b.AreaRange,5250)
 b.authority=false;b.AreaRange=7000
 reloaded.refresh();near(b.AreaRange,7000)
 print('PASS: runtime applies stable proximity limits across guilds, ignores height bypass and never writes client radius')
+
+-- Bonus cap is +300% maximum, not 300% total. Legacy inputs retain old behavior.
+near(Range.percent(16,{growthPercentPerLevel=20,maxRangeBonusPercent=300}),400)
+near(Range.radius(3500,35,{growthPercentPerLevel=20,maxRangeBonusPercent=999}),14000)
+near(Range.placementDistance(3500,{maxRangeBonusPercent=300}),28000)
+near(Range.percent(35,{maxRangePercent=999}),200)
+near(Range.percent(35,{maxRangePercent=200,maxRangeBonusPercent=50}),150)
+near(Range.percent(35,{maxRangeBonusPercent=math.huge}),200)
+for level=1,45 do
+ near(Range.storageBonus(level),math.min(level-1,20))
+ near(Range.storageBonus(level,{maxChestBonusSlots=40}),math.min(level-1,40))
+ near(Range.storageBonus(level,{maxChestBonusSlots=0}),0)
+end
+near(Range.settings({maxChestBonusSlots=999}).maxChestBonusSlots,40)
+near(Range.settings({maxChestBonusSlots=-1}).maxChestBonusSlots,0)
+near(Range.settings({maxChestBonusSlots=3.9}).maxChestBonusSlots,3)
+near(Range.settings({maxChestBonusSlots=0/0}).maxChestBonusSlots,20)
+-- Future growth reservation remains non-overlapping even at four times radius.
+local large=Range.separate({
+ {baseline=3500,desired=14000,maximum=14000,x=0,y=0},
+ {baseline=3500,desired=14000,maximum=14000,x=20000,y=0}})
+near(large[1],10000);near(large[2],10000)
+E.config={growthPercentPerLevel=20,maxRangeBonusPercent=300}
+b.authority=true;b.GetTransform=function()return {Translation={X=20000,Y=0,Z=0}}end
+reloaded.refresh();near(a.AreaRange,10000);near(b.AreaRange,10000)
+print('PASS: bonus cap/migration, fourfold radius and placement, occupied-neighbour protection, slot bonus progression and cap')

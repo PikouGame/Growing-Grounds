@@ -2,7 +2,7 @@ local root=assert(arg[1],'pass root with trailing slash')
 local realDofile=dofile
 local function run(development)
     local loops,hooks={},{}
-    local counters={runtime=0,ui=0}
+    local counters={runtime=0,ui=0,storage=0}
     local config={debug=development,resetToVanilla=false}
     local noop=function() end
     local function count(key) return function() counters[key]=counters[key]+1 end end
@@ -19,6 +19,7 @@ local function run(development)
             if name=='ui' then return {refresh=count('ui')} end
             if name=='preview' then return {} end
             if name=='world_settings' then return {refresh=noop,installHooks=noop} end
+            if name=='storage' then return {refresh=count('storage'),changed=noop} end
             if name=='changes' then return {install=noop} end
             error('unexpected dependency '..path)
         end
@@ -33,7 +34,7 @@ local function run(development)
     assert(loops[5000],'public reconciliation must still run')
     loops[5000]()
     hooks['/Script/Pal.PalBaseCampModel:OnRep_Level_InGuildProperty']()
-    assert(counters.runtime==2 and counters.ui==2,'normal upgrade refresh is independent of debug')
+    assert(counters.runtime==2 and counters.ui==2 and counters.storage==2,'normal upgrade refresh is independent of debug')
     dofile=realDofile
 end
 run(false);run(true)

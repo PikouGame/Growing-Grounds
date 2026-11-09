@@ -2,9 +2,12 @@ return {
     -- Host/server defaults. Local worlds can override these in World Settings.
     -- Each level after 1 adds this percentage of the ORIGINAL radius (0..20).
     growthPercentPerLevel = 5,
-    -- Total radius in percent, not bonus/area. 100..200; 200 is a hard ceiling.
-    -- Standard 35m radius: 200% = 70m. Reached at level21 with 5% growth.
-    maxRangePercent = 200,
+    -- Maximum radius BONUS: +100% doubles the radius (35m -> 70m).
+    -- World Settings: +50..+300%. +300% means 4x radius, not area.
+    -- Old maxRangePercent totals remain supported without changing their effect.
+    maxRangeBonusPercent = 100,
+    -- +1 chest slot per upgrade, starting at level 2. Bonus cap: 0..40.
+    maxChestBonusSlots = 20,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- verify restored radii in UE4SS.log, save, then remove the mod.
     resetToVanilla = false,

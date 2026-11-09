@@ -19,15 +19,15 @@ function fs.rename(a,b)
 end
 function fs.remove(path) files[path]=nil;return true end
 local a,b=string.rep('A',32),string.rep('B',32)
-local defaults={growthPercentPerLevel=5,maxRangePercent=200}
+local defaults={growthPercentPerLevel=5,maxRangeBonusPercent=100,maxChestBonusSlots=20}
 local store=factory('',Range,defaults,fs)
-assert(store.get(a).maxRangePercent==200)
+assert(store.get(a).maxRangeBonusPercent==100)
 assert(not pcall(store.save,'../../config.lua',defaults))
 store.save(a,{growthPercentPerLevel=8,maxRangePercent=175})
 store.save(b,{growthPercentPerLevel=2,maxRangePercent=125})
 store=factory('',Range,defaults,fs)
-assert(store.get(a).growthPercentPerLevel==8 and store.get(a).maxRangePercent==175)
-assert(store.get(b).growthPercentPerLevel==2 and store.get(b).maxRangePercent==125)
+assert(store.get(a).growthPercentPerLevel==8 and store.get(a).maxRangeBonusPercent==75)
+assert(store.get(b).growthPercentPerLevel==2 and store.get(b).maxRangeBonusPercent==25)
 assert(store.get(nil).growthPercentPerLevel==5,'server defaults stay independent')
 failCommit=true
 assert(not pcall(store.save,a,{growthPercentPerLevel=20,maxRangePercent=200}))
@@ -38,7 +38,7 @@ files['world-settings.ini.bak'],files['world-settings.ini']=files['world-setting
 assert(factory('',Range,defaults,fs).get(a).growthPercentPerLevel==8,'interrupted Windows rename recovers backup')
 files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=20\nmaxRangePercent=500\nos.execute("bad")\n'
 store=factory('',Range,defaults,fs)
-assert(store.get(a).maxRangePercent==200,'sidecar cannot bypass hard cap')
+assert(store.get(a).maxRangeBonusPercent==100,'legacy oversize sidecar retains the former hard cap')
 print('PASS: per-world isolation, data-only parsing, traversal rejection, cap, persistence and failed-write recovery')
 
 local objects,hookCallbacks={},{}
@@ -62,7 +62,9 @@ obj('/Script/UMG.Default__WidgetBlueprintLibrary',{
     Create=function()
         nextRow=nextRow+1
         return obj('row'..nextRow,{Text_OptionTitle={SetText=function(self,v) self.text=v end},
-            SetToolTipText=function() end,SetupIntValue=function(self,v,min,max) self.value=v end})
+            SetToolTipText=function() end,
+            WBP_OptionSettings_ListContentSlider={BP_PalTextBlock_Value={SetText=function(self,v) self.text=v end}},
+            SetupIntValue=function(self,v,min,max) self.value=v; self.min=min; self.max=max end})
     end,
 })
 local menu=obj('menu',{ScrollBox_DifficultySetting=panel,
@@ -72,21 +74,44 @@ local current=a
 local E={range=Range,settings=store,worldId=function() return current end,
     valid=function(o) return o and o:IsValid() end,log=function() end,guard=function(_,fn) return fn() end}
 local W=dofile(root..'src/world_settings.lua')(E)
-W.setup(menu,a,false);assert(#panel.children==2)
+W.setup(menu,a,false);assert(#panel.children==3)
 W.change(panel.children[1],7)
+W.change(panel.children[3],40)
+assert(store.get(a).maxChestBonusSlots==20,'chest slider changes only its draft')
 assert(menu.IsEditedSettingFlag and menu.IsEditedInCustomSetting)
 assert(store.get(a).growthPercentPerLevel==20,'drag is draft only')
 W.saved(outer,false);assert(store.get(a).growthPercentPerLevel==20,'native save failure must not commit')
-W.setup(menu,a,false);assert(#panel.children==2 and panel.children[1].value==20,'cancel/reopen discards draft without duplicates')
-W.change(panel.children[1],7);W.change(panel.children[2],165)
+W.setup(menu,a,false);assert(#panel.children==3 and panel.children[1].value==20,'cancel/reopen discards draft without duplicates')
+assert(panel.children[3].value==20,'cancel discards chest draft')
+assert(panel.children[2].min==50 and panel.children[2].max==300)
+assert(panel.children[2].WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text=='+100%')
+W.change(panel.children[1],7);W.change(panel.children[2],65);W.change(panel.children[3],40)
 W.saved(outer,true)
-assert(store.get(a).growthPercentPerLevel==7 and store.get(a).maxRangePercent==165)
+assert(store.get(a).growthPercentPerLevel==7 and store.get(a).maxRangeBonusPercent==65)
+assert(store.get(a).maxChestBonusSlots==40)
+assert(panel.children[2].WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text=='+65%')
 W.setup(menu,b,false)
 W.change(panel.children[1],3);W.saved(outer,true)
 assert(store.get(a).growthPercentPerLevel==7 and store.get(b).growthPercentPerLevel==3)
 W.setup(menu,'',true);W.change(panel.children[1],9)
+W.change(panel.children[2],999);W.change(panel.children[3],999)
 W.newGame(outer);W.refresh()
 assert(store.get(a).growthPercentPerLevel==7,'new world must not overwrite selected old world')
 current=string.rep('C',32);W.refresh()
 assert(store.get(current).growthPercentPerLevel==9 and not W.pendingNew)
+assert(store.get(current).maxRangeBonusPercent==300 and store.get(current).maxChestBonusSlots==40)
 print('PASS: native menu draft/confirm/failure/cancel, no duplicate rows, correct world and new-world identity')
+
+-- Old totals migrate once; a different world's save must not change their meaning.
+files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=5\nmaxRangePercent=175\n'
+local custom=factory('',Range,{maxRangeBonusPercent=300,maxChestBonusSlots=30},fs)
+assert(custom.get(a).maxRangeBonusPercent==75 and custom.get(a).maxChestBonusSlots==30)
+custom.save(b,{maxRangeBonusPercent=300,maxChestBonusSlots=40})
+assert(not files['world-settings.ini']:find('maxRangePercent='),'write only canonical bonus settings')
+custom=factory('',Range,{maxRangeBonusPercent=300,maxChestBonusSlots=30},fs)
+assert(custom.get(a).maxRangeBonusPercent==75 and custom.get(a).maxChestBonusSlots==30)
+assert(custom.get(b).maxRangeBonusPercent==300 and custom.get(b).maxChestBonusSlots==40)
+files['world-settings.ini']='['..a..']\nmaxRangePercent=200\nmaxRangeBonusPercent=150\nmaxChestBonusSlots=-2\n'
+custom=factory('',Range,defaults,fs)
+assert(custom.get(a).maxRangeBonusPercent==150 and custom.get(a).maxChestBonusSlots==0)
+print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..40')

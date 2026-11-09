@@ -23,7 +23,7 @@ return function(E)
         if not finite(x) or not finite(y) or not finite(z) then return end
         local level=math.floor(z-MAGIC+0.5)
         if level<1 or level>MAX_LEVEL or math.abs(z-MAGIC-level)>0.01 then return end
-        if x<9999 or x>20001 or (y~=-100 and (y<9999 or y>20001)) then return end
+        if x<9999 or x>40001 or (y~=-100 and (y<9999 or y>40001)) then return end
         return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil}
     end
     local function ownerBase(actor)
