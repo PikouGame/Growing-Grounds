@@ -1,5 +1,5 @@
 -- Presentation state only. No UObject references or gameplay writes.
-local M = {duration=1.6, wait=10}
+local M = {duration=1.15, wait=10}
 local function smooth(t) return t*t*(3-2*t) end
 function M.sample(s, now)
     if not s.animation then return s.radius, 1 end

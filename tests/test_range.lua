@@ -15,8 +15,6 @@ near(Range.percent(35,{maxRangePercent=0/0,growthPercentPerLevel=math.huge}),200
 near(Range.placementDistance(3500),14000)
 for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.percent,bad)) end
 for _,bad in ipairs({0,-1,math.huge,0/0,'3500'}) do assert(not pcall(Range.radius,bad,8)) end
-local cap=Range.reward(3500,35,35)
-assert(cap.atMaximum and cap.currentRadius==cap.nextRadius)
 
 local function valid(o) return o and o:IsValid() end
 local function obj(t) t.IsValid=function() return true end; return t end
@@ -38,7 +36,7 @@ local util={GetGameSetting=function() return settings end,
 StaticFindObject=function() return util end
 FindFirstOf=function() return obj({GetMaxLevel=function() return 35 end}) end
 FindAllOf=function(class) return class=='PalMapObjectModel' and mapObjects or {} end
-local E={range=Range,config={resetToVanilla=false},valid=valid,log=function() end,
+local E={root=root,range=Range,config={resetToVanilla=false},valid=valid,log=function() end,
     guard=function(_,fn) fn() end}
 local function newBase(level,radius,authority)
     return obj({AreaRange=radius,level=level,authority=authority,bTemporary=false,

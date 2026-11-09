@@ -1,6 +1,7 @@
 local root=assert(arg[1],'pass root with trailing slash')
 local M=dofile(root..'src/motion.lua')
 local W=dofile(root..'src/wave.lua')
+assert(M.duration<=1.2 and W.duration==2.4,'shorter bounce, without accelerating the accepted outward wave')
 local function near(a,b) assert(math.abs(a-b)<0.00001,tostring(a)..' != '..tostring(b)) end
 local function observe(s,l,r,t) return M.observe(s,l,r,t,true) end
 local s,action=observe(nil,8,4725,0)
@@ -100,7 +101,7 @@ actor=obj('/World.Palbox',{
             SetGenerateOverlapEvents=function(_,v) assert(not v) end,
             SetIsReplicated=function(_,v) assert(not v) end,
             SetCastShadow=function(_,v) assert(not v) end,
-            K2_SetWorldTransform=function(self,v) self.position=v.Translation end,
+            K2_SetWorldTransform=function(self,v) self.position=v.Translation;self.scale=v.Scale3D end,
             K2_SetWorldLocation=function(self,v) self.position=v end,
             GetOwner=function() return actor end,
             K2_DestroyComponent=function(self,owner)
@@ -148,6 +149,17 @@ end
 local function pump(start,frames)
     for i=1,frames do frame(start+i*0.016) end
 end
+-- Exercise real level/radius changes, not a production replay API.
+local function clear()
+    B.beginRefresh();B.endRefresh()
+    refresh() -- a reloaded base snaps to its authoritative radius
+end
+local function upgrade()
+    local l,r=level,radius
+    B.beginRefresh();B.endRefresh()
+    level,radius=l-1,r-175;refresh()
+    level,radius=l,r;refresh()
+end
 refresh();near(actor.AreaRange.RelativeScale3D.X,94.5)
 assert(created==0 and #queue==0)
 time=1;level=9;refresh();assert(#queue==0)
@@ -164,10 +176,11 @@ os.clock=savedClock;traceTick=nil
 assert(traces-beforeSlowTrace==2,'3 ms shared deadline stops after the native call that crossed it')
 assert(lookups==beforeLookup,'no repeated global lookups on animation frames')
 assert(systemChecks-beforeSystemChecks<=3,'validate the native trace helper per batch, not per sample')
-pump(6.016,90)
+pump(6.016,math.floor((M.duration-0.05)/0.016)-1)
 assert(created==1 and sections==2 and imports==1 and component.visible==false,table.concat(errors,';'))
 assert(#errors==0,table.concat(errors,';'))
-frame(7.6)
+local riseStart=6+M.duration
+frame(riseStart)
 assert(component.visible,'contour starts only after bounce')
 near(actor.AreaRange.RelativeScale3D.X,98)
 near(actor.AreaRange1.RelativeScale3D.X,98.01)
@@ -195,33 +208,65 @@ for _,mid in ipairs(component.materials) do
     near(mid.RGBScale02,0);near(mid.AlphaScale02,0)
 end
 beforeLookup=lookups
-frame(8.6);near(component.position.Z,300+600*(1-(1-1/2.8)^3))
+local beforeRiseTraces,beforeRiseSections=traces,sections
+near(component.scale.Z,1)
+frame(riseStart+1)
+local crest=high-12
+near(component.position.Z,300+600*(1-(1-1/2.8)^3)+(1-component.scale.Z)*crest)
+assert(component.scale.Z>0.35 and component.scale.Z<1,'relief straightens progressively')
 assert(lookups==beforeLookup,'rising mesh and materials stay cached')
-frame(9.15)
-assert(component.position.Z<900,'flash occurs while still rising')
+frame(riseStart+1.55)
+near(component.scale.Z,0.35)
+assert(component.position.Z<900+0.65*crest,'flash occurs while still rising')
 assert(component.materials[1].RGBScale01>4.9,'earlier emissive flash')
 assert(component.materials[2].AlphaScale01>0 and component.materials[2].RGBScale01>0,
     'soft trail remains through the flash')
-frame(10.39);assert(component.materials[1].AlphaScale01<0.01,'smooth fade before cleanup')
+frame(riseStart+2.79);assert(component.materials[1].AlphaScale01<0.01,'smooth fade before cleanup')
 near(component.materials[2].AlphaScale01/component.materials[1].AlphaScale01,0.6*0.95)
 assert(component.materials[2].RGBScale01>0,'trail persists until shared fade finishes')
-assert(component.position.Z<900,'no stationary visible hold')
-frame(10.41);assert(destroyed==1 and #queue==0)
+assert(component.position.Z<900+0.65*crest,'no stationary visible hold')
+assert(traces==beforeRiseTraces and sections==beforeRiseSections,
+    'straightening must not add terrain scans or mesh rebuilds')
+frame(riseStart+2.81);assert(destroyed==1 and #queue==0)
 near(radius,4900)
-B.replay();pump(time,40)
+upgrade();pump(time,40)
 assert(created==2)
-B.shutdown();frame(time+0.016)
-assert(destroyed==2 and #queue==0,'reload destroys unfinished contour')
-refresh();failMesh=true;B.replay();pump(time,110)
+clear();frame(time+0.016)
+assert(destroyed==2 and #queue==0,'base removal destroys unfinished contour')
+refresh();failMesh=true;upgrade();pump(time,110)
 assert(destroyed==3 and #queue==0,'native geometry failure cleaned, bounce still finishes')
 near(actor.AreaRange.RelativeScale3D.X,98)
 failMesh=false;dedicated=true;time=time+1;level=10;radius=5075;refresh()
 assert(created==3 and #queue==0,'dedicated server never constructs effects')
 near(actor.AreaRange.RelativeScale3D.X,101.5)
 dedicated=false;refresh()
+upgrade()
 actor.GetFullName=function() return 'Mock /World.ReusedAddressOtherObject' end
-B.replay();assert(#queue==0,'cached address reuse rejected')
+frame(time+0.016);assert(#queue==0,'cached address reuse rejected')
 local R=dofile(root..'src/ribbon.lua')(E,{})
+-- A steep, asymmetric contour stays grounded at launch, then rises and
+-- retains some relief. Use the crest, not a mean that can sink high points.
+for _,heights in ipairs({{-500,-100,200,900},{-900,-600,-300,-50},{20,20,20,20}}) do
+    local job={center={X=100,Y=200,Z=300},crest=math.max(table.unpack(heights))}
+    local previous={table.unpack(heights)}
+    for frame=0,280 do
+        local elapsed=frame/100
+        local pose=R.pose(job,elapsed,R.envelope(elapsed,600))
+        near(pose.Scale3D.X,1);near(pose.Scale3D.Y,1)
+        near(pose.Translation.X,100);near(pose.Translation.Y,200)
+        for i,z in ipairs(heights) do
+            local world=pose.Translation.Z+pose.Scale3D.Z*z
+            if frame==0 then near(world,300+z) end
+            assert(world>=300+z and world>=previous[i]-0.00001,'no point sinks or reverses its ascent')
+            previous[i]=world
+        end
+        if elapsed>=1.4 then near(pose.Scale3D.Z,0.35) end
+    end
+    local first=R.pose(job,0,0)
+    near(first.Scale3D.Z,1)
+end
+local _,quickAlpha=R.envelope(0.06,600)
+near(quickAlpha,1)
 local job={count=4,radius=100,points={{Z=1},{Z=2},false,{Z=4}}}
 local _,indices=R.geometry(job,0)
 assert(#indices==12,'missing terrain must not be bridged by a fake flat segment')
@@ -243,8 +288,8 @@ local _,headMid,_,lightMid=R.envelope(2.2,800)
 near(headMid,0.5);near(lightMid,0.5)
 print('PASS: terrain contour/seam, continuous gradient, early flash, shared moving fade, bounded setup, cached animation, cleanup, authority')
 
--- New ground wave must finish before the unchanged bounce and rising contour.
-B.shutdown()
+-- Ground wave must finish before the shorter bounce and rising contour.
+clear()
 actor.GetFullName=function() return 'Mock /World.Palbox' end
 E.config.upgradeWave=true
 local events={}
@@ -254,7 +299,7 @@ E.log=function(message)
     if message:find('contour rise started',1,true) then events.rise=time end
 end
 errors={};level=9;radius=4900;time=time+1
-B=dofile(root..'src/boundary.lua')(E,M);refresh();B.replay()
+B=dofile(root..'src/boundary.lua')(E,M);refresh();upgrade()
 local preparedAt,firstTraceStart=time,traces
 while not events.wave and time<preparedAt+15 do
     frame(time+0.016)
@@ -282,20 +327,22 @@ near(component.materials[3].OffsetV_01,0.45)
 frame(events.arrived+0.4)
 assert(not component.sectionVisible[2],'ground trail fades during the bounce, before the rise')
 assert(actor.AreaRange.RelativeScale3D.X>94.5)
-frame(events.arrived+1.61)
+frame(events.arrived+M.duration-0.01)
+assert(not events.rise,'rise must still wait for the bounce to settle')
+frame(events.arrived+M.duration+0.01)
 assert(events.rise and events.rise>=events.arrived+M.duration)
 assert(component.sectionVisible[0] and component.sectionVisible[1] and not component.sectionVisible[2])
 near(actor.AreaRange.RelativeScale3D.X,98)
 frame(events.rise+R.duration+0.01)
 assert(not component.alive and #queue==0 and #errors==0,table.concat(errors,';'))
 
--- A repeat/reload must sample the current surface again, even at the same
+-- A repeat must sample the current surface again, even at the same
 -- location and radius. Engine-object tracking remains, but terrain does not.
 local repeatTraceStart=traces
 terrainOffset=50
-B.shutdown();E.boundaryTerrain={oldData=true}
-B=dofile(root..'src/boundary.lua')(E,M);assert(E.boundaryTerrain==nil);refresh()
-events={};local replayAt=time;B.replay()
+clear()
+B=dofile(root..'src/boundary.lua')(E,M);refresh()
+events={};local replayAt=time;upgrade()
 while not events.wave and time-replayAt<15 do frame(time+0.016) end
 assert(events.wave and traces-repeatTraceStart==firstScanSamples,'repeat uses a complete fresh scan')
 for _,p in ipairs(component.geometry[3].vertices) do
@@ -303,23 +350,23 @@ for _,p in ipairs(component.geometry[3].vertices) do
 end
 frame(events.wave+W.duration-0.01);assert(not events.arrived,'wave must not trigger the bounce early')
 frame(events.wave+W.duration+0.01);assert(events.arrived)
-B.shutdown();frame(time+0.016)
+clear();frame(time+0.016)
 
 -- A failed wave setup releases the waiting bounce rather than leaving a small ring.
 refresh()
 local beforeDestroyed=destroyed
-failMesh=true;B.replay();pump(time,800)
+failMesh=true;upgrade();pump(time,800)
 assert(#queue==0 and destroyed==beforeDestroyed+1)
 near(actor.AreaRange.RelativeScale3D.X,98)
 failMesh=false
-B.replay();pump(time,3);B.shutdown();frame(time+0.016)
-assert(#queue==0,'reload cancels terrain preparation')
+upgrade();pump(time,3);clear();frame(time+0.016)
+assert(#queue==0,'base removal cancels terrain preparation')
 near(actor.AreaRange.RelativeScale3D.X,98)
 dedicated=true;time=time+1;level=10;radius=5075
 local noServerEffects=created
-refresh();B.replay();assert(created==noServerEffects and #queue==0)
+refresh();upgrade();assert(created==noServerEffects and #queue==0)
 near(actor.AreaRange.RelativeScale3D.X,101.5)
-print('PASS: Palbox wave -> bounce -> rise, terrain surface, bounded setup, no moving mesh/scans, failure and reload cleanup')
+print('PASS: Palbox wave -> bounce -> rise, terrain surface, bounded setup, no moving mesh/scans, failure and removal cleanup')
 
 -- Menu readiness and elapsed idle time must no longer cause terrain work.
 dedicated=false;level=9;radius=4900;time=time+1;events={};errors={}
@@ -335,9 +382,9 @@ local upgradeAt=time
 while not events.wave and time-upgradeAt<15 do frame(time+0.016) end
 assert(events.wave and traces>idleTraces,'a real upgrade also samples fresh terrain on demand')
 near(actor.AreaRange.RelativeScale3D.X,98)
-B.shutdown();frame(time+0.016)
+clear();frame(time+0.016)
 assert(#queue==0 and #errors==0,table.concat(errors,';'))
-print('PASS: fresh terrain on repeat/reload and real upgrade, changed surfaces, no retained heights or menu/idle preloading')
+print('PASS: fresh terrain on repeat and real upgrade, changed surfaces, no retained heights or menu/idle preloading')
 
 -- Prepare only after a trigger, but keep every visual hidden until the native
 -- Base Upgrade screen for THIS base deactivates. No viewport-root assumption.
@@ -351,7 +398,7 @@ E.objects={all=function(name)
 end}
 local originalVisible=actor.AreaRange.IsVisible
 actor.AreaRange.IsVisible=function() return false end
-refresh();events={};local beforeMenus=menuReads;B.replay();local triggeredAt=time
+refresh();events={};local beforeMenus=menuReads;upgrade();local triggeredAt=time
 pump(triggeredAt,200)
 assert(not events.wave and component.alive and not component.visible,'menu holds the prepared effect hidden')
 assert(menuReads==beforeMenus+1,'widgets discovered once, never scanned each frame')
@@ -360,23 +407,24 @@ local preparedTraces=traces
 pump(time,10);assert(traces==preparedTraces,'ready effect does no more terrain work while the screen stays open')
 screenActive=false;frame(time+0.016)
 assert(events.wave==time,'closing a prepared menu starts the wave in that update, without a fixed delay')
-assert(E.boundaryObjects['/World.BaseUpgrade']==nil,'release screen references on close')
+local readsAfterClose=menuReads
+frame(time+0.016);assert(menuReads==readsAfterClose,'closed screen is no longer polled')
 assert(traces==preparedTraces and #errors==0,table.concat(errors,';'))
-B.shutdown();frame(time+0.016)
+clear();frame(time+0.016)
 
 -- Closing before setup is finished releases the UI gate but still requires
 -- complete terrain/meshes. Destroyed screens also release the gate safely.
 actor.AreaRange.IsVisible=originalVisible
-refresh();events={};screenActive=true;B.replay();triggeredAt=time
+refresh();events={};screenActive=true;upgrade();triggeredAt=time
 frame(time+0.016);screenActive=false;frame(time+0.016)
 assert(not events.wave,'an early close must not display incomplete terrain')
 while not events.wave and time-triggeredAt<10 do frame(time+0.016) end
 assert(events.wave and time-triggeredAt<1,'no one-second timer is imposed')
-B.shutdown();frame(time+0.016)
-refresh();events={};screenActive=true;B.replay();pump(time,200)
+clear();frame(time+0.016)
+refresh();events={};screenActive=true;upgrade();pump(time,200)
 assert(not events.wave)
 screen.alive=false;frame(time+0.016)
 assert(events.wave==time,'destroying the widget cannot strand the animation')
-B.shutdown();frame(time+0.016)
+clear();frame(time+0.016)
 assert(#queue==0 and #errors==0,table.concat(errors,';'))
 print('PASS: native Base Upgrade close gate, hidden preparation, immediate ready release, early close, destroyed widget and reference cleanup')

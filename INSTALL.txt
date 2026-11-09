@@ -1,137 +1,82 @@
-Growing Grounds 0.1.2-alpha — internal mod ID BaseRangeGrowth
+Growing Grounds 0.1.3-alpha — internal mod ID BaseRangeGrowth
 
-ALPHA RELEASE: configurable growth, a 200% ceiling, spacing-aware limits and
-an upgrade celebration. Update host/server and clients together. Keep a world
-backup: new caps/spacing can reduce previously expanded bases. Native World
-Settings flows, placement rejection and full expanded-area gameplay still need
-broader live verification. The server-supplied 140% -> 145% preview and screen-
-close visual replay were confirmed in game.
+Install or update
+1. Save and close the game/server, and back up your world.
+2. Install a compatible Palworld UE4SS loader once on host/server and clients.
+3. Copy BaseRangeGrowth into the existing UE4SS Mods folder on both sides:
+   Manual: Pal/Binaries/Win64/ue4ss/Mods/BaseRangeGrowth
+   Existing Workshop loader: Mods/NativeMods/UE4SS/Mods/BaseRangeGrowth
+   Use your existing loader location; do not install a second loader.
+4. Preserve your config.lua preferences and world-settings.ini / .bak files.
+   Add new defaults as needed. Never replace your sidecar with another player's.
+5. Restart host/server and clients. Allow up to five seconds for the initial UI.
+
+Updating from 0.1.1 or older can shrink bases because of the cap and spacing
+limits. Buildings outside the resulting boundary may lose coverage. Keep a backup.
+0.1.3 does not change those gameplay rules. It removes development keyboard
+shortcuts entirely; an old debug=true option is ignored. No test hotkey is needed.
 
 Configuration
-growthPercentPerLevel=5: 0..20% of the original radius per level after level 1.
-maxRangePercent=200: total radius, 100..200%. Values above 200 are clamped.
-Default 35m radius reaches 70m at level21, then stops growing.
-For local/co-op worlds, two Growing Grounds rows at the end of custom World
-Settings save per world after successful native confirmation. Keep the generated
-world-settings.ini alongside config.lua when updating. Do not copy another
-player's sidecar file over your own. Dedicated servers use config.lua defaults;
-an existing per-world override takes precedence if one was saved on that host.
+- growthPercentPerLevel=5: adds 0..20% of the ORIGINAL radius after level 1.
+- maxRangePercent=200: total radius, 100..200%; 200 is a hard ceiling.
+- resetToVanilla=false: see removal instructions before changing this.
+- upgradeAnimation=true: enables the automatic upgrade celebration.
+- upgradeRibbon=true: enables glow effects; false disables both wave and rise.
+- upgradeWave=true: enables the Palbox-to-boundary ground wave.
+- upgradeEffectHeight=600: rise height in centimetres (clamped to 100..2000).
 
-Native Palbox spacing is raised to two maximum radii (140m by default), for
-both PvE and PvP. Stronger existing restrictions are retained. Existing nearby
-bases reserve free growth space between their original circles, across guilds
-and regardless of height; they may stop growing below the cap. Already-
-overlapping vanilla circles are logged and receive no extra growth. Neighbours'
-future upgrades are reserved for, so upgrading cannot shrink another guild's
-base. The mod
-does not move or remove bases. Shrinking an old radius can leave buildings
-outside the base, so retain a world backup when upgrading.
+Local/co-op hosts can change growth and cap at the bottom of custom World
+Settings. Values save per world after native confirmation, in world-settings.ini.
+Dedicated servers use config.lua defaults unless that host has a per-world
+sidecar override. Server settings always control gameplay and the next-value UI.
 
-Upgrade animation
-Known visual issue: the celebration can still start late after closing the Palbox. This does not postpone the actual base-radius upgrade. A new lightweight change observer is included; its improvement during a natural upgrade has not yet been verified in game.
+With the standard 35m radius: level 8 = 47.25m, level 9 = 49m, level 21 = 70m.
+Growth is additive. The UI shows the bonus above 100%, with metres rounded to a
+tenth. Level 10 displays 45% 50.8m -> 50% 52.5m. At maximum game level, the next
+value is hidden. A missing/stale server preview also hides the next value.
 
-Sequence: a blue wave travels from the Palbox across sampled ground
-to the currently visible boundary. Arrival starts the boundary expansion/bounce.
-After the radius expands and settles, one terrain-shaped line rises 6m with a
-soft 2.4m trailing glow. The climb starts fast and slows down. The trail softens
-before the leading edge flashes, retaining a glow through the finish. Both
-fade together during the last 1.2s of movement, without a stopped hold.
-The wave and contour share one procedural mesh and a native Palworld glow material.
-After a confirmed upgrade, terrain sampling and mesh setup are spread across
-updates. If the matching Base Upgrade screen is active, setup runs hidden and
-playback waits for that screen to close. There is no fixed one-second countdown.
-Closing early waits only for unfinished setup. Each run samples fresh terrain;
-no terrain data is kept between animations and no speculative scans run.
-Sampling uses up to 64 points under a shared 3ms deadline per update. Individual
-native calls cannot be interrupted; this is not a guarantee of hitch-free frames.
-The ground mesh stays fixed during the sweep; a material offset moves the light.
-Missing ground and sharp cliffs are not filled with invented flat patches.
-Initial login does not animate. The actual gameplay radius never bounces.
-Ctrl+Shift+F7 replays visible boundaries without changing gameplay/base level.
-Use build mode near the Palbox to preview, or press F7 inside Base Upgrade and
-close it after setup to test the screen-close trigger. Debug logging/hot reload is off by
-default; developers can enable debug=true in config.lua.
-upgradeWave=false skips the ground wave. upgradeRibbon=false disables both glow
-effects. upgradeEffectHeight=600 is the rising effect's
-height in centimetres. upgradeAnimation=false disables automatic animation.
-The author approved the Palbox wave speed and screen-close behavior through
-in-game replay. A natural upgrade with this exact screen-close build has not
-yet been observed.
-Performance has not been benchmarked across hardware.
+Spacing and server authority
+New Palboxes reserve two maximum radii (140m by default), across guilds and
+heights, for PvE and PvP. Stronger native restrictions remain. Existing nearby
+bases share free growth space and may reach a lower cap. Originally overlapping
+circles receive no extra growth. Bases are never moved or deleted.
+Clients read the server radius; only the visible boundary bounces. One invisible,
+non-ticking native component per Palbox carries the server's next-value preview
+through its existing network channel. No added ports, chat messages or save models.
+Temporary raid bases, decay, spawning and unrelated collisions are untouched.
 
-Defaults to 5% of the original base radius per base level after level 1, capped at 200%.
-The Base Upgrade screen adds a native reward row with a circle/four-arrow
-icon and percentages, for example 135% -> 140%. No +5% label.
-
-Target inspected
-Palworld v1.0.5.102999. Client Steam build 25246127; Windows dedicated
-server build 25247047. UE4SS Palworld fork 2281fa31 is already installed
-on both test machines. Local setup runs Windows executables through Wine/
-Proton. Native Windows compatibility still needs a native Windows test.
-
-Requirements
-UE4SS Palworld fork, installed once on BOTH server/host and each client
-that needs the UI and boundary. This package does not replace your loader.
-
-Install
-1. Save and exit the game/server normally. Keep a world backup.
-2. Copy BaseRangeGrowth into the existing UE4SS Mods folder.
-   Manual loader: Pal/Binaries/Win64/ue4ss/Mods/BaseRangeGrowth
-   Existing Workshop loader: Mods/NativeMods/UE4SS/Mods/BaseRangeGrowth
-   Use your existing loader location; do not install a second UE4SS copy.
-   The folder contains enabled.txt, Scripts, src, assets and config.lua.
-   Preserve config.lua preferences and any world-settings.ini (and its .bak).
-   Add newly introduced defaults without overwriting your chosen values.
-3. Start the server and clients. No edits to other mods are needed.
-4. In UE4SS.log, look for BaseRangeGrowth, role=authority on the server,
-   and the changed base radius. Clients should log role=client.
-5. Open Base Upgrade. Allow up to five seconds for the initial row.
-   Ctrl+Shift+F10 logs a diagnostic check and requests an immediate refresh.
-
-Expected level-8 test
-Server changes 3500 cm to 4725 cm (47.25 m). Client receives the same
-radius and shows 135% -> 140% after the server's preview arrives.
-If no matching preview is available, only the current percentage appears.
-The boundary follows the received radius.
-Reopening the panel must not add duplicate rows. Rejoining/restarting must
-not increase radius again. Level 9 must be 4900 cm, not 4961.25 cm.
-
-Server authority and limitations
-Clients read the actual replicated radius and the server's computed next value.
-Preview data uses one unrendered native scene component per loaded Palbox, without
-collision, ticking, saved Pal models, chat messages or extra network ports.
-The component's replicated relative transform carries version-marked numeric
-UI data over the Palbox's existing channel. Clients reject stale levels/radii
-and foreign components. Components leave with their bases/world and are recreated on
-load. They never write a client gameplay radius. At max game level the next
-value is hidden. Configure dedicated-server gameplay on the host.
-Tracked base levels and radii are checked every 250 ms; only a change requests
-a full refresh. Native level/creation hooks and a five-second reconciliation
-remain as additional paths. The frequent check never performs a global object
-search. If construction notifications are unavailable, it yields to the slow
-reconciliation. Terrain preparation starts only after a confirmed change.
-Temporary raid bases are excluded. World decay settings, unrelated collision
-boxes, spawning and raid configuration are not modified.
-Expanded Pal work coverage, placement, resource use and building membership
-must be verified live. Standalone tests do not prove these engine behaviors.
+Animation
+A 2.4s blue wave follows sampled ground from the Palbox to the old boundary,
+then triggers the expansion/bounce. Once settled, a contour rises, gradually
+softens sharp relief, brightens and fades with its trail while still moving.
+Preparation starts after a confirmed upgrade. It stays hidden while the matching
+Base Upgrade screen is open and plays when the screen closes and setup is ready.
+There is no fixed countdown or terrain cache between animations. The celebration
+can still start late; the actual gameplay radius is already updated.
+Fresh terrain work is bounded to 64 samples and a shared 3ms deadline per update.
+Native calls cannot be interrupted, so this is not a hitch-free guarantee.
+The effect uses one procedural mesh and a native glow material; no moving mesh
+rebuilds, repeated ground scans during playback or speculative idle scans.
 
 Remove/reset
-The game can save the expanded radius. Simply removing the mod does not
-guarantee that saved bases shrink. First set resetToVanilla=true in the
-SERVER's config.lua, restart, verify 3500 cm (or your original setting) in
-the log, then save and remove BaseRangeGrowth on server and clients.
-Objects built in the added area may be outside the base after shrinking.
-Restore the pre-install world backup for an exact rollback.
-Restoring a backup also rolls back progress made since that backup.
+Expanded radii can be saved by the game. To shrink before removal, set
+resetToVanilla=true on the SERVER, restart and load the world. Verify the
+original radius in UE4SS.log, save, then remove BaseRangeGrowth on both sides.
+Buildings in the added area may lose coverage. An exact rollback requires the
+pre-install world backup, which also rolls back progress since that backup.
 
-Sources used for API research (no third-party mod implementation copied)
-https://github.com/localcc/PalworldModdingKit
-SDK reference commit e6632458b97af0083eb81715775651b08104ef6a
-https://docs.ue4ss.com/lua-api.html
-Installed game reflection and selected cooked UI/Palbox assets.
-The distributed code and icon are original; game assets remain in the excluded local research directory.
+Compatibility and verification
+Inspected Palworld v1.0.5.102999; client Steam build 25246127, server 25247047;
+UE4SS Palworld fork 2281fa31. Windows executables were tested through Proton/Wine.
+Native Windows OS execution and Workshop deployment are not verified.
+The UI and radius replication were observed in game. Standalone checks cover
+settings, spacing, authority, preview, UI layout and animation lifecycle.
+This cleanup has not had a fresh full in-game session. An earlier intermittent
+client crash remains unattributed; this release is not claimed to fix it.
+World Settings flows, placement rejection, expanded-area Pal work/resources,
+full removal/reset and other range mods still need broader live testing.
+See README.md for credits, licensing and compatibility details.
 
-Verification status
-Lua syntax and standalone behavior checks pass. Radius replication and the
-menu row were observed in game. Expanded-ring gameplay and lifecycle checks
-remain outstanding. This remains an alpha release.
+We'd love your comments, experiences and bug reports so we can investigate and
+improve the mod: https://github.com/PikouGame/Growing-Grounds/issues
+Please remove personal information before sharing logs.

@@ -8,9 +8,7 @@ return {
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- verify restored radii in UE4SS.log, save, then remove the mod.
     resetToVanilla = false,
-    -- Enable extra logs and hot reload for development; not required to play.
-    debug = false,
-    -- Presentation only: Palbox wave, then 1.6s boundary bounce and rising glow.
+    -- Presentation only: Palbox wave, then a brief boundary bounce and rising glow.
     upgradeAnimation = true,
     -- One rising terrain-shaped contour with a soft trailing glow.
     upgradeRibbon = true,

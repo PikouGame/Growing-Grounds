@@ -3,21 +3,30 @@
 return function(E,A)
     local R={layers=2,duration=2.8,sampleLimit=64,sampleBudget=0.003}
     local Wave=dofile(E.root..'src/wave.lua')
-    -- Discard data held by earlier development builds when hot reloading.
-    -- Each animation owns its own terrain samples until cleanup.
-    E.boundaryTerrain=nil
     local materialPath='/Game/Pal/Effect/Material_Instances/Particle_basic_color/MI_LightUpGlow.MI_LightUpGlow'
     local function smooth(t) t=math.max(0,math.min(1,t));return t*t*(3-2*t) end
     function R.envelope(elapsed,height)
         local t=math.max(0,math.min(1,elapsed/R.duration))
         local rise=height*(1-(1-t)^3) -- keeps moving until fully invisible
-        local appear=smooth(elapsed/0.12)
+        local appear=smooth(elapsed/0.06)
         local fade=1-smooth((elapsed-1.6)/1.2)
         -- Soften the tail before the flash, retaining a glow through the
         -- finish. Both parts share the final fade while still moving.
         local trail=appear*(1-0.4*smooth((elapsed-0.65)/0.6))*fade
         local flash=smooth((elapsed-1.3)/0.25)*(1-smooth((elapsed-1.65)/0.35))
         return rise,appear*fade,trail,(1+4*flash)*fade
+    end
+    function R.pose(job,elapsed,rise)
+        -- Gradually compress relief about its highest sampled point. Lower
+        -- sections move upwards, never down through the terrain. Retain 35%
+        -- of the original relief: a softer contour rather than a flat hoop.
+        -- One component transform also keeps the head/trail joined, without
+        -- rebuilding sections or doing any more terrain queries while rising.
+        local zScale=1-0.65*smooth(elapsed/1.4)
+        return {Rotation={X=0,Y=0,Z=0,W=1},
+            Translation={X=job.center.X,Y=job.center.Y,
+                Z=job.center.Z+rise+(1-zScale)*(job.crest or 0)},
+            Scale3D={X=1,Y=1,Z=zScale}}
     end
     function R.geometry(job,layer)
         local vertices,indices,normals,uv={},{},{},{}
@@ -122,7 +131,10 @@ return function(E,A)
         mid:SetScalarParameterValue(FName('RGBScale02'),0)
         mid:SetScalarParameterValue(FName('AlphaScale01'),0)
         mid:SetScalarParameterValue(FName('AlphaScale02'),0)
-        if ground then mid:SetScalarParameterValue(FName('SoftEdge'),8) end
+        if ground then
+            mid:SetScalarParameterValue(FName('SoftEdge'),8)
+            mid:SetScalarParameterValue(FName('RGBScale01'),5)
+        end
         return mid
     end
     local function terrain(lib,job,actor,x,y)
@@ -134,7 +146,7 @@ return function(E,A)
         local hit=out.OutHit or out
         if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+12 end
     end
-    function R.sample(s,actor,time,budget,deadline)
+    function R.sample(s,actor,budget,deadline)
         local job=s.ribbon
         if not job then return 0 end
         deadline=deadline or os.clock()+R.sampleBudget
@@ -151,6 +163,7 @@ return function(E,A)
                 if z then
                     job.points[i+1]={Z=z}
                     job.hits=job.hits+1
+                    job.crest=math.max(job.crest or z,z)
                 else job.points[i+1]=false end
             end
             if job.nextPoint<job.count then return used end
@@ -167,7 +180,7 @@ return function(E,A)
         local job=s.ribbon
         if not job then return 0 end
         deadline=deadline or os.clock()+R.sampleBudget
-        if not job.sampled then return R.sample(s,actor,time,budget,deadline) end
+        if not job.sampled then return R.sample(s,actor,budget,deadline) end
         if job.nextLayer<R.layers then
             if budget<1 or os.clock()>=deadline then return 0 end
             local c=A.resolve(job.component) or create(job,actor)
@@ -186,7 +199,7 @@ return function(E,A)
             assert(c,'Wave component expired')
             if not w.mesh then
                 if budget<1 or os.clock()>=deadline then return 0 end
-                local vertices,indices,normals,uv=Wave.geometry(w,job)
+                local vertices,indices,normals,uv=Wave.geometry(w)
                 assert(#indices>0,'No continuous terrain available for Palbox wave')
                 c:CreateMeshSection(2,vertices,indices,normals,uv,{},{},false)
                 material(job,actor,c,2,true)
@@ -205,7 +218,6 @@ return function(E,A)
                 local p,done=Wave.progress(time-w.started)
                 mid:SetScalarParameterValue(FName('OffsetV_01'),0.45*p)
                 mid:SetScalarParameterValue(FName('AlphaScale01'),smooth((time-w.started)/0.12))
-                mid:SetScalarParameterValue(FName('RGBScale01'),5)
                 if done then
                     w.arrived=time
                     if s.animation then s.animation.waiting=nil;s.animation.start=time end
@@ -230,13 +242,13 @@ return function(E,A)
             end
             c:SetHiddenInGame(false,false)
             c:SetVisibility(true,false)
-            E.log(string.format('contour rise started: %d/%d terrain samples, %d continuous sections, %.0f cm height',
+            E.log(string.format('contour rise started: %d/%d terrain samples, %d continuous sections, %.0f cm height; relief eases to 35%%',
                 job.hits,job.count,R.layers,job.height))
         end
         local elapsed=time-job.started
         if elapsed<0 or elapsed>=R.duration then R.cleanup(s);return 0 end
         local rise,headAlpha,trailAlpha,headLight=R.envelope(elapsed,job.height)
-        c:K2_SetWorldLocation({X=job.center.X,Y=job.center.Y,Z=job.center.Z+rise},false,{},true)
+        c:K2_SetWorldTransform(R.pose(job,elapsed,rise),false,{},true)
         for i=1,R.layers do
             local p=job.materials[i]
             local mid=A.resolve(p)
@@ -244,11 +256,9 @@ return function(E,A)
                 local alpha=i==1 and headAlpha or trailAlpha*0.95
                 local light=i==1 and headLight*4 or trailAlpha*5
                 mid:SetScalarParameterValue(FName('AlphaScale01'),alpha)
-                mid:SetScalarParameterValue(FName('AlphaScale02'),0)
                 -- Emissive intensity makes the flash/fade visible even when
                 -- the material's opacity expression would otherwise saturate.
                 mid:SetScalarParameterValue(FName('RGBScale01'),light)
-                mid:SetScalarParameterValue(FName('RGBScale02'),0)
             end
         end
         return 0

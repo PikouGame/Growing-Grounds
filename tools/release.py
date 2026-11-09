@@ -6,13 +6,13 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.1.2-alpha'
+VERSION = '0.1.3-alpha'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',
     'src/settings.lua', 'src/world_settings.lua',
     'src/preview.lua', 'src/objects.lua', 'src/changes.lua',
-    'src/motion.lua', 'src/boundary.lua', 'src/ribbon.lua', 'src/wave.lua',
+    'src/motion.lua', 'src/boundary.lua', 'src/ring.lua', 'src/ribbon.lua', 'src/wave.lua',
     'assets/base-range.svg', 'assets/base-range.png',
     'assets/contour-gradient.svg', 'assets/contour-gradient.png',
     'assets/ground-wave.svg', 'assets/ground-wave.png',
@@ -41,6 +41,12 @@ def archive(name, entries):
     return {'file': output.name, 'sha256': digest, 'files': len(entries)}
 
 
+# Reject accidental reintroduction of developer keyboard controls.
+for name in RUNTIME:
+    if name.endswith('.lua'):
+        assert 'RegisterKeyBind' not in (ROOT / name).read_text(), name
+assert VERSION in (ROOT / 'Scripts/main.lua').read_text()
+
 manual = {f'BaseRangeGrowth/{name}': (ROOT / name).read_bytes()
           for name in RUNTIME + DOCS}
 receipts = [archive(f'Growing-Grounds-{VERSION}.zip', manual)]
@@ -52,7 +58,7 @@ targets = ['./Scripts', './src', './assets', './config.lua', './enabled.txt']
 info = {
     'ModName': 'Growing Grounds', 'PackageName': 'BaseRangeGrowth',
     'Thumbnail': 'thumbnail.png', 'Version': VERSION, 'DebugMode': False,
-    'MinRevision': 102999, 'Author': 'PikouGame',
+    'MinRevision': 102999, 'Author': 'lelorax',
     'Dependencies': ['UE4SSExperimentalPW'],
     'Tags': ['UE4SS', 'Gameplay', 'User Interface'],
     'InstallRule': [

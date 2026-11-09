@@ -1,6 +1,7 @@
 return function(E)
     local R = {}
-    local baselines, seen, ringTargets, originalSpacing = {}, {}, {}, {}
+    local scale=dofile(E.root..'src/ring.lua')(E)
+    local baselines, seen, originalSpacing = {}, {}, {}
     local function find(path)
         if E.objects then return E.objects.find(path) end
         return StaticFindObject(path)
@@ -183,23 +184,7 @@ return function(E)
             end)
             if ok then return end -- unsupported presentation API: exact old path below
         end
-        -- Installed game's Cylinder mesh is 100 cm across. Its two authored
-        -- rings are 70 and 70.01 XY at the original 3500 cm radius. Preserve Z.
-        for _, field in ipairs({'AreaRange', 'AreaRange1'}) do
-            local component = actor[field]
-            if E.valid(component) then
-                local desired = radius / 50 + (field == 'AreaRange1' and 0.01 or 0)
-                local scale = component.RelativeScale3D
-                if math.abs(scale.X - desired) > 0.001 or math.abs(scale.Y - desired) > 0.001 then
-                    component:SetRelativeScale3D({X=desired, Y=desired, Z=scale.Z})
-                end
-                local key = component:GetFullName()
-                if ringTargets[key] ~= radius then
-                    ringTargets[key] = radius
-                    if E.config.debug then E.log(string.format('boundary %s = %.2f cm', field, radius)) end
-                end
-            end
-        end
+        scale(actor,radius)
     end
     function R.refresh()
         if E.boundary then E.boundary.beginRefresh() end
@@ -266,17 +251,6 @@ return function(E)
         end
         if E.boundary then E.boundary.endRefresh() end
         if E.preview then E.guard('preview cleanup',E.preview.finish) end
-    end
-    function R.report()
-        for _, model in ipairs(all('PalBaseCampModel')) do
-            if E.valid(model) then
-                local s = R.snapshot(model)
-                local policy=R.policy(model)
-                E.log(string.format('CHECK role=%s level=%d radius=%.2f baseline=%.2f percent=%.2f max=%d localGrowth=%.2f localCap=%.2f',
-                    s.authority and 'authority' or 'client', s.level, s.radius, s.baseline, s.currentPercent,
-                    s.maximum,policy.growthPercentPerLevel,policy.maxRangePercent))
-            end
-        end
     end
     return R
 end

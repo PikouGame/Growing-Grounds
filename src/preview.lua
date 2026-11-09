@@ -4,9 +4,8 @@
 -- Relative X/Y are hundredths of current/next percent; Z is a version marker
 -- plus level. This unrendered, unattached component has no gameplay or save model.
 return function(E)
-    local P = {protocol='palbox-component-v1'}
+    local P = {}
     local marker, records, reported = {}, {}, {}
-    local lastDiscovery
     local MAGIC, MAX_LEVEL = 232000, 1000
     local componentPath='/Script/Engine.SceneComponent'
     local function find(path)
@@ -65,7 +64,6 @@ return function(E)
     function P.refresh()
         records={}
         local boxes=E.objects and E.objects.all('BP_BuildObject_PalBoxV2_C') or FindAllOf('BP_BuildObject_PalBoxV2_C') or {}
-        local count=0
         local class=find(componentPath)
         if E.valid(class) then
             for _,box in ipairs(boxes) do
@@ -78,17 +76,11 @@ return function(E)
                             local id=ownerBase(component)
                             if id then
                                 records[id]={actor=component,path=component:GetFullName()}
-                                count=count+1
                             end
                         end
                     end
                 end
             end
-        end
-        local discovery=#boxes..':'..count
-        if E.config and E.config.debug and discovery~=lastDiscovery then
-            lastDiscovery=discovery
-            E.log('preview components: Palboxes='..#boxes..' received='..count)
         end
         for _,state in pairs(marker) do state.live=false end
     end

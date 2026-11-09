@@ -4,7 +4,8 @@ Give your base room to grow—and enjoy the moment it does.
 
 Growing Grounds adds **5% of the original base radius per level**, starting at
 level 2, with a configurable cap of **200%**. The Base Upgrade screen shows your
-current and next range using Palworld's own reward-row layout.
+current and next bonus with metres beside each value: **45% 50.8m → 50% 52.5m**.
+The numbers follow Palworld's own reward-row layout.
 
 ## A little celebration for every upgrade
 
@@ -16,7 +17,7 @@ If Base Upgrade is open, the effect prepares after the upgrade is confirmed and
 waits for you to close the screen. It plays once the screen is closed and setup
 is ready. There is no fixed countdown, no terrain reuse between animations, and
 no speculative scanning while you play. The outward wave lasts 2.4 seconds;
-the rising effect reaches 6 metres by default.
+the rising effect lifts 6 metres by default and gradually softens the terrain relief.
 
 ## Your world's settings
 
@@ -49,22 +50,19 @@ for this version's settings and server-supplied next-range preview.
 previously expanded base. Buildings outside the new boundary may lose base
 coverage. Please keep a backup before updating.
 
-See [INSTALL.txt](INSTALL.txt) for configuration, diagnostics and removal.
+See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
-## What changed in 0.1.2-alpha
+## What changed in 0.1.3-alpha
 
-- Palbox-to-boundary wave, slower outward travel and a shorter rising effect.
-- Playback waits for Base Upgrade to close, with fresh, bounded terrain setup.
-- Cached engine-object tracking replaces repeated whole-game searches that
-  caused the reported five-second freezes on the test setup.
-- A lightweight check of tracked base levels/radii every 250 ms avoids waiting
-  for the five-second reconciliation when native level hooks miss a change.
-- Per-world settings, a 200% ceiling and spacing-aware growth limits.
-- Server-supplied current/next percentages and a refined four-arrow range icon.
+- Gain percentages and compact mint metre labels, with aligned numeric columns.
+- A quicker bounce/lift and a rising contour that gradually straightens.
+- Removed development keyboard shortcuts, hot reload and profiling code.
+- Shared text styling and boundary scaling; one release builder and fewer repeated material writes.
 
-**Visual timing:** Known visual issue: the celebration can still start late after closing the Palbox. This does not postpone the actual base-radius upgrade. A new lightweight change observer is included; its improvement during a natural upgrade has not yet been verified in game.
+The celebration can still start late after closing the Palbox. This does not
+postpone the gameplay radius change. No growth, cap or spacing defaults changed.
 
 ## Testing and current limits
 
@@ -74,6 +72,10 @@ replication, the 140% → 145% preview, and the screen-close animation replay we
 checked in game. The author approved the slower wave and screen-close behavior.
 The former periodic freezes stopped on the test setup; broader hardware
 performance has not been established.
+
+The 0.1.3 cleanup passes standalone regression checks but has not had a fresh
+full in-game session. An earlier intermittent client crash remains unattributed;
+this release is not claimed to fix it.
 
 This is an alpha. World Settings save/cancel/new-world flows, placement rejection,
 Pal work and resource access throughout expanded areas, the full reset lifecycle,
@@ -85,16 +87,14 @@ The server owns gameplay radius. Animation changes the visible boundary only.
 Existing bases are not moved or deleted. Overlapping original base circles do
 not receive extra growth; other nearby bases may reach a lower cap.
 
-## Configuration and preview
+## Configuration
 
 Gameplay options: `growthPercentPerLevel`, `maxRangePercent`, `resetToVanilla`.
 Visual options: `upgradeAnimation`, `upgradeWave`, `upgradeRibbon`,
 `upgradeEffectHeight` (centimetres).
 
-**Ctrl+Shift+F7** replays the effect without changing your level or gameplay
-radius. It also works inside Base Upgrade: close the screen to see the prepared
-wave. **Ctrl+Shift+F10** writes a diagnostic report. Debug logging and hot reload
-are disabled by default; developers can enable `debug=true` in `config.lua`.
+There are no mod keyboard shortcuts or hot reload. An old `debug=true` setting
+is ignored. Animations start automatically after a qualifying base upgrade.
 
 ## Share your experience
 
@@ -109,6 +109,8 @@ information from logs before sharing them.
 Run the Lua checks from this directory:
 
 ```sh
+lua tests/test_main.lua ./
+lua tests/test_changes.lua ./
 lua tests/test_range.lua ./
 lua tests/test_settings.lua ./
 lua tests/test_objects.lua ./
@@ -116,7 +118,6 @@ lua tests/test_preview.lua ./
 lua tests/test_ui.lua ./
 lua tests/test_wave.lua ./
 lua tests/test_motion.lua ./
-python3 tools/package.py
 python3 tools/release.py
 ```
 

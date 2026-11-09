@@ -2,9 +2,7 @@
 -- Cache them to avoid full-name searches each frame; also reject address reuse.
 return function(E,Motion)
     local B,states,queued={},{},false
-    local Range=E.range or dofile(E.root..'src/range.lua')
-    E.boundaryObjects=E.boundaryObjects or {}
-    local objects=E.boundaryObjects
+    local objects={}
     local function path(o)
         local p=assert(o:GetFullName():match('^%S+ (.+)$'))
         objects[p]=o;return p
@@ -28,22 +26,11 @@ return function(E,Motion)
     local function dedicated(actor)
         return resolve('/Script/Pal.Default__PalUtility'):IsDedicatedServer(actor)
     end
-    local function scale(actor,radius,force)
-        for _,field in ipairs({'AreaRange','AreaRange1'}) do
-            local c=actor[field]
-            if E.valid(c) then
-                local n=radius/50+(field=='AreaRange1' and 0.01 or 0)
-                local v=c.RelativeScale3D
-                if force or math.abs(v.X-n)>0.001 or math.abs(v.Y-n)>0.001 then
-                    c:SetRelativeScale3D({X=n,Y=n,Z=v.Z})
-                end
-            end
-        end
-    end
+    local scale=dofile(E.root..'src/ring.lua')(E)
     local function upgradeScreens(s)
         if not E.objects then return end
         local screens={}
-        -- Discover once when an upgrade/replay starts, never on animation ticks.
+        -- Discover once when an upgrade starts, never on animation ticks.
         for _,screen in ipairs(E.objects.all('WBP_IngameMenu_Mission_C')) do
             if E.valid(screen) and screen:IsActivated() then
                 local base=screen:GetBaseCampModel()
@@ -78,7 +65,7 @@ return function(E,Motion)
         queued=false
         -- Count and elapsed-time limits are shared by every active base.
         -- Each run samples fresh terrain. Spread work over short, bounded
-        -- batches rather than retaining heights between upgrades/replays.
+        -- batches rather than retaining heights between upgrades.
         local active,budget,deadline=false,Ribbon.sampleLimit,os.clock()+Ribbon.sampleBudget
         for key,s in pairs(states) do
             if s.animation or s.ribbon then
@@ -100,26 +87,9 @@ return function(E,Motion)
                             end
                         end
                         if s.ribbon then
-                            local job=s.ribbon
-                            local measure=E.config.debug and job.wave and not job.wave.started
-                                and not(s.upgradeScreens and job.wave.mesh)
-                            local started=measure and os.clock()
-                            local phase=job.sampled and 'mesh' or 'terrain'
                             local ribbonOK,used=E.guard('contour effect',function()
                                 return Ribbon.step(s,actor,time,budget,deadline)
                             end)
-                            if started then
-                                local elapsed=(os.clock()-started)*1000
-                                local stats=job.preparation or {steps=0,total=0,longest=0,terrain=0,mesh=0}
-                                job.preparation=stats
-                                stats.steps=stats.steps+1;stats.total=stats.total+elapsed
-                                stats[phase]=stats[phase]+elapsed
-                                stats.longest=math.max(stats.longest,elapsed)
-                                if ribbonOK and job.wave.started then
-                                    E.log(string.format('wave preparation: %d updates, %.1f ms work (terrain %.1f, mesh %.1f), %.1f ms longest update',
-                                        stats.steps,stats.total,stats.terrain,stats.mesh,stats.longest))
-                                end
-                            end
                             if ribbonOK then budget=budget-used
                             else
                                 Ribbon.cleanup(s)
@@ -145,10 +115,10 @@ return function(E,Motion)
         queued=true
         ExecuteWithDelay(16,function() ExecuteInGameThread(tick) end)
     end
-    local function start(s,actor,screens)
+    local function start(s,actor)
         Ribbon.cleanup(s)
         clearScreens(s)
-        local ok,found=E.guard('upgrade screen capture',function() return screens or upgradeScreens(s) end)
+        local ok,found=E.guard('upgrade screen capture',function() return upgradeScreens(s) end)
         s.upgradeScreens=ok and found or nil
         scale(actor,s.animation.from)
         local prepared=E.guard('contour preparation',function() Ribbon.prepare(s,actor) end)
@@ -173,36 +143,6 @@ return function(E,Motion)
         for key,s in pairs(states) do
             if not s.live then Ribbon.cleanup(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil end
         end
-    end
-    function B.replay()
-        local count=0
-        for _,s in pairs(states) do
-            local actor=resolve(s.actor)
-            if actor and not s.animation and s.level>1 and not dedicated(actor) then
-                local visible=actor.AreaRange:IsVisible()
-                local screens
-                if not visible then
-                    local ok,found=E.guard('replay screen capture',function() return upgradeScreens(s) end)
-                    if ok then screens=found end
-                end
-                if visible or screens then
-                    local policy=E.policy and E.policy(actor) or E.config
-                    local previous=Range.percent(s.level-1,policy)/Range.percent(s.level,policy)
-                    s.animation={from=s.radius*previous,start=now(actor)}
-                    start(s,actor,screens);count=count+1
-                end
-            end
-        end
-        E.log('visual-only replay: '..count..' eligible boundaries; gameplay radius unchanged')
-    end
-    function B.shutdown()
-        for _,s in pairs(states) do
-            local actor=resolve(s.actor)
-            if actor then E.guard('animation reload restore',function() scale(actor,s.radius,true) end) end
-            Ribbon.cleanup(s)
-            clearScreens(s)
-        end
-        states={}
     end
     return B
 end

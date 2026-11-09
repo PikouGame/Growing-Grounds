@@ -1,4 +1,4 @@
--- BaseRangeGrowth 0.1.2-alpha: prompt change detection and a Palbox-to-boundary wave.
+-- BaseRangeGrowth 0.1.3-alpha: prompt change detection and a Palbox-to-boundary wave.
 local script = debug.getinfo(1, 'S').source:gsub('^@', '')
 local root = assert(script:match('^(.*[/\\])Scripts[/\\]main%.lua$'), 'Cannot resolve mod folder')
 local Range = dofile(root .. 'src/range.lua')
@@ -31,20 +31,13 @@ env.preview=dofile(root .. 'src/preview.lua')(env)
 local UI = dofile(root .. 'src/ui.lua')(env, Runtime)
 local WorldSettings = dofile(root .. 'src/world_settings.lua')(env)
 local pending = false
-local profileSamples=0
 local function refresh()
     if pending then return end
     pending = true
     ExecuteInGameThread(function()
-        local started=env.config.debug and os.clock()
         guard('runtime refresh', Runtime.refresh)
         guard('UI refresh', UI.refresh)
         guard('World Settings refresh', WorldSettings.refresh)
-        if started and profileSamples<10 and #env.objects.all('PalBaseCampModel')>0 then
-            profileSamples=profileSamples+1
-            log(string.format('PERF refresh %d: %.1f ms (includes runtime, menus and settings)',
-                profileSamples,(os.clock()-started)*1000))
-        end
         pending = false
     end)
 end
@@ -76,26 +69,4 @@ guard('World Settings hooks',WorldSettings.installHooks)
 -- Palboxes and radius replication arriving after the base-level notification.
 LoopAsync(5000, function() refresh(); return false end)
 ExecuteWithDelay(1000, refresh)
-RegisterKeyBind(Key.F10, {ModifierKey.CONTROL, ModifierKey.SHIFT}, function()
-    refresh()
-    ExecuteInGameThread(function() guard('diagnostic', Runtime.report) end)
-end)
-RegisterKeyBind(Key.F7, {ModifierKey.CONTROL, ModifierKey.SHIFT}, function()
-    ExecuteInGameThread(function()
-        guard('animation replay',function()
-            -- Development replay reloads only presentation code, after restoring
-            -- owned materials/components. Further visual tuning needs no restart.
-            if env.config.debug then
-                local candidate=dofile(root .. 'src/boundary.lua')(env,dofile(root .. 'src/motion.lua'))
-                local config=dofile(root .. 'config.lua')
-                env.boundary.shutdown()
-                env.boundary=candidate
-                env.config=config
-                Runtime.refresh()
-                log('presentation reloaded for visual test')
-            end
-            env.boundary.replay()
-        end)
-    end)
-end)
-log('v0.1.2-alpha loaded; tracked base changes every 250ms; Palbox wave; radius capped at 200%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))
+log('v0.1.3-alpha loaded; tracked base changes every 250ms; Palbox wave; radius capped at 200%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))

@@ -38,23 +38,6 @@ function Range.radius(originalRadius, level, settings)
     return result
 end
 
-function Range.reward(originalRadius, level, maximumLevel, settings)
-    validLevel(level)
-    validLevel(maximumLevel)
-    assert(level <= maximumLevel, "base level exceeds game maximum")
-    local current = Range.radius(originalRadius, level, settings)
-    local nextLevel = math.min(level + 1, maximumLevel)
-    local nextRadius = Range.radius(originalRadius, nextLevel, settings)
-    return {
-        label = "Base Range",
-        currentRadius = current,
-        nextRadius = nextRadius,
-        currentPercent = Range.percent(level, settings),
-        nextPercent = Range.percent(nextLevel, settings),
-        atMaximum = level == maximumLevel,
-    }
-end
-
 -- Reserve full-sized bases, including future upgrades, at placement time.
 function Range.placementDistance(originalRadius, settings)
     assert(finite(originalRadius) and originalRadius > 0, 'invalid original radius')

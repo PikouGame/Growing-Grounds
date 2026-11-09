@@ -40,7 +40,7 @@ function W.sample(w,job,trace,budget,deadline)
     w.ready=w.nextPoint>#w.points
     return used
 end
-function W.geometry(w,job)
+function W.geometry(w)
     local vertices,indices,normals,uv={},{},{},{}
     for _,p in ipairs(w.points) do
         vertices[#vertices+1]={X=p.X,Y=p.Y,Z=p.Z or 0}

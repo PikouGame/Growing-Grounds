@@ -1,9 +1,9 @@
 Growing Grounds — Steam Workshop preparation
 
 Package content is built by: python3 tools/release.py
-The upload content directory is build/workshop-0.1.0-alpha/.
+The upload content directory is build/workshop-0.1.3-alpha/.
 Its Info.json is at the root, not under a BaseRangeGrowth wrapper.
-Manual installations must use the separate Growing-Grounds-0.1.0-alpha.zip.
+Manual installations must use the separate Growing-Grounds-0.1.3-alpha.zip.
 
 Official uploader:
 https://github.com/pocketpairjp/PalworldModUploader/releases
