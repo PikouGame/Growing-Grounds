@@ -3,7 +3,7 @@ Room to grow. A moment to celebrate.
 
 Give your base room to grow: +5% of its original radius per level from level 2, up to 200% by default. See your current and next range bonus, with metres beside each value, in the Base Upgrade menu, then watch a blue wave travel from the Palbox to the expanding boundary.
 
-Animation: https://raw.githubusercontent.com/PikouGame/Growing-Grounds/e38ca7230c31f1d73453178c17e04f3f64f3b0fb/assets/showcase/growing-grounds-upgrade-web.gif
+Animation: https://raw.githubusercontent.com/PikouGame/Growing-Grounds/999a446fffa9b154cb22e040a253101908e7cd89/assets/showcase/growing-grounds-upgrade-web.gif
 Gameplay excerpt at original speed; initial wait trimmed.
 
 Make it your own
