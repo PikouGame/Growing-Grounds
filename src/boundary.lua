@@ -113,7 +113,7 @@ return function(E,Motion)
     schedule=function()
         if queued then return end
         queued=true
-        ExecuteWithDelay(16,function() ExecuteInGameThread(tick) end)
+        ExecuteInGameThreadWithDelay(16,tick)
     end
     local function start(s,actor)
         Ribbon.cleanup(s)

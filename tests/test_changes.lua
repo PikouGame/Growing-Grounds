@@ -74,19 +74,18 @@ local F=make({valid=E.valid,objects=fallback,guard=E.guard})
 for _=1,100 do assert(not F.check()) end
 assert(scans==before,'frequent fallback cannot reintroduce the freezing scans')
 
--- Backlogged game-thread work is coalesced. An error releases the queue.
-local timer,queue,refreshes=nil,{},0
-LoopAsync=function(interval,fn) assert(interval==250);timer=fn end
-ExecuteInGameThread=function(fn) queue[#queue+1]=fn end
+-- Observe directly on the game thread; one native loop cannot backlog itself.
+local timer,refreshes=nil,0
+LoopInGameThreadWithDelay=function(interval,fn) assert(interval==250);timer=fn end
+LoopAsync=function() error('Observer must never run asynchronously') end
 C.install(function() refreshes=refreshes+1 end)
 nextWorld.level=2
-for _=1,20 do assert(timer()==false) end
-assert(#queue==1,'at most one game-thread callback may be pending')
-table.remove(queue,1)();assert(refreshes==1)
-timer();table.remove(queue,1)();assert(refreshes==1,'unchanged world triggers no full refresh')
+timer();assert(refreshes==1,'native timer detects a changed base')
+for _=1,20 do timer() end
+assert(refreshes==1,'unchanged world triggers no full refresh')
 local saved=nextWorld.GetRange
 nextWorld.GetRange=function() error('destroyed during check') end
-timer();table.remove(queue,1)()
+timer()
 nextWorld.GetRange=saved;nextWorld.radius=3675
-timer();table.remove(queue,1)();assert(refreshes==2,'observer recovers after invalidation')
-print('PASS: prompt split replication, stable no-op checks, no global scans, fallback isolation, travel/deletion and bounded game-thread queue')
+timer();assert(refreshes==2,'observer recovers after invalidation')
+print('PASS: prompt split replication, stable no-op checks, no global scans, fallback isolation, travel/deletion and native game-thread observation')

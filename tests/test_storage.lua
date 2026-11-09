@@ -79,8 +79,8 @@ E.objects={all=function(name)scans[name]=(scans[name] or 0)+1;return lists[name]
         if path:find('PalUtility',1,true) then return {GetGameSetting=function()return {GuildChestSlotNum=80}end} end
         return obj(path)
     end}
-ExecuteWithDelay=function(_,fn)tasks[#tasks+1]=fn end
-ExecuteInGameThread=function(fn)fn()end
+ExecuteInGameThreadWithDelay=function(delay,fn)assert(delay==1);tasks[#tasks+1]=fn end
+ExecuteWithDelay=function()error('Chest work must never schedule asynchronous Lua')end
 NotifyOnNewObject=function(path,fn)notifications[path]=fn end
 FName=function(v)return v end
 StaticConstructObject=function(_,outer,name)

@@ -39,6 +39,8 @@ reaches the 70 m cap. Growth is additive, not compounded.
 ## Install or update
 
 Requires a compatible **UE4SS loader for Palworld**, installed separately.
+The loader must provide `ExecuteInGameThreadWithDelay` and
+`LoopInGameThreadWithDelay` (available in the tested Palworld fork **2281fa31**).
 Install Growing Grounds on the **host/server and clients**; update both sides
 for this version's settings and server-supplied next-range preview.
 

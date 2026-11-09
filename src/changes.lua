@@ -35,17 +35,9 @@ return function(E)
         return changed
     end
     function C.install(refresh)
-        local pending=false
-        LoopAsync(250,function()
-            if not pending then
-                pending=true
-                ExecuteInGameThread(function()
-                    local ok,changed=E.guard('base change observer',C.check)
-                    pending=false
-                    if ok and changed then refresh() end
-                end)
-            end
-            return false
+        LoopInGameThreadWithDelay(250,function()
+            local ok,changed=E.guard('base change observer',C.check)
+            if ok and changed then refresh() end
         end)
     end
     return C

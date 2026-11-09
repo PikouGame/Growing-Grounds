@@ -1,6 +1,8 @@
 -- BaseRangeGrowth 0.1.5-alpha: prompt change detection and a Palbox-to-boundary wave.
 local script = debug.getinfo(1, 'S').source:gsub('^@', '')
 local root = assert(script:match('^(.*[/\\])Scripts[/\\]main%.lua$'), 'Cannot resolve mod folder')
+assert(type(ExecuteInGameThreadWithDelay)=='function' and type(LoopInGameThreadWithDelay)=='function',
+    'Growing Grounds requires UE4SS game-thread timers (tested Palworld fork 2281fa31)')
 local Range = dofile(root .. 'src/range.lua')
 local Config = dofile(root .. 'config.lua')
 local logOnce = {}
@@ -35,7 +37,7 @@ local pending = false
 local function refresh()
     if pending then return end
     pending = true
-    ExecuteInGameThread(function()
+    ExecuteInGameThreadWithDelay(0,function()
         guard('runtime refresh', Runtime.refresh)
         guard('storage refresh', Storage.refresh)
         guard('UI refresh', UI.refresh)
@@ -53,9 +55,9 @@ guard('client level hook', function()
     RegisterHook('/Script/Pal.PalBaseCampModel:OnRep_Level_InGuildProperty', function() end, refresh)
 end)
 env.objects.install(function(name)
-    if name=='PalBaseCampModel' then ExecuteWithDelay(500,refresh)
+    if name=='PalBaseCampModel' then ExecuteInGameThreadWithDelay(500,refresh)
     elseif name=='BP_BuildObject_PalBoxV2_C' or name=='WBP_IngameMenu_Mission_C' then
-        ExecuteWithDelay(100,refresh)
+        ExecuteInGameThreadWithDelay(100,refresh)
     elseif name=='PalMapObjectItemChestModel' or name=='PalGroupGuild' then
         Storage.changed()
     end
@@ -71,6 +73,8 @@ end)
 guard('World Settings hooks',WorldSettings.installHooks)
 -- A low-frequency reconciliation also handles late join, load order, streamed
 -- Palboxes and radius replication arriving after the base-level notification.
-LoopAsync(5000, function() refresh(); return false end)
-ExecuteWithDelay(1000, refresh)
+-- Keep all Lua timers on the game thread. Async scheduling shares the loader's
+-- Lua state with these callbacks and can corrupt its registry during execution.
+LoopInGameThreadWithDelay(5000,refresh)
+ExecuteInGameThreadWithDelay(1000,refresh)
 log('v0.1.5-alpha loaded; tracked base changes every 250ms; Palbox wave; range bonus cap up to +300%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))

@@ -136,7 +136,7 @@ return function(E)
     local function pump()
         if pending or cursor>#jobs then return end
         pending=true
-        ExecuteWithDelay(1,function() ExecuteInGameThread(function()
+        ExecuteInGameThreadWithDelay(1,function()
             pending=false
             local job=jobs[cursor];cursor=cursor+1
             if job and not failed[job.name] then
@@ -145,7 +145,7 @@ return function(E)
             end
             -- At most one container per yield. No scans or terrain work here.
             pump()
-        end) end)
+        end)
     end
     function S.changed()S.dirty=true end
     function S.refresh()

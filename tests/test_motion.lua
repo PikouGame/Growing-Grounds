@@ -56,8 +56,8 @@ local function obj(p,t)
 end
 StaticFindObject=function(p) lookups=lookups+1;return objects[p] end
 FName=function(s) return s end
-ExecuteWithDelay=function(_,fn) queue[#queue+1]=fn end
-ExecuteInGameThread=function(fn) fn() end
+ExecuteInGameThreadWithDelay=function(delay,fn) assert(delay==16);queue[#queue+1]=fn end
+ExecuteWithDelay=function() error('Animation must never schedule asynchronous Lua') end
 LoadAsset=function(p) obj(p) end
 local function height(x,y) return 100+x*0.1+y*0.05+terrainOffset end
 obj('/Script/Engine.Default__KismetSystemLibrary',{
