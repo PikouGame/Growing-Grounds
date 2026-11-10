@@ -69,7 +69,9 @@ return function(E)
                     NotifyOnNewObject(path,function(object)
                         -- Defer inspection until the next game-thread refresh:
                         -- the constructed object may still be initializing.
-                        s.pending[#s.pending+1]=object
+                        -- An unseeded set finds every live object on its first use,
+                        -- so queueing for it would only grow when nobody reads it.
+                        if s.seeded then s.pending[#s.pending+1]=object end
                         if onCreated then onCreated(name,object) end
                     end)
                 end)

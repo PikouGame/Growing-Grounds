@@ -53,4 +53,18 @@ NotifyOnNewObject=function() error('native registration unavailable') end
 local fallback=make(E);fallback.install()
 fallback.all('PalBaseCampModel');fallback.all('PalBaseCampModel')
 assert(counts.PalBaseCampModel==3,'failed registration preserves discovery correctness')
+-- A set nobody reads keeps no queue: its notified objects are not held back from collection.
+local chests=hooks['/Script/Pal.PalMapObjectItemChestModel']
+local weak=setmetatable({},{__mode='v'})
+local before=created
+for i=1,1000 do local o=obj('Chest'..i);weak[i]=o;chests(o) end
+collectgarbage('collect')
+assert(next(weak)==nil and created==before+1000,'an unseeded set queues nothing, yet every notification calls back')
+-- Its first use still finds every live object, and a seeded set then takes new ones through the queue.
+local guilds,idle={},hooks['/Script/Pal.PalGroupGuild']
+for i=1,1000 do guilds[i]=obj('Guild'..i);idle(guilds[i]) end
+live.PalGroupGuild=guilds
+assert(#O.all('PalGroupGuild')==1000,'an unseeded set finds the objects through its first scan')
+local late=obj('Guild1001');idle(late)
+assert(#O.all('PalGroupGuild')==1001 and counts.PalGroupGuild==1,'a seeded set takes new objects without a rescan')
 print('PASS: no steady object scans, empty/late discovery, deletion, travel, identity reuse, static cache and registration fallback')
