@@ -11,7 +11,7 @@ return {
     -- levels before it: with 20, +1 at level 2, 5 at level 10, 20 at level 35.
     maxChestBonusSlots = 20,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
-    -- verify restored radii in UE4SS.log, save, then remove the mod.
+    -- wait for "reset complete" in UE4SS.log, save, then remove the mod.
     resetToVanilla = false,
     -- Presentation only. Master switch for the whole celebration: Palbox wave,
     -- brief boundary bounce and rising glow. false turns all of it off.

@@ -79,10 +79,17 @@ The effect uses one procedural mesh and a native glow material; no moving mesh
 rebuilds, repeated ground scans during playback or speculative idle scans.
 
 Remove/reset
-Expanded radii can be saved by the game. To shrink before removal, set
-resetToVanilla=true on the SERVER, restart and load the world. Verify the
-original radius and chest capacities in UE4SS.log, save, then remove BaseRangeGrowth
-on both sides. Empty bonus slots first: occupied overflow slots are never removed.
+Expanded radii can be saved by the game, and enlarged chests are: deleting the mod
+alone leaves each chest at its enlarged size, with its items in place. To return the
+world to its original sizes first, set resetToVanilla=true on the SERVER, restart and
+load the world. Radii go back to the original. Each chest goes back to its native
+size; stacks sitting above it are first moved into free native slots, in the same
+order. A chest holding more stacks than its native size keeps the slots in use:
+UE4SS.log names it ("ItemChest_02 keeps 30 slots instead of 24 until the slots above
+are emptied") and it shrinks once you empty them. Occupied slots are never removed.
+When UE4SS.log says "reset complete: N chests at native size", save, then remove
+BaseRangeGrowth on both sides. "reset waiting" means a chest still has to be
+emptied; the last reset line is the current state.
 Buildings in the added area may lose coverage. An exact rollback requires the
 pre-install world backup, which also rolls back progress since that backup.
 
