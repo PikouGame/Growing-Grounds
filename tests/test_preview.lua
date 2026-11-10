@@ -77,6 +77,21 @@ local upgraded,_,waiting=client.read(base,3500,10,5075)
 assert(upgraded==150 and not waiting,'coherent preview releases the pending UI')
 deliver()
 assert(client.read(base,3500,9,5000)==nil,'mismatched replicated current range is rejected')
+-- Between two refreshes the watcher only checks identity and decodes the value;
+-- the owner and class proof belongs to refresh.
+do
+    local getOwner,getClass,asked=cc.GetOwner,cc.GetClass,0
+    cc.GetOwner=function(...) asked=asked+1;return getOwner(...) end
+    cc.GetClass=function(...) asked=asked+1;return getClass(...) end
+    local before=client.revision(base)
+    assert(client.read(base,3500,9,4900)==145 and before,'cheap path returns the same values')
+    cc.RelativeLocation={X=14500,Y=15000,Z=400000+9+1001*41}
+    assert(client.revision(base)~=before,'a changed preview still changes the revision')
+    assert(asked==0,'revision and read never ask for the owner or the class between refreshes')
+    client.refresh();assert(asked>0,'refresh still proves the owner and the class')
+    cc.GetOwner,cc.GetClass=getOwner,getClass
+    deliver()
+end
 client.publish(remote,base,200);assert(cc.RelativeLocation.Y==14500,'client cannot publish')
 server=true;boxes={host}
 publisher.refresh();publisher.publish(host,base,140);publisher.finish()

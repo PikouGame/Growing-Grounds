@@ -61,8 +61,9 @@ return function(E)
         local record=records[id]
         if not record or not E.valid(record.actor) then return end
         if record.actor:GetFullName()~=record.path then return end
-        if ownerBase(record.actor)~=id then return end
-        return ours(record.actor)
+        -- P.refresh proved the owner and class when it recorded this component;
+        -- the 250 ms watcher only needs the identity and the current value.
+        return decode(record.actor.RelativeLocation)
     end
     function P.revision(model)
         local value=state(model)
