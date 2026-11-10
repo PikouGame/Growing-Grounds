@@ -5,7 +5,9 @@ return function(root, Range, defaults, filesystem, log, clock)
     local path = root .. 'world-settings.ini'
     local worlds, loaded, loadError = {}, false, nil
     -- An unreadable file is reported once and tried again at most every five seconds.
-    local RETRY_SECONDS, lastTry, reported = 5, nil, false
+    -- Reads recover; saving stays refused until restart, because a menu draft
+    -- taken meanwhile holds config.lua values, not this world's saved ones.
+    local RETRY_SECONDS, lastTry, reported, everUnreadable = 5, nil, false, false
     clock = clock or os.time
     local S = {}
     local function key(value)
@@ -19,7 +21,8 @@ return function(root, Range, defaults, filesystem, log, clock)
         if loaded then return end
         if loadError then
             local now = clock()
-            if lastTry and now - lastTry < RETRY_SECONDS then return end
+            -- A clock set back must not postpone the next attempt.
+            if lastTry and now >= lastTry and now - lastTry < RETRY_SECONDS then return end
         end
         local file, err, code = fs.open(path, 'r')
         if not file and code == 2 then
@@ -28,7 +31,7 @@ return function(root, Range, defaults, filesystem, log, clock)
         end
         if not file then
             if code and code ~= 2 then
-                loadError, lastTry = err, clock()
+                loadError, lastTry, everUnreadable = err, clock(), true
                 if log and not reported then
                     reported = true
                     log('Cannot read world-settings.ini, using config.lua values: '..tostring(err))
@@ -74,6 +77,7 @@ return function(root, Range, defaults, filesystem, log, clock)
         local id = assert(key(world), 'World settings require a valid world ID')
         load()
         assert(not loadError, 'Cannot read existing world settings: '..tostring(loadError))
+        assert(not everUnreadable, 'World settings were unreadable earlier in this session; restart before saving')
         local nextWorlds = {}
         for k,v in pairs(worlds) do nextWorlds[k] = v end
         nextWorlds[id] = normalize(values)

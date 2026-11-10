@@ -212,6 +212,7 @@ function readFs.open(path,mode)
 end
 store=factory('',Range,defaults,readFs,function(m)logged[#logged+1]=m end,function()return now end)
 for _=1,5 do assert(store.get(a).growthPercentPerLevel==5,'unreadable file gives config values') end
+local staleDraft=store.get(a) -- what a World Settings menu opened now would hold
 assert(#logged==1 and logged[1]:find('permission denied',1,true) and opens==1,'logged once, not retried at once')
 assert(not pcall(store.save,a,defaults),'save refuses while the file cannot be read')
 now=104;store.get(a);assert(opens==1 and #logged==1,'no retry before five seconds')
@@ -220,7 +221,20 @@ unreadable=false;now=110
 assert(store.get(a).growthPercentPerLevel==9 and opens==3,'saved values return once readable')
 for _=1,3 do store.get(a) end
 assert(opens==3 and #logged==1,'a loaded file is not read again')
-assert(pcall(store.save,a,defaults),'save works again once the error clears')
+-- A draft taken while the file was unreadable holds config values. Saving it
+-- after the recovery would replace this world's saved 9 by the default.
+staleDraft.maxChestBonusSlots=30
+local onDisk=files['world-settings.ini']
+assert(not pcall(store.save,a,staleDraft),'saving stays refused for the session after a read failure')
+assert(files['world-settings.ini']==onDisk and store.get(a).growthPercentPerLevel==9,'the saved values are untouched')
+-- A clock set back does not postpone the next attempt.
+unreadable=true;now=1000;opens=0
+store=factory('',Range,defaults,readFs,function()end,function()return now end)
+store.get(a);assert(opens==1)
+now=400;store.get(a);assert(opens==2,'a clock set back retries at once')
+now=402;store.get(a);assert(opens==2,'then the five-second interval applies again')
+now=405;store.get(a);assert(opens==3)
+unreadable=false
 -- A missing file stays silent and is not retried.
 files['world-settings.ini'],files['world-settings.ini.bak']=nil,nil
 opens,logged=0,{}
