@@ -13,12 +13,15 @@ return {
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- verify restored radii in UE4SS.log, save, then remove the mod.
     resetToVanilla = false,
-    -- Presentation only: Palbox wave, then a brief boundary bounce and rising glow.
+    -- Presentation only. Master switch for the whole celebration: Palbox wave,
+    -- brief boundary bounce and rising glow. false turns all of it off.
     upgradeAnimation = true,
-    -- One rising terrain-shaped contour with a soft trailing glow.
+    -- Glow effects: one rising terrain-shaped contour with a soft trailing glow.
+    -- false turns them off, and the wave below with them; the bounce stays.
     upgradeRibbon = true,
     -- Blue terrain-following pulse from the Palbox before the boundary bounce.
+    -- Needs upgradeRibbon = true.
     upgradeWave = true,
-    -- Height in centimetres above the sampled terrain profile.
+    -- Height in centimetres above the sampled terrain profile (kept within 100..2000).
     upgradeEffectHeight = 600,
 }

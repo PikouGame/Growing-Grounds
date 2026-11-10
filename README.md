@@ -27,7 +27,7 @@ the rising effect lifts 6 metres by default and gradually softens the terrain re
 
 - **Growth per level:** 0–20% of the original radius; default 4%.
 - **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius.
-- **Bonus chest slots:** 20 by default, spread evenly over all 35 base levels (1 at level 2, 5 at level 10, 11 at level 20, 20 at level 35); adjustable from 0 to 40. Guild Chests share one bonus.
+- **Bonus chest slots:** 20 by default, spread evenly over all base levels; adjustable from 0 to 40. Guild Chests share one bonus.
 - Local worlds have three Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
@@ -134,7 +134,9 @@ This is an alpha. Saving World Settings and starting a new world, placement reje
 Pal work and resource access throughout expanded areas, the full reset lifecycle,
 conflicts with other range mods, and native Windows OS execution still need
 broader in-game verification. The added reward and settings labels are currently English.
-If a valid server preview is unavailable, only the current range is shown.
+On a client, while the server's preview is missing or out of date, Base Upgrade keeps
+its last complete Growing Grounds values, or shows no Growing Grounds row on a first open.
+The next value alone is hidden at the maximum base level or when the mod is reset.
 
 The server owns gameplay radius. Animation changes the visible boundary only.
 Existing bases are not moved or deleted. Overlapping original base circles do
