@@ -375,3 +375,36 @@ do
     E.policy,FindFirstOf=nil,plain
 end
 print('PASS: a refresh resolves policy and level table once, remembers nothing afterwards, even when it throws')
+
+-- Shrink before expand: a base that gives room back is written before another
+-- base grows, whatever the enumeration order.
+do
+    local order
+    local function recorded(model,name)
+        local radius=model.AreaRange
+        model.AreaRange=nil
+        return setmetatable(model,{
+            __index=function(_,key) if key=='AreaRange' then return radius end end,
+            __newindex=function(table,key,value)
+                if key=='AreaRange' then order[#order+1]=name; radius=value else rawset(table,key,value) end
+            end})
+    end
+    local previous=FindAllOf
+    E.config={growthPercentPerLevel=20,maxRangeBonusPercent=100}
+    for _,shrinkFirst in ipairs({true,false}) do
+        order={}
+        local grows=recorded(newBase(35,3500,true),'grows')
+        local shrinks=recorded(newBase(1,7000,true),'shrinks')
+        shrinks.GetId=function() return {A=2,B=0,C=0,D=0} end
+        shrinks.GetGroupIdBelongTo=function() return {A=8,B=0,C=0,D=0} end
+        shrinks.GetTransform=function() return {Translation={X=50000,Y=0,Z=0}} end
+        local list=shrinkFirst and {shrinks,grows} or {grows,shrinks}
+        FindAllOf=function(class) return class=='PalBaseCampModel' and list or {} end
+        dofile(root..'src/runtime.lua')(E).refresh()
+        assert(#order==2 and order[1]=='shrinks' and order[2]=='grows',
+            'shrink is written before expand, got '..table.concat(order,','))
+        near(shrinks.AreaRange,3500);near(grows.AreaRange,7000)
+    end
+    FindAllOf=previous
+end
+print('PASS: a shrinking base is written before an expanding one in either enumeration order')
