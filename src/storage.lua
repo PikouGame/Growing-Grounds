@@ -75,6 +75,50 @@ return function(E)
         local ok,maximum=pcall(E.runtime.maxLevel)
         return ok and maximum or nil
     end
+    local function announce(job)
+        job.container.OnUpdateContentsDelegate:Broadcast(job.container)
+        if E.valid(job.actor) then job.actor:FlushNetDormancy();job.actor:ForceNetUpdate() end
+    end
+    local function occupied(container,count)
+        local last=container:GetLastNotEmptyIndex()
+        assert(type(last)=='number' and last>=-1 and last<count and last%1==0,'Invalid occupied slot index')
+        return last
+    end
+    -- A reset brings the stacks above native size down into free native slots by exchanging the
+    -- two slot objects, so items, counts and dynamic data are never copied. The caller has seen
+    -- a stack above native size.
+    local function pack(job,native)
+        local container=job.container
+        local slots,free,stacks={},{},{}
+        local function at(index)
+            local slot=container:Get(index)
+            assert(E.valid(slot) and slot.SlotIndex==index,'Invalid native slot ordering')
+            slots[index+1]=slot
+            return slot
+        end
+        for index=0,native-1 do
+            if at(index):IsEmpty() then free[#free+1]=index end
+        end
+        if #free==0 then return false end
+        for index=native,container:Num()-1 do
+            if not at(index):IsEmpty() and #stacks<#free then stacks[#stacks+1]=index end
+        end
+        -- Every slot has been read and checked before the first write.
+        for i,from in ipairs(stacks) do
+            local to=free[i]
+            local stack,empty=slots[from+1],slots[to+1]
+            slots[to+1],slots[from+1]=stack,empty
+            stack.SlotIndex=to;empty.SlotIndex=from
+        end
+        container.ItemSlotArray=slots
+        -- Our lifetime references follow the slots they keep alive.
+        local record=retained[job.name]
+        if record then
+            for _,entry in ipairs(record.slots) do entry.index=entry.object.SlotIndex end
+        end
+        E.log(string.format('%s: %d stacks moved into free native slots',job.label,#stacks))
+        return true
+    end
     -- The largest bonus any release has added; not the current limit, so older enlargements stay recognised.
     local LARGEST_RELEASE_BONUS = 40
     local function resize(job)
@@ -89,10 +133,13 @@ return function(E)
         local bonus=E.config.resetToVanilla and 0 or E.range.storageBonus(job.base:GetLevel(),policy,levels())
         local desired=job.baseline+bonus
         if before==desired then overflow[job.name]=nil;reported[job.name]=nil;return end
-        local target=desired
+        local target,moved=desired,false
         if before>desired then
-            local last=container:GetLastNotEmptyIndex()
-            assert(type(last)=='number' and last>=-1 and last<before and last%1==0,'Invalid occupied slot index')
+            local last=occupied(container,before)
+            -- Only a full pass packs: a retry can run while a player has the chest open.
+            if last>=desired and E.config.resetToVanilla and overflow[job.name]~=job and pack(job,desired) then
+                moved=true;last=occupied(container,before)
+            end
             target=math.max(desired,last+1)
         end
         overflow[job.name]=target>desired and job or nil
@@ -102,7 +149,10 @@ return function(E)
                 job.label,target,desired))
         end
         reported[job.name]=target>desired and target or nil
-        if target==before then return end
+        if target==before then
+            if moved then announce(job) end
+            return
+        end
         local slots=container.ItemSlotArray
         assert(#slots==before,'Native container/slot counts disagree')
         if target>before then
@@ -143,8 +193,7 @@ return function(E)
             local record=retained[job.name]
             if record then record.count=target;release(record,target) end
         end
-        container.OnUpdateContentsDelegate:Broadcast(container)
-        if E.valid(job.actor) then job.actor:FlushNetDormancy();job.actor:ForceNetUpdate() end
+        announce(job)
         E.log(string.format('chest capacity %d -> %d (native %d, bonus cap %d)',
             before,target,job.baseline,policy.maxChestBonusSlots))
     end

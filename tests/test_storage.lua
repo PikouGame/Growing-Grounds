@@ -293,6 +293,7 @@ assert(logged('busy model keeps 13 slots')==1,'an unchanged chest is not reporte
 assert(logged('Guild Chest keeps 83 slots instead of 80')==1,'the shared chest is named')
 assert(logged('chest keeps 12 slots instead of 10')==1,'a chest whose name cannot be read is still reported')
 assert(logged('reset waiting: 3 chests still hold items above native size, 0 failed')==1 and logged('reset complete')==0)
+assert(logged('stacks moved')==0,'a chest with no free native slot is left as it is')
 local lines=#logs
 for _=1,5 do S.refresh();drain() end
 assert(#logs==lines,'a waiting reset says so once')
@@ -316,3 +317,71 @@ same(brokenStart,census({broken}),'failed resize')
 assert(logged('reset waiting: 0 chests still hold items above native size, 1 failed')==1)
 assert(logged('reset complete')==2,'a failed chest never reports a complete reset')
 print('PASS: a reset names each chest holding items above native size once, waits for them and completes only when all are native')
+
+-- A reset first brings the stacks above native size down into free native slots,
+-- by exchanging slot objects: a chest with room returns to native size by itself.
+for i=#errors,1,-1 do errors[i]=nil end
+for i=#logs,1,-1 do logs[i]=nil end
+tableLevels=35;base.level=11;E.config.maxChestBonusSlots=20;E.config.resetToVanilla=false
+owner.ReferencedObjects={foreign}
+local grown=saved('grown',10,{4})                 -- enlarged in this session: its extra slots live on our references
+local roomy=saved('roomy',16,{3,12,15})           -- loaded from a save at 16 slots, room below
+local crowded=filled('crowded',16,9,{11,13,15})   -- one free native slot for three stacks above
+local sharedRoomy=saved('guild roomy',86,{2,85})
+local idle=saved('idle',16,{1,12})                -- emptied above native size before the reset
+lists.PalMapObjectItemChestModel={chest('grown model',grown,10),chest('roomy model',roomy,10),
+    chest('crowded model',crowded,10),(chest('idle model',idle,10))}
+group.ItemStorage.ItemContainer=sharedRoomy
+S=dofile(root..'src/storage.lua')(E);S.refresh();drain()
+assert(grown:Num()==16 and #owner.ReferencedObjects==7 and #errors==0)
+grown:Get(14).amount=5
+local packed={grown,roomy,crowded,sharedRoomy,idle}
+local unpacked=census(packed)
+local late,high,higher,low=grown:Get(14),roomy:Get(12),roomy:Get(15),roomy:Get(3)
+local first,second,third,shared=crowded:Get(11),crowded:Get(13),crowded:Get(15),sharedRoomy:Get(85)
+-- A lowered cap moves nothing: only a reset packs.
+E.config.maxChestBonusSlots=0;S.refresh();drain()
+assert(roomy:Num()==16 and roomy:Get(12)==high and roomy:Get(15)==higher and grown:Get(14)==late and #errors==0)
+assert(logged('moved into free native slots')==0 and idle:Num()==13)
+idle:Get(12).amount=0;unpacked=census(packed)
+local told=crowded.broadcasts
+E.config.resetToVanilla=true;S.refresh();drain();S.refresh();drain()
+assert(#errors==0,table.concat(errors,'\n'))
+assert(roomy:Num()==10 and roomy:Get(0)==high and roomy:Get(1)==higher and roomy:Get(3)==low,
+    'stacks fill the lowest free native slots in order, the others stay')
+assert(sharedRoomy:Num()==80 and sharedRoomy:Get(0)==shared,'the shared chest is packed too')
+assert(grown:Num()==10 and grown:Get(0)==late and late.amount==5)
+assert(#owner.ReferencedObjects==2 and owner.ReferencedObjects[2]==late,
+    'a slot built this session keeps its lifetime reference after it moves down')
+assert(crowded:Num()==16 and crowded:Get(9)==first and crowded:Get(13)==second and crowded:Get(15)==third,
+    'stacks without a free native slot stay where they are')
+assert(crowded.broadcasts==told+1,'a chest that was packed but could not shrink still tells its viewers')
+same(unpacked,census(packed),'packing')
+assert(logged('roomy model: 2 stacks moved into free native slots')==1 and logged('Guild Chest: 1 stacks moved')==1)
+assert(logged('crowded model keeps 16 slots instead of 10')==1)
+assert(idle:Num()==10 and logged('idle model: ')==0,'a chest with nothing above native size shrinks without packing')
+assert(logged('reset waiting: 1 chests still hold items above native size, 0 failed')==1)
+for _=1,5 do S.refresh();drain() end
+assert(crowded.broadcasts==told+1 and crowded:Num()==16 and #errors==0,'nothing moves once the native slots are full')
+-- Room made later is not used by a retry, which can run while the chest is open; the next full pass uses it.
+crowded:Get(0).amount=0;crowded:Get(1).amount=0
+for _=1,3 do S.refresh();drain() end
+assert(crowded:Num()==16 and crowded:Get(13)==second and crowded:Get(15)==third and crowded.broadcasts==told+1)
+S.changed();S.refresh();drain();S.refresh();drain()
+assert(crowded:Num()==10 and crowded:Get(0)==second and crowded:Get(1)==third and crowded:Get(9)==first and #errors==0)
+assert(logged('reset complete: 5 chests at native size')==1)
+-- Growth resumes after the reset is switched off, around the slot that moved down.
+E.config.resetToVanilla=false;E.config.maxChestBonusSlots=20;S.refresh();drain()
+assert(grown:Num()==16 and grown:Get(0)==late and late.amount==5 and #errors==0)
+assert(#owner.ReferencedObjects==32 and owner.ReferencedObjects[2]==late,'five chests regain six slots each beside the kept one')
+-- A slot that cannot be read stops the packing before anything is written.
+local torn=saved('torn',16,{3,12,14})
+local tornSlots={};for i=0,15 do tornSlots[i]=torn:Get(i) end
+torn:Get(15).alive=false
+lists.PalMapObjectItemChestModel={(chest('torn model',torn,10))}
+E.config.resetToVanilla=true;E.config.maxChestBonusSlots=0
+for i=#errors,1,-1 do errors[i]=nil end
+S.changed();S.refresh();drain()
+assert(#errors==1 and torn:Num()==16)
+for i=0,15 do assert(torn:Get(i)==tornSlots[i] and tornSlots[i].SlotIndex==i,'a failed packing left a slot moved') end
+print('PASS: a full reset pass packs stacks into free native slots by exchanging slot objects, keeps lifetime references, and neither a retry nor a lowered cap packs')
