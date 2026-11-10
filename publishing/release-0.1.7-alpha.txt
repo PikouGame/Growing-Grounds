@@ -18,7 +18,8 @@ What existing worlds will see
 Update the host/server and clients together: an older client would preview the previous chest numbers. Keep your config.lua and world-settings.ini.
 
 What was checked in the game: the pace change was installed on a dedicated server and a client. A level-11 base showed Base Range Bonus 40% 49m -> 44% 50.4m and Bonus Chest Slots 6 -> 6, and the server resized seventeen chests from +10 to +6 without error.
-That session ran the pace change only. The new reset was run on an isolated copy of that server with nobody connected: three stacks placed in bonus slots came back into native slots, all eight chests returned to native size with every item kept, and the saved world then loaded the same way without the mod. A reset with a player connected was not tried.
+A real upgrade from level 10 to 11 was then run on an isolated copy of that server with a client connected: Base Upgrade showed 36% 47.6m -> 40% 49m and 5 -> 6, the radius and the chests followed, and the wave, the bounce and the rising glow played, with no mod error in either log.
+The new reset was run on an isolated copy of that server with nobody connected: three stacks placed in bonus slots came back into native slots, all eight chests returned to native size with every item kept, and the saved world then loaded the same way without the mod. A reset with a player connected was not tried.
 Everything else in this build, including the five items before the last one above and the internal clean-ups, has only passed the Lua regression suites.
 
 We'd love to hear how it works in your world! Leave a comment, share your experience or report a bug so we can investigate and improve it:

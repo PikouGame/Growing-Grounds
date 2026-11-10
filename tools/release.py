@@ -6,7 +6,7 @@ import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.1.6-alpha'
+VERSION = '0.1.7-alpha'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',

@@ -1,3 +1,30 @@
+Growing Grounds 0.1.7-alpha — a gentler pace
+
+- Range now grows 4% of the original radius per level by default (was 5%). The +100% cap arrives at level 26 instead of level 21.
+- Bonus chest slots are now spread over all 35 base levels instead of +1 per upgrade. With the default 20: 1 at level 2, 5 at level 10, 11 at level 20 and all 20 at level 35. The cap you choose (0 to 40) sets the pace.
+- Base Upgrade shows the current and next number of bonus slots, including upgrades that add none.
+- With some range caps (for example +57%), bases stopped growing once one base reached its cap. Fixed.
+- A chest whose enlargement failed is tried again at the next base level change or cap change, not only after a restart.
+- A world-settings file that cannot be read is now reported once in the log and read again a few seconds later. Saving World Settings then waits for a restart, so the file is never overwritten with defaults.
+- The bonus chest slider rounds to the nearest slot: a drag ending on 18.9999 is saved as 19, not 18.
+- Clients do less background work: they no longer plan base radii they never apply.
+- Removing the mod is tidier. With resetToVanilla=true, stacks sitting in bonus slots are first moved into free native slots, the log names any chest that still holds more stacks than its native size, and "reset complete" tells you when the mod can be removed. Deleting the mod without a reset still loses nothing: chests simply stay at their enlarged size.
+
+What existing worlds will see
+- Your own growth value is kept. Saved World Settings and a preserved config.lua are never rewritten, so those worlds stay at their current pace (5% unless you changed it). Only a world that never saved a value, or a config.lua replaced by the new default file, moves to 4%.
+- To adopt the new pace, set the World Settings slider or growthPercentPerLevel to 4. Grown bases then shrink a little: a level-11 base with the standard 35 m radius goes from 52.5 m to 49 m. Buildings beyond the new boundary may lose coverage, so keep a world backup.
+- Chests follow the new pace as soon as the update loads: a level-11 base goes from 10 bonus slots to 6. Extra slots that hold items stay until you empty them; nothing is deleted or moved. A cap of 34 gives one slot per upgrade again.
+
+Update the host/server and clients together: an older client would preview the previous chest numbers. Keep your config.lua and world-settings.ini.
+
+What was checked in the game: the pace change was installed on a dedicated server and a client. A level-11 base showed Base Range Bonus 40% 49m -> 44% 50.4m and Bonus Chest Slots 6 -> 6, and the server resized seventeen chests from +10 to +6 without error.
+A real upgrade from level 10 to 11 was then run on an isolated copy of that server with a client connected: Base Upgrade showed 36% 47.6m -> 40% 49m and 5 -> 6, the radius and the chests followed, and the wave, the bounce and the rising glow played, with no mod error in either log.
+The new reset was run on an isolated copy of that server with nobody connected: three stacks placed in bonus slots came back into native slots, all eight chests returned to native size with every item kept, and the saved world then loaded the same way without the mod. A reset with a player connected was not tried.
+Everything else in this build, including the five items before the last one above and the internal clean-ups, has only passed the Lua regression suites.
+
+We'd love to hear how it works in your world! Leave a comment, share your experience or report a bug so we can investigate and improve it:
+https://github.com/PikouGame/Growing-Grounds/issues
+
 Growing Grounds 0.1.6-alpha
 
 - Fixed concurrent Lua timer scheduling that could cause "Ref was not function" errors.
