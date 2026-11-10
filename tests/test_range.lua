@@ -46,6 +46,7 @@ FindFirstOf=function() return obj({GetMaxLevel=function() return 35 end}) end
 FindAllOf=function(class) return class=='PalMapObjectModel' and mapObjects or {} end
 local E={root=root,range=Range,config={resetToVanilla=false},valid=valid,log=function() end,
     guard=function(_,fn) fn() end}
+E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
 local function newBase(level,radius,authority)
     return obj({AreaRange=radius,level=level,authority=authority,bTemporary=false,
         IsAvailable=function() return true end,

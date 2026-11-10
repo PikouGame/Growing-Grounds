@@ -28,7 +28,6 @@ return function(E,Motion)
     end
     local scale=dofile(E.root..'src/ring.lua')(E)
     local function upgradeScreens(s)
-        if not E.objects then return end
         local screens={}
         -- Discover once when an upgrade starts, never on animation ticks.
         for _,screen in ipairs(E.objects.all('WBP_IngameMenu_Mission_C')) do

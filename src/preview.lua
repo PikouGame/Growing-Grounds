@@ -8,10 +8,7 @@ return function(E)
     local marker, records, reported = {}, {}, {}
     local MAGIC, LEGACY, MAX_LEVEL = 400000, 232000, 1000
     local componentPath='/Script/Engine.SceneComponent'
-    local function find(path)
-        if E.objects then return E.objects.find(path) end
-        return StaticFindObject(path)
-    end
+    local function find(path) return E.objects.find(path) end
     local function finite(n) return type(n)=='number' and n==n and math.abs(n)<math.huge end
     local function guid(g) return table.concat({g.A,g.B,g.C,g.D},':') end
     local function authority(actor)
@@ -89,7 +86,7 @@ return function(E)
     end
     function P.refresh()
         records={}
-        local boxes=E.objects and E.objects.all('BP_BuildObject_PalBoxV2_C') or FindAllOf('BP_BuildObject_PalBoxV2_C') or {}
+        local boxes=E.objects.all('BP_BuildObject_PalBoxV2_C')
         local class=find(componentPath)
         if E.valid(class) then
             for _,box in ipairs(boxes) do

@@ -48,6 +48,7 @@ end
 local host,remote=box('serverPalbox'),box('clientPalbox')
 boxes={host}
 local E={range=dofile(root..'src/range.lua'),runtime={baseline=function() return 3500 end, bonuses=function() return {rangeEnabled=true,chestCap=20} end},valid=function(o) return o and o:IsValid() end,log=function() end}
+E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
 local make=dofile(root..'src/preview.lua')
 local publisher=make(E)
 publisher.refresh();publisher.publish(host,base,145);publisher.finish()
@@ -173,7 +174,7 @@ assert(probe(40002,-100,top)==nil and probe(14000,40002,top)==nil,'range bonus o
 -- One source: a fresh Range with raised limits moves the decoder with it.
 local raised=dofile(root..'src/range.lua')
 raised.limits.maxChestBonusSlots=45;raised.limits.maxRangeBonusPercent=350
-local E2={range=raised,runtime=E.runtime,valid=E.valid,log=E.log}
+local E2={range=raised,runtime=E.runtime,objects=E.objects,valid=E.valid,log=E.log}
 local wide=make(E2)
 wide.refresh()
 local function wideRead(x,y,flags)

@@ -2,15 +2,9 @@ return function(E)
     local R = {}
     local scale=dofile(E.root..'src/ring.lua')(E)
     local baselines, seen, originalSpacing = {}, {}, {}
-    local function find(path)
-        if E.objects then return E.objects.find(path) end
-        return StaticFindObject(path)
-    end
-    local function all(name) return E.objects and E.objects.all(name) or FindAllOf(name) or {} end
-    local function first(name)
-        if E.objects then return E.objects.first(name) end
-        return FindFirstOf(name)
-    end
+    local function find(path) return E.objects.find(path) end
+    local function all(name) return E.objects.all(name) end
+    local function first(name) return E.objects.first(name) end
     local function utility() return find('/Script/Pal.Default__PalUtility') end
     local function guid(g) return table.concat({g.A, g.B, g.C, g.D}, ':') end
     local function zeroGuid(g) return g.A == 0 and g.B == 0 and g.C == 0 and g.D == 0 end

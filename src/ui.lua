@@ -3,10 +3,7 @@ return function(E, Runtime)
     local rowPath = '/Game/Pal/Blueprint/UI/UserInterface/IngameMenu/Task/WBP_IngameMenu_MissionLevelEffect.WBP_IngameMenu_MissionLevelEffect_C'
     local attached, owned, columns, lastWritten = {}, {}, {}, {}
     local constructHookInstalled = false
-    local function object(path)
-        if E.objects then return E.objects.find(path) end
-        return StaticFindObject(path)
-    end
+    local function object(path) return E.objects.find(path) end
     local function text(value) return FText(value) end
     local specs = {
         {key='range', label='Base Range Bonus', icon='base-range.png'},
@@ -255,7 +252,7 @@ return function(E, Runtime)
     end
     function UI.refresh()
         local live = {}
-        local screens=E.objects and E.objects.all('WBP_IngameMenu_Mission_C') or FindAllOf('WBP_IngameMenu_Mission_C') or {}
+        local screens=E.objects.all('WBP_IngameMenu_Mission_C')
         for _, screen in ipairs(screens) do
             if E.valid(screen) then
                 live[screen:GetFullName()] = true

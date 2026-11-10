@@ -118,6 +118,7 @@ FName=function(v) return v end
 FindAllOf=function() return {screen} end
 local snapshot={currentPercent=145,nextPercent=150,radius=5075,baseline=3500,atMaximum=false}
 local E={root=root,log=function() end,guard=function(_,fn) fn() end,valid=function(o) return o and o:IsValid() end}
+E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
 local Runtime={snapshot=function() return snapshot end}
 local UI=dofile(root..'src/ui.lua')(E,Runtime)
 local function current() return parent.children[3] end

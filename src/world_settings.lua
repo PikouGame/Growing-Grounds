@@ -14,10 +14,7 @@ return function(E)
         {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=E.range.limits.maxChestBonusSlots,
             tip='0 disables bonus slots. These slots arrive steadily over all base levels; the last level gives them all. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
     }
-    local function object(path)
-        if E.objects then return E.objects.find(path) end
-        return StaticFindObject(path)
-    end
+    local function object(path) return E.objects.find(path) end
     local function stringValue(value)
         return type(value)=='string' and value or value:ToString()
     end

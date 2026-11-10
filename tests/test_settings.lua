@@ -74,6 +74,7 @@ local outer=obj('outer',{WBP_Title_WorldSettings=menu})
 local current=a
 local E={range=Range,settings=store,worldId=function() return current end,
     valid=function(o) return o and o:IsValid() end,log=function() end,guard=function(_,fn) return fn() end}
+E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
 local W=dofile(root..'src/world_settings.lua')(E)
 W.setup(menu,a,false);assert(#panel.children==3)
 W.change(panel.children[1],7)
@@ -177,7 +178,7 @@ local menu2=obj('menu2',{ScrollBox_DifficultySetting=panel2,
     WorldSettings_BaseCampWorkerNum=obj('nativeRow2',{OptionType=1}),GetOwningPlayer=function() end})
 local outer2=obj('outer2',{WBP_Title_WorldSettings=menu2})
 local W2=dofile(root..'src/world_settings.lua')({range=raised,settings=store2,worldId=function() return a end,
-    valid=E.valid,log=E.log,guard=E.guard})
+    objects=E.objects,valid=E.valid,log=E.log,guard=E.guard})
 W2.setup(menu2,a,false)
 assert(panel2.children[3].max==45,'slider maximum follows the raised limit')
 W2.change(panel2.children[3],45);W2.saved(outer2,true)

@@ -133,6 +133,7 @@ local E={root=root,config={upgradeWave=false},valid=function(o) return o and o:I
         if not ok then errors[#errors+1]=label..':'..tostring(result) end
         return ok,result
     end}
+E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
 local B=dofile(root..'src/boundary.lua')(E,M)
 local level,radius=8,4725
 local base=obj('/World.BaseModel',{GetLevel=function() return level end})
