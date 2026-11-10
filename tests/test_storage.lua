@@ -157,6 +157,11 @@ StaticConstructObject=function()error('simulated allocation failure')end
 S.changed();S.refresh();drain()
 assert(failure:Num()==10 and failure:Get(0).amount==3 and #errors==1)
 S.changed();S.refresh();drain();assert(#errors==1)
+-- A real change (a higher base level) earns the failed chest one new attempt.
+StaticConstructObject=function(_,outer)allocations=allocations+1;return slot(-1,outer,0)end
+S.changed();S.refresh();drain();assert(failure:Num()==10 and #errors==1,'same signature never retries')
+base.level=11;S.refresh();drain()
+assert(failure:Num()==16 and #errors==1,'a changed signature retries a failed chest')
 print('PASS: server-only native baselines, guild dedup, initialized empty slots, item identity, cap/reset overflow safety, bounded jobs, reload, stable no-scan and failure isolation')
 
 -- A world saved by 0.1.6 at level 11 holds 10 extra slots per chest. The spread

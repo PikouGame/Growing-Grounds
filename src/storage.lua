@@ -182,6 +182,8 @@ return function(E)
             end
             return
         end
+        -- A changed signature (level, cap, reset or level table) earns every failed chest one new attempt.
+        if signature~=now then failed={} end
         S.dirty=false;signature=now;jobs={};cursor=1
         local seen={}
         local function enqueue(container,baseline,base,actor)
