@@ -331,3 +331,46 @@ do
     Range.separate,E.log,FindAllOf=separate,log,plain
 end
 print('PASS: a client refresh plans and writes nothing but still reports bases and updates rings')
+
+-- One refresh resolves the policy and the level table once, not once per base;
+-- nothing is remembered outside a refresh or after one that threw.
+do
+    local policyCalls,levelCalls,maxLevel,growth=0,0,35,20
+    local plain=FindFirstOf
+    FindFirstOf=function() levelCalls=levelCalls+1; return obj({GetMaxLevel=function() return maxLevel end}) end
+    E.policy=function() policyCalls=policyCalls+1; return {growthPercentPerLevel=growth,maxRangeBonusPercent=300,maxChestBonusSlots=20} end
+    E.config={resetToVanilla=false}
+    local memoRuntime=dofile(root..'src/runtime.lua')(E)
+    local five={}
+    for i=1,5 do
+        local one=newBase(10,3500,true)
+        one.GetId=function() return {A=10+i,B=0,C=0,D=0} end
+        one.GetTransform=function() return {Translation={X=i*100000,Y=0,Z=0}} end
+        five[i]=one
+    end
+    collection=five
+    memoRuntime.refresh()
+    for _,one in ipairs(five) do near(one.AreaRange,Range.radius(3500,10,{growthPercentPerLevel=20,maxRangeBonusPercent=300})) end
+    assert(policyCalls<=2 and levelCalls<=2, 'policy '..policyCalls..', level table '..levelCalls)
+    -- A policy change between refreshes is seen by the second one.
+    growth=4
+    memoRuntime.refresh()
+    for _,one in ipairs(five) do near(one.AreaRange,Range.radius(3500,10,{growthPercentPerLevel=4,maxRangeBonusPercent=300})) end
+    -- Outside a refresh every call resolves again.
+    policyCalls,levelCalls=0,0
+    memoRuntime.policy(five[1]);memoRuntime.policy(five[1]);memoRuntime.maxLevel();memoRuntime.maxLevel()
+    assert(policyCalls==2 and levelCalls==2)
+    -- A refresh that throws midway leaves no memo behind and rethrows its error.
+    five[4].GetTransform=function() error('planning failed') end
+    growth=20
+    local ok,message=pcall(memoRuntime.refresh)
+    assert(not ok and tostring(message):find('planning failed',1,true), tostring(message))
+    five[4].GetTransform=function() return {Translation={X=400000,Y=0,Z=0}} end
+    growth=8;maxLevel=12
+    near(memoRuntime.policy(five[1]).growthPercentPerLevel,8)
+    assert(memoRuntime.maxLevel()==12 and memoRuntime.snapshot(five[1]).maximum==12)
+    memoRuntime.refresh()
+    near(five[4].AreaRange,Range.radius(3500,10,{growthPercentPerLevel=8,maxRangeBonusPercent=300}))
+    E.policy,FindFirstOf=nil,plain
+end
+print('PASS: a refresh resolves policy and level table once, remembers nothing afterwards, even when it throws')

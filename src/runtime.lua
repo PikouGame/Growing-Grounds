@@ -15,10 +15,25 @@ return function(E)
     local function guid(g) return table.concat({g.A, g.B, g.C, g.D}, ':') end
     local function zeroGuid(g) return g.A == 0 and g.B == 0 and g.C == 0 and g.D == 0 end
     local function positive(n) return type(n) == 'number' and n == n and n > 0 and n < math.huge end
+    -- Values that cannot change inside one synchronous refresh. The table exists
+    -- only while R.refresh runs and is filled lazily, at the first call site.
+    local memo
+    local function remembered(name, compute)
+        if not memo then return compute() end
+        local value = memo[name]
+        if value == nil then
+            value = compute()
+            memo[name] = value
+        end
+        return value
+    end
     function R.baseline(model)
-        local settings = utility():GetGameSetting(model)
-        assert(E.valid(settings), 'Game settings unavailable')
-        local key = settings:GetFullName()
+        local found = remembered('settings', function()
+            local settings = utility():GetGameSetting(model)
+            assert(E.valid(settings), 'Game settings unavailable')
+            return {settings, settings:GetFullName()}
+        end)
+        local settings, key = found[1], found[2]
         if not baselines[key] then
             local radius = settings.BaseCampAreaRange
             assert(positive(radius), 'Invalid original base radius')
@@ -28,7 +43,10 @@ return function(E)
     end
     function R.isAuthority(model) return utility():IsServer(model) end
     function R.policy(model)
-        return E.range.settings(E.policy and E.policy(model) or E.config)
+        -- The game's policy does not depend on the base, so one refresh reads it once.
+        return remembered('policy', function()
+            return E.range.settings(E.policy and E.policy(model) or E.config)
+        end)
     end
     function R.bonuses(model)
         local policy=R.policy(model)
@@ -86,11 +104,13 @@ return function(E)
         return byId
     end
     function R.maxLevel()
-        local data = first('PalMasterDataTableAccess_BaseCampLevelData')
-        assert(E.valid(data), 'Base-level table not loaded')
-        local maximum = data:GetMaxLevel()
-        assert(type(maximum) == 'number' and maximum >= 1 and maximum % 1 == 0, 'Invalid max base level')
-        return maximum
+        return remembered('maxLevel', function()
+            local data = first('PalMasterDataTableAccess_BaseCampLevelData')
+            assert(E.valid(data), 'Base-level table not loaded')
+            local maximum = data:GetMaxLevel()
+            assert(type(maximum) == 'number' and maximum >= 1 and maximum % 1 == 0, 'Invalid max base level')
+            return maximum
+        end)
     end
     function R.snapshot(model)
         local baseline, level = R.baseline(model), model:GetLevel()
@@ -203,7 +223,7 @@ return function(E)
         end
         scale(actor,radius)
     end
-    function R.refresh()
+    local function refresh()
         if E.boundary then E.boundary.beginRefresh() end
         if E.preview then E.guard('preview discovery',E.preview.refresh) end
         local byId, live = {}, {}
@@ -279,6 +299,13 @@ return function(E)
         end
         if E.boundary then E.boundary.endRefresh() end
         if E.preview then E.guard('preview cleanup',E.preview.finish) end
+    end
+    function R.refresh()
+        if memo then return refresh() end
+        memo = {}
+        local ok, err = pcall(refresh)
+        memo = nil
+        if not ok then error(err, 0) end
     end
     return R
 end
