@@ -212,7 +212,15 @@ return function(E)
         if E.valid(context) then E.guard('base placement distance', function() R.updatePlacement(context) end) end
         -- Plan every radius before mutating any, so enumeration order never
         -- gives one guild priority or makes the result oscillate across ticks.
-        local planned = R.targets(models)
+        -- Only an authority writes a radius; a client has nothing to plan.
+        local anyAuthority = false
+        for _,model in ipairs(models) do
+            if E.valid(model) and model:IsAvailable() and not model.bTemporary and R.isAuthority(model) then
+                anyAuthority = true
+                break
+            end
+        end
+        local planned = anyAuthority and R.targets(models) or nil
         if E.preview and E.valid(context) and R.isAuthority(context) then
             E.guard('preview values',function()
             E.previewValues={}
@@ -236,11 +244,14 @@ return function(E)
         for _,model in ipairs(models) do
             if E.valid(model) and model:IsAvailable() and not model.bTemporary then ordered[#ordered+1]=model end
         end
-        table.sort(ordered,function(a,b)
-            local da = planned[guid(a:GetId())] - a:GetRange()
-            local db = planned[guid(b:GetId())] - b:GetRange()
-            return da < db
-        end)
+        if planned then
+            local keyed = {}
+            for i,model in ipairs(ordered) do
+                keyed[i] = {model=model, delta=planned[guid(model:GetId())] - model:GetRange()}
+            end
+            table.sort(keyed,function(a,b) return a.delta < b.delta end)
+            for i,entry in ipairs(keyed) do ordered[i] = entry.model end
+        end
         for _, model in ipairs(ordered) do
             E.guard('base sync', function()
                 if not E.valid(model) or not model:IsAvailable() then return end

@@ -277,3 +277,57 @@ do
     end
 end
 print('PASS: every integer cap plans and applies its capped radius through apply, snapshot and refresh')
+
+-- Clients plan nothing: a refresh with no authority never separates radii and
+-- writes no AreaRange, yet still reports each base and updates its ring.
+do
+    local boxes,logs,writes,separations={}, {}, 0, 0
+    local plain=FindAllOf
+    FindAllOf=function(class)
+        if class=='PalBaseCampModel' then return collection end
+        return class=='BP_BuildObject_PalBoxV2_C' and boxes or {}
+    end
+    local separate,log=Range.separate,E.log
+    Range.separate=function(...) separations=separations+1; return separate(...) end
+    E.log=function(message) logs[#logs+1]=message end
+    local function watched(model)
+        local radius=model.AreaRange
+        model.AreaRange=nil
+        return setmetatable(model,{
+            __index=function(_,key) if key=='AreaRange' then return radius end end,
+            __newindex=function(table,key,value)
+                if key=='AreaRange' then writes=writes+1; radius=value else rawset(table,key,value) end
+            end})
+    end
+    E.config={growthPercentPerLevel=20,maxRangeBonusPercent=300}
+    local watcher=dofile(root..'src/runtime.lua')(E)
+    local first=watched(newBase(10,3500,false))
+    local second=watched(newBase(20,4200,false))
+    second.GetId=function() return {A=2,B=0,C=0,D=0} end
+    second.GetTransform=function() return {Translation={X=50000,Y=0,Z=0}} end
+    collection={first,second}
+    boxes={actor}
+    rings.AreaRange.RelativeScale3D={X=1,Y=1,Z=100}
+    rings.AreaRange1.RelativeScale3D={X=1,Y=1,Z=100}
+    watcher.refresh()
+    assert(separations==0 and writes==0, 'a client refresh plans and writes nothing')
+    near(first.AreaRange,3500);near(second.AreaRange,4200)
+    near(rings.AreaRange.RelativeScale3D.X,3500/50)
+    local ready=0
+    for _,message in ipairs(logs) do if message:find('base ready: role=client',1,true) then ready=ready+1 end end
+    assert(ready==2, 'both client bases are reported once')
+    watcher.refresh()
+    assert(separations==0 and writes==0)
+    -- One authority among clients: the plan is made and only the authority is written.
+    first.authority=true
+    first.GetTransform=function() return {Translation={X=0,Y=0,Z=0}} end
+    watcher.refresh()
+    assert(separations==1, 'an authority in the list still plans once')
+    assert(writes==1 and first.AreaRange>3500 and second.AreaRange==4200)
+    collection={second,first}
+    first.AreaRange=3500
+    watcher.refresh()
+    assert(separations==2 and first.AreaRange>3500 and second.AreaRange==4200)
+    Range.separate,E.log,FindAllOf=separate,log,plain
+end
+print('PASS: a client refresh plans and writes nothing but still reports bases and updates rings')
