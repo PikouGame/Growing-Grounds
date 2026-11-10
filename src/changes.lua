@@ -2,7 +2,7 @@
 -- Observe only the small event-maintained base set; never search the world here.
 return function(E)
     local C,previous,visible={},{},{}
-    local function finite(n) return type(n)=='number' and n==n and n>0 and n<math.huge end
+    local function positive(n) return type(n)=='number' and n==n and n>0 and n<math.huge end
     function C.check()
         local models=E.objects.tracked('PalBaseCampModel')
         if not models then return false end
@@ -14,7 +14,7 @@ return function(E)
             if E.valid(model) and model:IsAvailable() and not model.bTemporary then
                 local name=model:GetFullName()
                 local level,radius=model:GetLevel(),model:GetRange()
-                if finite(level) and level%1==0 and finite(radius) then
+                if positive(level) and level%1==0 and positive(radius) then
                     if watchPreview==nil then watchPreview=E.preview~=nil and not E.runtime.isAuthority(model) end
                     local preview=watchPreview and E.preview.revision(model) or nil
                     current[name]={level=level,radius=radius,preview=preview}

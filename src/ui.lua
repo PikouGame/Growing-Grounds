@@ -3,6 +3,8 @@ return function(E, Runtime)
     local rowPath = '/Game/Pal/Blueprint/UI/UserInterface/IngameMenu/Task/WBP_IngameMenu_MissionLevelEffect.WBP_IngameMenu_MissionLevelEffect_C'
     local attached, owned, columns, lastWritten = {}, {}, {}, {}
     local constructHookInstalled = false
+    -- Engine enum values: ESlateVisibility and EVerticalAlignment/EHorizontalAlignment.
+    local SelfHitTestInvisible, Hidden, Collapsed, Center = 4, 2, 1, 2
     local function object(path) return E.objects.find(path) end
     local function text(value) return FText(value) end
     local specs = {
@@ -30,16 +32,16 @@ return function(E, Runtime)
         balance:SetSize({X=0,Y=0})
         main:RemoveFromParent()
         group:AddChildToHorizontalBox(balance)
-        group:AddChildToHorizontalBox(main):SetVerticalAlignment(2)
-        group:AddChildToHorizontalBox(unit):SetVerticalAlignment(2)
+        group:AddChildToHorizontalBox(main):SetVerticalAlignment(Center)
+        group:AddChildToHorizontalBox(unit):SetVerticalAlignment(Center)
         local slot = group:AddChildToHorizontalBox(note)
-        slot:SetVerticalAlignment(2)
+        slot:SetVerticalAlignment(Center)
         slot:SetPadding({Left=metreGap,Top=0,Right=0,Bottom=0})
         local outerSlot = box:AddChild(group)
-        outerSlot:SetHorizontalAlignment(2)
-        outerSlot:SetVerticalAlignment(2)
-        unit:SetVisibility(4)
-        note:SetVisibility(4)
+        outerSlot:SetHorizontalAlignment(Center)
+        outerSlot:SetVerticalAlignment(Center)
+        unit:SetVisibility(SelfHitTestInvisible)
+        note:SetVisibility(SelfHitTestInvisible)
     end
     local function paintSuffix(main, index, scale, value, color)
         -- Copy the native face, weight and shadow; change only size and tint.
@@ -136,8 +138,8 @@ return function(E, Runtime)
         paintSuffix(row.Text_Num_Aft, 3, metreScale, state.nextPercent and metres(state.baseline * state.nextPercent / 100) or '',
             state.canLevelup and row.Text_Num_Aft.ColorAndOpacity or mint)
         -- Hidden preserves the game's two value columns while replication catches up.
-        row.Image_Arrow:SetVisibility(showNext and 4 or 2)
-        row.SizeBox_Aft:SetVisibility(showNext and 4 or 2)
+        row.Image_Arrow:SetVisibility(showNext and SelfHitTestInvisible or Hidden)
+        row.SizeBox_Aft:SetVisibility(showNext and SelfHitTestInvisible or Hidden)
         row:ForceLayoutPrepass()
         -- Construct can rebuild Slate outside UI.update. Its post-hook uses
         -- this same current painter; the next visible update must remeasure.
@@ -152,8 +154,8 @@ return function(E, Runtime)
         row.Text_Num_Pre:SetText(text(tostring(state.chestCurrent)))
         row.Text_Num_Aft:SetText(text(state.chestNext and tostring(state.chestNext) or ''))
         local showNext=not state.atMaximum and state.chestNext~=nil
-        row.Image_Arrow:SetVisibility(showNext and 4 or 2)
-        row.SizeBox_Aft:SetVisibility(showNext and 4 or 2)
+        row.Image_Arrow:SetVisibility(showNext and SelfHitTestInvisible or Hidden)
+        row.SizeBox_Aft:SetVisibility(showNext and SelfHitTestInvisible or Hidden)
         lastWritten[row:GetFullName()]=nil
     end
     local function installConstructHook()
@@ -225,7 +227,7 @@ return function(E, Runtime)
                 local name=row:GetFullName()
                 owned[name]={kind=spec.key,state=state}
                 if grid.visible[spec.key]~=enabled[spec.key] then
-                    row:SetVisibility(enabled[spec.key] and 4 or 1)
+                    row:SetVisibility(enabled[spec.key] and SelfHitTestInvisible or Collapsed)
                     grid.visible[spec.key]=enabled[spec.key]
                     lastWritten[name]=nil
                     needsLayout=true

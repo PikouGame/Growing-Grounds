@@ -2,6 +2,7 @@ return function(E)
     local R = {}
     local scale=dofile(E.root..'src/ring.lua')(E)
     local baselines, seen, originalSpacing = {}, {}, {}
+    local overlapWarned, previewValues = false, nil
     local function find(path) return E.objects.find(path) end
     local function all(name) return E.objects.all(name) end
     local function first(name) return E.objects.first(name) end
@@ -36,6 +37,7 @@ return function(E)
         return baselines[key]
     end
     function R.isAuthority(model) return utility():IsServer(model) end
+    -- The policy is per world; the model only gives the context to read it from.
     function R.policy(model)
         -- The game's policy does not depend on the base, so one refresh reads it once.
         return remembered('policy', function()
@@ -91,8 +93,8 @@ return function(E)
         end
         local values, conflicts = E.range.separate(entries)
         for i, entry in ipairs(entries) do byId[entry.id] = values[i] end
-        if #conflicts > 0 and not seen.vanillaOverlap then
-            seen.vanillaOverlap = true
+        if #conflicts > 0 and not overlapWarned then
+            overlapWarned = true
             E.log('existing vanilla-sized bases overlap; growth stopped for those bases; no bases moved or removed')
         end
         return byId
@@ -206,7 +208,7 @@ return function(E)
         if not positive(radius) then return end
         if E.preview and R.isAuthority(base) then
             E.guard('server preview',function()
-                E.preview.publish(actor,base,E.previewValues and E.previewValues[guid(concrete.BaseCampId)])
+                E.preview.publish(actor,base,previewValues and previewValues[guid(concrete.BaseCampId)])
             end)
         end
         if E.boundary then
@@ -237,19 +239,19 @@ return function(E)
         local planned = anyAuthority and R.targets(models) or nil
         if E.preview and E.valid(context) and R.isAuthority(context) then
             E.guard('preview values',function()
-            E.previewValues={}
-            -- Maximum proximity budgets are independent of levels; calculate
-            -- once for all bases instead of an O(n^3) per-base prediction pass.
-            local limits=R.targets(models,nil,nil,true)
-            for _,model in ipairs(models) do
-                if E.valid(model) and model:IsAvailable() and not model.bTemporary and R.isAuthority(model)
-                        and not E.config.resetToVanilla then
-                    local id=guid(model:GetId())
-                    local baseline=R.baseline(model)
-                    local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model))
-                    E.previewValues[id]=math.min(limits[id],future)/baseline*100
+                previewValues={}
+                -- Maximum proximity budgets are independent of levels; calculate
+                -- once for all bases instead of an O(n^3) per-base prediction pass.
+                local limits=R.targets(models,nil,nil,true)
+                for _,model in ipairs(models) do
+                    if E.valid(model) and model:IsAvailable() and not model.bTemporary and R.isAuthority(model)
+                            and not E.config.resetToVanilla then
+                        local id=guid(model:GetId())
+                        local baseline=R.baseline(model)
+                        local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model))
+                        previewValues[id]=math.min(limits[id],future)/baseline*100
+                    end
                 end
-            end
             end)
         end
         -- Shrink first, then expand; native containment must never see an
@@ -285,7 +287,7 @@ return function(E)
                 reassociate(change.model,change.previous,change.target)
             end)
         end
-        for id in pairs(seen) do if id ~= 'vanillaOverlap' and not live[id] then seen[id] = nil end end
+        for id in pairs(seen) do if not live[id] then seen[id] = nil end end
         if next(byId) then
             for _, actor in ipairs(all('BP_BuildObject_PalBoxV2_C')) do
                 E.guard('boundary sync', function() R.updateRing(actor, byId) end)

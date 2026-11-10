@@ -36,8 +36,8 @@ return function(E)
         return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil,
             rangeEnabled=rangeEnabled,chestCap=chestCap}
     end
-    local function ownerBase(actor)
-        local owner=actor:GetOwner()
+    local function ownerBase(component)
+        local owner=component:GetOwner()
         if not E.valid(owner) then return end
         if not owner:IsA(find('/Script/Pal.PalBuildObjectBaseCampPoint')) then return end
         local model=owner:GetModel()
@@ -56,11 +56,11 @@ return function(E)
     local function state(model)
         local id=guid(model:GetId())
         local record=records[id]
-        if not record or not E.valid(record.actor) then return end
-        if record.actor:GetFullName()~=record.path then return end
+        if not record or not E.valid(record.component) then return end
+        if record.component:GetFullName()~=record.path then return end
         -- P.refresh proved the owner and class when it recorded this component;
         -- the 250 ms watcher only needs the identity and the current value.
-        return decode(record.actor.RelativeLocation)
+        return decode(record.component.RelativeLocation)
     end
     function P.revision(model)
         local value=state(model)
@@ -98,7 +98,7 @@ return function(E)
                         if ours(component) then
                             local id=ownerBase(component)
                             if id then
-                                records[id]={actor=component,path=component:GetFullName()}
+                                records[id]={component=component,path=component:GetFullName()}
                             end
                         end
                     end
@@ -117,54 +117,54 @@ return function(E)
             Z=MAGIC+model:GetLevel()+(MAX_LEVEL+1)*(bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0))}
         assert(decode(location),'Invalid server preview')
         local state=marker[id]
-        local actor=state and state.actor
-        if not E.valid(actor) or actor:GetFullName()~=state.path then
+        local component=state and state.component
+        if not E.valid(component) or component:GetFullName()~=state.path then
             -- Reuse our own native marker after a Lua reload when possible.
             local old=records[id]
-            actor=old and old.actor
-            if not E.valid(actor) then
+            component=old and old.component
+            if not E.valid(component) then
                 assert(palbox.bReplicates,'Palbox actor is not replicated')
                 local class=find(componentPath)
                 assert(E.valid(class),'Native preview component class unavailable')
                 -- Wake the existing channel before creating or modifying its
                 -- replicated subobject. Do not change the Palbox's dormancy policy.
                 palbox:FlushNetDormancy()
-                actor=palbox:AddComponentByClass(class,true,{
+                component=palbox:AddComponentByClass(class,true,{
                     Rotation={X=0,Y=0,Z=0,W=1},Translation={X=0,Y=0,Z=0},Scale3D={X=1,Y=1,Z=1},
                 },false)
-                assert(E.valid(actor),'Native preview component creation failed')
+                assert(E.valid(component),'Native preview component creation failed')
                 local ok,err=pcall(function()
-                    actor:SetMobility(2)
-                    actor:SetComponentTickEnabled(false)
-                    actor:SetVisibility(false,false)
-                    actor:SetHiddenInGame(true,false)
-                    actor:K2_SetRelativeLocation(location,false,{},true)
-                    actor:SetIsReplicated(true)
-                    assert(ours(actor),'Preview component setup did not stick')
+                    component:SetMobility(2)
+                    component:SetComponentTickEnabled(false)
+                    component:SetVisibility(false,false)
+                    component:SetHiddenInGame(true,false)
+                    component:K2_SetRelativeLocation(location,false,{},true)
+                    component:SetIsReplicated(true)
+                    assert(ours(component),'Preview component setup did not stick')
                 end)
-                if not ok then actor:K2_DestroyComponent(palbox);error(err) end
+                if not ok then component:K2_DestroyComponent(palbox);error(err) end
                 palbox:ForceNetUpdate()
                 E.log('server upgrade preview component created on Palbox channel')
             end
-            state={actor=actor,path=actor:GetFullName()}
+            state={component=component,path=component:GetFullName()}
             marker[id]=state
         end
         state.live=true
-        local old=actor.RelativeLocation
+        local old=component.RelativeLocation
         if math.abs(old.X-location.X)>0.01 or math.abs(old.Y-location.Y)>0.01 or old.Z~=location.Z then
             palbox:FlushNetDormancy()
-            actor:K2_SetRelativeLocation(location,false,{},true)
+            component:K2_SetRelativeLocation(location,false,{},true)
             palbox:ForceNetUpdate()
         end
     end
     function P.finish()
         for id,state in pairs(marker) do
             if not state.live then
-                if E.valid(state.actor) and state.actor:GetFullName()==state.path then
-                    local owner=state.actor:GetOwner()
+                if E.valid(state.component) and state.component:GetFullName()==state.path then
+                    local owner=state.component:GetOwner()
                     if E.valid(owner) and authority(owner) then
                         owner:FlushNetDormancy()
-                        state.actor:K2_DestroyComponent(owner)
+                        state.component:K2_DestroyComponent(owner)
                         owner:ForceNetUpdate()
                     end
                 end
