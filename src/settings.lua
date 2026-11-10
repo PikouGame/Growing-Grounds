@@ -1,9 +1,12 @@
 -- Per-world settings sidecar. Data only: never execute a downloaded/save file.
 -- Keep this file beside config.lua when updating or moving the installation.
-return function(root, Range, defaults, filesystem)
+return function(root, Range, defaults, filesystem, log, clock)
     local fs = filesystem or {open=io.open, rename=os.rename, remove=os.remove}
     local path = root .. 'world-settings.ini'
     local worlds, loaded, loadError = {}, false, nil
+    -- An unreadable file is reported once and tried again at most every five seconds.
+    local RETRY_SECONDS, lastTry, reported = 5, nil, false
+    clock = clock or os.time
     local S = {}
     local function key(value)
         -- Palworld world directory names are GUIDs. Reject traversal/newlines.
@@ -14,16 +17,29 @@ return function(root, Range, defaults, filesystem)
     S.key = key
     local function load()
         if loaded then return end
-        loaded = true
+        if loadError then
+            local now = clock()
+            if lastTry and now - lastTry < RETRY_SECONDS then return end
+        end
         local file, err, code = fs.open(path, 'r')
         if not file and code == 2 then
             -- Recover if power was lost between the two Windows renames.
             file, err, code = fs.open(path..'.bak', 'r')
         end
         if not file then
-            if code and code ~= 2 then loadError = err end
+            if code and code ~= 2 then
+                loadError, lastTry = err, clock()
+                if log and not reported then
+                    reported = true
+                    log('Cannot read world-settings.ini, using config.lua values: '..tostring(err))
+                end
+            else
+                loaded, loadError = true, nil
+            end
             return
         end
+        loaded, loadError, reported = true, nil, false
+        worlds = {}
         local section
         for line in file:lines() do
             local heading = line:match('^%[([^%]]+)%]$')

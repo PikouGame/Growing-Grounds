@@ -197,4 +197,34 @@ assert(drag(3,18.5).maxChestBonusSlots==19 and drag(3,40.4).maxChestBonusSlots==
 assert(drag(1,6.6).growthPercentPerLevel==7 and drag(1,6.4).growthPercentPerLevel==6)
 assert(drag(2,64.6).maxRangeBonusPercent==65 and drag(2,64.4).maxRangeBonusPercent==64)
 assert(drag(2,999).maxRangeBonusPercent==300 and drag(3,999).maxChestBonusSlots==40,'maxima still clamp')
+do
+-- An unreadable file: defaults, one log line, a retry only after five seconds, saved values return.
+files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=9\n'
+local unreadable,now,logged,opens=true,100,{},0
+local readFs={rename=fs.rename,remove=fs.remove}
+function readFs.open(path,mode)
+    if mode=='r' and path=='world-settings.ini' then
+        opens=opens+1
+        if unreadable then return nil,'permission denied',13 end
+    end
+    return fs.open(path,mode)
+end
+store=factory('',Range,defaults,readFs,function(m)logged[#logged+1]=m end,function()return now end)
+for _=1,5 do assert(store.get(a).growthPercentPerLevel==5,'unreadable file gives config values') end
+assert(#logged==1 and logged[1]:find('permission denied',1,true) and opens==1,'logged once, not retried at once')
+assert(not pcall(store.save,a,defaults),'save refuses while the file cannot be read')
+now=104;store.get(a);assert(opens==1 and #logged==1,'no retry before five seconds')
+now=105;store.get(a);assert(opens==2 and #logged==1,'retried after the interval, not logged again')
+unreadable=false;now=110
+assert(store.get(a).growthPercentPerLevel==9 and opens==3,'saved values return once readable')
+for _=1,3 do store.get(a) end
+assert(opens==3 and #logged==1,'a loaded file is not read again')
+assert(pcall(store.save,a,defaults),'save works again once the error clears')
+-- A missing file stays silent and is not retried.
+files['world-settings.ini'],files['world-settings.ini.bak']=nil,nil
+opens,logged=0,{}
+store=factory('',Range,defaults,readFs,function(m)logged[#logged+1]=m end,function()return now end)
+for _=1,3 do now=now+60;assert(store.get(a).growthPercentPerLevel==5) end
+assert(#logged==0 and opens==1,'missing file: silent and read once')
+end
 print('PASS: sliders round to the nearest integer before clamping')
