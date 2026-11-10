@@ -5,7 +5,7 @@ Growing Grounds 0.1.7-alpha — a gentler pace
 - Base Upgrade shows the current and next number of bonus slots, including upgrades that add none.
 - With some range caps (for example +57%), bases stopped growing once one base reached its cap. Fixed.
 - A chest whose enlargement failed is tried again at the next base level change or cap change, not only after a restart.
-- A world-settings file that cannot be read is now reported once in the log and read again a few seconds later.
+- A world-settings file that cannot be read is now reported once in the log and read again a few seconds later. Saving World Settings then waits for a restart, so the file is never overwritten with defaults.
 - The bonus chest slider rounds to the nearest slot: a drag ending on 18.9999 is saved as 19, not 18.
 - Clients do less background work: they no longer plan base radii they never apply.
 
@@ -17,7 +17,7 @@ What existing worlds will see
 Update the host/server and clients together: an older client would preview the previous chest numbers. Keep your config.lua and world-settings.ini.
 
 What was checked in the game: the pace change was installed on a dedicated server and a client. A level-11 base showed Base Range Bonus 40% 49m -> 44% 50.4m and Bonus Chest Slots 6 -> 6, and the server resized seventeen chests from +10 to +6 without error.
-The fixes listed after that check have only passed the Lua regression suites; they have not had an in-game session yet.
+That session ran the pace change only. Everything else in this build, including the last five items above and the internal clean-ups made after it, has only passed the Lua regression suites.
 
 We'd love to hear how it works in your world! Leave a comment, share your experience or report a bug so we can investigate and improve it:
 https://github.com/PikouGame/Growing-Grounds/issues

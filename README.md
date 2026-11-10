@@ -77,7 +77,8 @@ A gentler pace, so later base levels still have something to give.
 - A chest whose enlargement failed is tried again at the next base level or
   cap change, not only after a restart.
 - A world-settings file that cannot be read is now reported once in the log
-  and read again a few seconds later.
+  and read again a few seconds later. Saving World Settings then waits for a
+  restart, so the file is never overwritten with defaults.
 - The bonus chest slider rounds to the nearest slot (18.9999 is saved as 19).
 - Clients do less background work: they no longer plan base radii they never
   apply.
@@ -145,7 +146,8 @@ conflicts with other range mods, and native Windows OS execution still need
 broader in-game verification. The added reward and settings labels are currently English.
 On a client, while the server's preview is missing or out of date, Base Upgrade keeps
 its last complete Growing Grounds values, or shows no Growing Grounds row on a first open.
-The next value alone is hidden at the maximum base level or when the mod is reset.
+At the maximum base level only the next value is hidden. With `resetToVanilla=true`
+both Growing Grounds rows are hidden.
 
 The server owns gameplay radius. Animation changes the visible boundary only.
 Existing bases are not moved or deleted. Overlapping original base circles do

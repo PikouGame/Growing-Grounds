@@ -51,7 +51,7 @@ sidecar override. Server settings always control gameplay and the next-value UI.
 With the standard 35m radius: level 8 = 44.8m, level 11 = 49m, level 26 = 70m.
 Growth is additive. The UI shows the bonus above 100%, with metres rounded to a
 tenth. Level 10 displays 36% 47.6m -> 40% 49m. At maximum game level, the next
-value is hidden, as it is when the mod is reset. On a client, while the server's preview
+value is hidden. On a client, while the server's preview
 is missing or out of date, Base Upgrade keeps its last complete Growing Grounds values,
 or shows no Growing Grounds row on a first open.
 
