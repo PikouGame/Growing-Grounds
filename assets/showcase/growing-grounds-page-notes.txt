@@ -1,0 +1,17 @@
+Growing Grounds — page images, 2026-11-10
+
+publishing/description.* uses the banner and the three section images below. assets/identity/ holds the icon, the
+wordmark and the Nexus header backdrop as published on 2026-11-10.
+
+- growing-grounds-banner.png (1920x1080): original vector mark, wordmark and tagline. On the right, the game's Base
+  Upgrade window: growing-grounds-rewards.png reduced to 90%, not retouched.
+- growing-grounds-rewards.png (870x960): native engine render of the Base Upgrade window at base level 10 under the
+  0.1.7 pace (36% 47.6m -> 40% 49m, bonus chest slots 5 -> 6), cropped 870x960+538+30 from the 1920x1080 render,
+  not retouched.
+- growing-grounds-range.png and growing-grounds-settings.png (896x504): original vector diagrams with the default
+  numbers of 0.1.7.
+- growing-grounds-chests.png (896x504): the slot schedule as a diagram, and a lossless capture of a level-11 Metal
+  Chest (24 + 6 slots) cropped to the chest panel and reduced, not retouched; the bonus row is outlined.
+
+The wordmark is drawn as vector polygons: no image generator made any lettering in these files.
+The earlier hero, wordmark and chest images in this folder belong to the pages before 0.1.7.
