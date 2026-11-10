@@ -184,3 +184,17 @@ W2.change(panel2.children[3],45);W2.saved(outer2,true)
 assert(store2.get(a).maxChestBonusSlots==45,'a value up to the raised limit is saved')
 assert(factory('',raised,defaults,fs).get(a).maxChestBonusSlots==45,'and read back')
 print('PASS: slider maxima equal Range.limits and follow it from one source')
+
+-- The native slider reports floats; the chest cap is rounded to the nearest slot, not floored.
+W.setup(menu,a,false)
+local function drag(index,value)
+    W.change(rows[index],value);W.saved(outer,true)
+    return store.get(a)
+end
+assert(drag(3,18.9999).maxChestBonusSlots==19,'18.9999 saves as 19')
+assert(drag(3,18.4).maxChestBonusSlots==18,'18.4 saves as 18')
+assert(drag(3,18.5).maxChestBonusSlots==19 and drag(3,40.4).maxChestBonusSlots==40 and drag(3,-0.4).maxChestBonusSlots==0)
+assert(drag(1,6.6).growthPercentPerLevel==7 and drag(1,6.4).growthPercentPerLevel==6)
+assert(drag(2,64.6).maxRangeBonusPercent==65 and drag(2,64.4).maxRangeBonusPercent==64)
+assert(drag(2,999).maxRangeBonusPercent==300 and drag(3,999).maxChestBonusSlots==40,'maxima still clamp')
+print('PASS: sliders round to the nearest integer before clamping')

@@ -83,6 +83,8 @@ return function(E)
         if not entry then return end
         local state = screens[entry.screen]
         if not state or state.initializing then return end
+        -- Round the native float first: Range.settings floors the chest cap.
+        if type(value)=='number' and value==value and math.abs(value)<math.huge then value=math.floor(value+0.5) end
         local normalized = E.range.settings({[entry.spec.key]=value})[entry.spec.key]
         normalized = math.max(entry.spec.min,math.min(entry.spec.max,math.floor(normalized+0.5)))
         if state.draft[entry.spec.key]==normalized then
