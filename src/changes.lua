@@ -7,12 +7,16 @@ return function(E)
         local models=E.objects.tracked('PalBaseCampModel')
         if not models then return false end
         local current,changed={},false
+        -- The server and a co-op host build their values directly and never read
+        -- the preview, so only a client watches its revision. Decide once per tick.
+        local watchPreview
         for _,model in ipairs(models) do
             if E.valid(model) and model:IsAvailable() and not model.bTemporary then
                 local name=model:GetFullName()
                 local level,radius=model:GetLevel(),model:GetRange()
                 if finite(level) and level%1==0 and finite(radius) then
-                    local preview=E.preview and E.preview.revision(model)
+                    if watchPreview==nil then watchPreview=E.preview~=nil and not E.runtime.isAuthority(model) end
+                    local preview=watchPreview and E.preview.revision(model) or nil
                     current[name]={level=level,radius=radius,preview=preview}
                     local old=previous[name]
                     if not old or old.level~=level or math.abs(old.radius-radius)>0.1 or old.preview~=preview then changed=true end

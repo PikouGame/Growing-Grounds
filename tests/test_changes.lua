@@ -21,7 +21,9 @@ E.objects.all('PalBaseCampModel')
 assert(C.check() and not C.check(),'initial base reconciles once')
 for _=1,1000 do assert(not C.check()) end
 assert(scans==1,'stable checks must not search all game objects')
-E.preview={revision=function(model) return model.preview end}
+local authority,previewCalls=false,0
+E.runtime={isAuthority=function() return authority end}
+E.preview={revision=function(model) previewCalls=previewCalls+1;return model.preview end}
 b.preview='10:145:150:true:20'
 assert(C.check() and not C.check(),'initial preview arrives independently of the base')
 b.level=10
@@ -42,6 +44,17 @@ hooks['/Script/Pal.PalBaseCampModel'](late)
 assert(not C.check(),'not-ready bases cause no refresh loop')
 late.level=1;late.radius=3500
 assert(C.check() and not C.check(),'late initialization is observed')
+-- A server or co-op host never reads the preview: no revision call per base, and
+-- level and radius changes still reconcile.
+authority=true;previewCalls=0
+b.preview='12:160:165:true:20'
+assert(not C.check() and previewCalls==0,'an authority ignores the preview and never asks for it')
+b.level=12;assert(C.check() and not C.check(),'an authority still reports a level change')
+b.radius=5600;assert(C.check() and not C.check(),'an authority still reports a radius change')
+assert(previewCalls==0,'no preview call on an authority')
+authority=false
+assert(C.check() and not C.check(),'a client reads the preview again')
+assert(previewCalls>0)
 late.bTemporary=true;assert(C.check() and not C.check())
 late.radius=7000;assert(not C.check(),'temporary raid bases are ignored')
 b.alive=false
