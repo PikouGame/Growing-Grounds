@@ -37,4 +37,4 @@ Share your experience
 
 We’d love to see what you build! Share your base, leave a comment, or report a bug: https://github.com/PikouGame/Growing-Grounds/issues so we can keep improving Growing Grounds together.
 
-Made with OpenAI Codex under lelorax’s direction. Gameplay and UI captured in game; AI-assisted title lettering. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.
+Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game; AI-assisted title lettering. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.

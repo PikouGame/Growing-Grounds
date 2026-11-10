@@ -34,4 +34,4 @@ Install on the **host/server and clients** with a compatible **Palworld UE4SS lo
 
 We’d love to see what you build! Share your base, leave a comment, or [report a bug](https://github.com/PikouGame/Growing-Grounds/issues) so we can keep improving Growing Grounds together.
 
-_Made with OpenAI Codex under lelorax’s direction. Gameplay and UI captured in game; AI-assisted title lettering. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod._
+_Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game; AI-assisted title lettering. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod._
