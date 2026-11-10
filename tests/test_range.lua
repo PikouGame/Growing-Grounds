@@ -148,7 +148,7 @@ print('PASS: legacy 200% ceiling, capped configuration, future placement spacing
 
 -- Exercise the engine adapter with two different guilds and both enumeration
 -- orders, rather than only testing the geometry helper.
-E.config={growthPercentPerLevel=5,maxRangePercent=200}
+E.config={growthPercentPerLevel=5,maxRangeBonusPercent=100}
 local a,b=newBase(35,7000,true),newBase(35,7000,true)
 b.GetId=function() return {A=2,B=0,C=0,D=0} end
 b.GetGroupIdBelongTo=function() return {A=8,B=0,C=0,D=0} end

@@ -1,9 +1,9 @@
 local root=assert(arg[1],'pass root with trailing slash')
 local realDofile=dofile
-local function run(development)
+local function run()
     local loops,hooks,timers={},{},{}
     local counters={runtime=0,ui=0,storage=0}
-    local config={debug=development,resetToVanilla=false}
+    local config={resetToVanilla=false}
     local noop=function() end
     local function count(key) return function() counters[key]=counters[key]+1 end end
     local objects={install=noop,all=function() return {} end}
@@ -42,10 +42,10 @@ local function run(development)
     table.remove(timers[0],1)()
     hooks['/Script/Pal.PalBaseCampModel:OnRep_Level_InGuildProperty']()
     table.remove(timers[0],1)()
-    assert(counters.runtime==2 and counters.ui==2 and counters.storage==2,'normal upgrade refresh is independent of debug')
+    assert(counters.runtime==2 and counters.ui==2 and counters.storage==2,'an upgrade event refreshes runtime, ui and storage once each')
     dofile=realDofile
 end
-run(false);run(true)
+run()
 for _,api in ipairs({'ExecuteInGameThreadWithDelay','LoopInGameThreadWithDelay'}) do
     local previous=_G[api];_G[api]=nil
     local ok,message=pcall(assert(loadfile(root..'Scripts/main.lua')))

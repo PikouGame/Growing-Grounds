@@ -369,6 +369,26 @@ refresh();upgrade();assert(created==noServerEffects and #queue==0)
 near(actor.AreaRange.RelativeScale3D.X,101.5)
 print('PASS: Palbox wave -> bounce -> rise, terrain surface, bounded setup, no moving mesh/scans, failure and removal cleanup')
 
+-- With the glow effects off there is no wave or contour to prepare, but the
+-- boundary bounce still runs.
+dedicated=false;E.config.upgradeRibbon=false;errors={};events={}
+clear();time=time+1
+B=dofile(root..'src/boundary.lua')(E,M);refresh()
+local plainCreated,plainSections,plainTraces=created,sections,traces
+local lowest,highest=math.huge,-math.huge
+upgrade()
+for _=1,math.floor(M.duration/0.016)+30 do
+    frame(time+0.016)
+    local x=actor.AreaRange.RelativeScale3D.X
+    lowest,highest=math.min(lowest,x),math.max(highest,x)
+end
+assert(lowest<101.5-0.1 and highest>101.5+0.1,'the boundary still bounces past its new radius without the glow effects')
+assert(created==plainCreated and sections==plainSections and traces==plainTraces,'no wave or contour is prepared')
+assert(not events.wave and not events.rise and #queue==0 and #errors==0,table.concat(errors,';'))
+near(actor.AreaRange.RelativeScale3D.X,101.5)
+E.config.upgradeRibbon=nil
+print('PASS: without the glow effects the bounce still runs and no wave or contour is prepared')
+
 -- Menu readiness and elapsed idle time must no longer cause terrain work.
 dedicated=false;level=9;radius=4900;time=time+1;events={};errors={}
 local menuReads=0
