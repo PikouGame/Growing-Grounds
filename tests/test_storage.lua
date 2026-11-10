@@ -60,6 +60,7 @@ local function chest(name,c,n)
     function actor:FlushNetDormancy()self.wakes=self.wakes+1 end
     function actor:ForceNetUpdate()self.updates=self.updates+1 end
     return obj(name,{GetActor=function()return actor end,
+        TryGetMapObjectId=function()return {ToString=function()return name end}end,
         GetBaseCampModelBelongTo=function()return base end,
         GetItemContainerModule=function()return obj('module',{GetContainer=function()return c end})end}),actor
 end
@@ -240,3 +241,78 @@ assert(plain:Num()==27,'level 35 of 40 gives 17 of 20 slots')
 base.level=40;S.refresh();drain();assert(plain:Num()==30)
 base.level=41;S.refresh();drain();assert(plain:Num()==30 and #errors==0,'a level above the table stays on the cap')
 print('PASS: level-table fallback, table change reconciliation and levels above the table')
+
+-- A reset names each chest that still holds items above its native size, once,
+-- and says when every chest is back to native size: the signal to remove the mod.
+for i=#errors,1,-1 do errors[i]=nil end
+local logs={};E.log=function(text)logs[#logs+1]=text end
+local function logged(text)
+    local n=0
+    for _,line in ipairs(logs) do if line:find(text,1,true) then n=n+1 end end
+    return n
+end
+local function census(list)
+    local held={}
+    for _,c in ipairs(list) do
+        for i=0,c:Num()-1 do
+            local s=c:Get(i)
+            assert(s.SlotIndex==i,'a slot sits at another index than its own')
+            if not s:IsEmpty() then assert(not held[s],'a slot appears twice');held[s]=s.amount end
+        end
+    end
+    return held
+end
+local function same(a,b,label)
+    for s,n in pairs(a) do assert(b[s]==n,label..': an item was lost or changed') end
+    for s in pairs(b) do assert(a[s],label..': an item appeared') end
+end
+local function filled(name,count,native,extra)   -- every native slot in use, plus the listed ones
+    local c=saved(name,count,extra)
+    for index=0,native-1 do c:Get(index).amount=7 end
+    return c
+end
+tableLevels=35;base.level=11;E.config.maxChestBonusSlots=20;E.config.resetToVanilla=false
+local busy,tidy=filled('busy',16,10,{12}),saved('tidy',16,{1})
+local unnamed,sharedBusy=filled('unnamed',16,10,{11}),filled('guild busy',86,80,{82})
+local unnamedModel=chest('unnamed model',unnamed,10)
+unnamedModel.TryGetMapObjectId=nil
+lists.PalMapObjectItemChestModel={chest('busy model',busy,10),chest('tidy model',tidy,10),unnamedModel}
+group.ItemStorage.ItemContainer=sharedBusy
+local reset={busy,tidy,unnamed,sharedBusy}
+local start=census(reset)
+-- A lowered cap reports the slots it keeps, and no reset line.
+E.config.maxChestBonusSlots=0
+S=dofile(root..'src/storage.lua')(E);S.refresh();drain();S.refresh();drain()
+assert(#errors==0,table.concat(errors,'\n'))
+assert(logged('busy model keeps 13 slots instead of 10 until the slots above are emptied')==1 and logged('reset ')==0)
+E.config.resetToVanilla=true;S.refresh();drain();S.refresh();drain()
+assert(#errors==0,table.concat(errors,'\n'))
+assert(busy:Num()==13 and tidy:Num()==10 and unnamed:Num()==12 and sharedBusy:Num()==83)
+same(start,census(reset),'reset with occupied slots above native size')
+assert(logged('busy model keeps 13 slots')==1,'an unchanged chest is not reported again')
+assert(logged('Guild Chest keeps 83 slots instead of 80')==1,'the shared chest is named')
+assert(logged('chest keeps 12 slots instead of 10')==1,'a chest whose name cannot be read is still reported')
+assert(logged('reset waiting: 3 chests still hold items above native size, 0 failed')==1 and logged('reset complete')==0)
+local lines=#logs
+for _=1,5 do S.refresh();drain() end
+assert(#logs==lines,'a waiting reset says so once')
+-- Emptying those slots lets each chest shrink; the reset completes with the last one.
+busy:Get(12).amount=0;unnamed:Get(11).amount=0;sharedBusy:Get(82).amount=0
+S.refresh();drain();S.refresh();drain()
+assert(busy:Num()==10 and unnamed:Num()==10 and sharedBusy:Num()==80 and #errors==0)
+assert(logged('reset complete: 4 chests at native size')==1)
+-- A chest that appears later is counted: the last reset line is the one to trust.
+lists.PalMapObjectItemChestModel[4]=chest('newcomer model',saved('newcomer',10,{2}),10)
+S.changed();S.refresh();drain();S.refresh();drain()
+assert(logged('reset complete: 5 chests at native size')==1 and #errors==0)
+-- A chest whose resize fails holds the reset open.
+local broken=filled('broken',12,10,{})
+function broken:GetLastNotEmptyIndex()error('simulated native failure')end
+lists.PalMapObjectItemChestModel={(chest('broken model',broken,10))}
+local brokenStart=census({broken})
+S.changed();S.refresh();drain();S.refresh();drain()
+assert(broken:Num()==12 and #errors==1)
+same(brokenStart,census({broken}),'failed resize')
+assert(logged('reset waiting: 0 chests still hold items above native size, 1 failed')==1)
+assert(logged('reset complete')==2,'a failed chest never reports a complete reset')
+print('PASS: a reset names each chest holding items above native size once, waits for them and completes only when all are native')

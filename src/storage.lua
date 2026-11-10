@@ -3,7 +3,8 @@
 return function(E)
     local S={dirty=true}
     local signature,jobs,cursor,pending=nil,{},1,false
-    local overflow,failed,retained={},{},{}
+    local overflow,failed,retained,reported={},{},{},{}
+    local checked,waiting=0,nil
     local function object(path)return E.objects.find(path)end
     local function guid(id)return table.concat({id.A,id.B,id.C,id.D},':')end
     local function integer(n)return type(n)=='number' and n>=0 and n<math.huge and n%1==0 end
@@ -87,7 +88,7 @@ return function(E)
         local policy=E.runtime.policy(job.base)
         local bonus=E.config.resetToVanilla and 0 or E.range.storageBonus(job.base:GetLevel(),policy,levels())
         local desired=job.baseline+bonus
-        if before==desired then overflow[job.name]=nil;return end
+        if before==desired then overflow[job.name]=nil;reported[job.name]=nil;return end
         local target=desired
         if before>desired then
             local last=container:GetLastNotEmptyIndex()
@@ -95,6 +96,12 @@ return function(E)
             target=math.max(desired,last+1)
         end
         overflow[job.name]=target>desired and job or nil
+        -- Said once per size: the player empties those slots and a later refresh shrinks the chest.
+        if target>desired and reported[job.name]~=target then
+            E.log(string.format('%s keeps %d slots instead of %d until the slots above are emptied',
+                job.label,target,desired))
+        end
+        reported[job.name]=target>desired and target or nil
         if target==before then return end
         local slots=container.ItemSlotArray
         assert(#slots==before,'Native container/slot counts disagree')
@@ -174,6 +181,19 @@ return function(E)
         local now=table.concat(parts,';')
         if not S.dirty and signature==now then
             if cursor>#jobs then
+                -- A finished pass under reset says whether the mod can be removed yet.
+                if E.config.resetToVanilla then
+                    local held,broken=0,0
+                    for _ in pairs(overflow) do held=held+1 end
+                    for _ in pairs(failed) do broken=broken+1 end
+                    local state=held..':'..broken..':'..checked
+                    if state~=waiting then
+                        waiting=state
+                        E.log(held+broken==0 and string.format('reset complete: %d chests at native size',checked)
+                            or string.format('reset waiting: %d chests still hold items above native size, %d failed',
+                                held,broken))
+                    end
+                end
                 jobs={};cursor=1
                 for name,job in pairs(overflow) do
                     if current(job) then jobs[#jobs+1]=job else overflow[name]=nil end
@@ -186,12 +206,12 @@ return function(E)
         if signature~=now then failed={} end
         S.dirty=false;signature=now;jobs={};cursor=1
         local seen={}
-        local function enqueue(container,baseline,base,actor)
+        local function enqueue(container,baseline,base,actor,label)
             if not E.valid(container) or not integer(baseline) or baseline<1 then return end
             local name=container:GetFullName()
             if seen[name] then return end
             seen[name]=true
-            jobs[#jobs+1]={container=container,name=name,baseline=baseline,base=base,actor=actor}
+            jobs[#jobs+1]={container=container,name=name,baseline=baseline,base=base,actor=actor,label=label}
         end
         for _,model in ipairs(E.objects.all('PalMapObjectItemChestModel')) do
             local base=model:GetBaseCampModelBelongTo()
@@ -199,7 +219,9 @@ return function(E)
                 local module=model:GetItemContainerModule()
                 if E.valid(module) then
                     local baseline,actor=capacity(model)
-                    enqueue(module:GetContainer(),baseline,base,actor)
+                    -- The name is only for the log: without it the chest is still resized.
+                    local named,id=pcall(function()return model:TryGetMapObjectId():ToString()end)
+                    enqueue(module:GetContainer(),baseline,base,actor,named and id or 'chest')
                 end
             end
         end
@@ -209,9 +231,10 @@ return function(E)
             local storage=group.ItemStorage
             if base and E.valid(storage) then
                 local settings=utility:GetGameSetting(base)
-                enqueue(storage.ItemContainer,settings.GuildChestSlotNum,base)
+                enqueue(storage.ItemContainer,settings.GuildChestSlotNum,base,nil,'Guild Chest')
             end
         end
+        checked=#jobs
         pump()
     end
     -- Models may exist before their actor parameters/shared inventory do.
