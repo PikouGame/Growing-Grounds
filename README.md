@@ -72,6 +72,15 @@ A gentler pace, so later base levels still have something to give.
   upgrade: with the default 20, that is 1 at level 2, 5 at level 10, 11 at
   level 20 and all 20 at level 35. Base Upgrade shows the current and next
   number even when an upgrade adds none.
+- With some range caps (for example +57%), bases stopped growing once one
+  base reached its cap. Fixed.
+- A chest whose enlargement failed is tried again at the next base level or
+  cap change, not only after a restart.
+- A world-settings file that cannot be read is now reported once in the log
+  and read again a few seconds later.
+- The bonus chest slider rounds to the nearest slot (18.9999 is saved as 19).
+- Clients do less background work: they no longer plan base radii they never
+  apply.
 - **Existing worlds keep their own growth value.** Saved World Settings and a
   kept `config.lua` are never rewritten; the new default only reaches worlds
   that never saved one. To adopt it, set growth to 4: a level-11, 35 m base
