@@ -91,59 +91,33 @@ A gentler pace, so later base levels still have something to give.
   from 10 bonus slots to 6. Extra slots that hold items stay until you empty
   them; nothing is deleted or moved.
 
-## What changed in 0.1.6-alpha
+## Earlier versions
 
-- Prevents concurrent Lua timer callbacks from corrupting callback references.
-- Keeps range and chest rewards coherent while an upgrade reaches the client.
-- Preserves the existing gameplay balance, animation and keyboard controls.
-
-## What changed in 0.1.5-alpha
-
-Base Upgrade now previews bonus chest slots alongside range. Set either cap to **0 (Off)** to disable that feature and hide its row. When an upgrade is ready, the next radius in metres follows Palworld’s turquoise highlight. Current metres keep their mint tint.
-
-## What changed in 0.1.4-alpha
-
-The range cap now uses bonus percentages in World Settings and `config.lua`.
-The default remains +100%; +300% is the new upper limit. Legacy totals retain
-their previous effective cap. Chest capacity now follows base level, including shared Guild Chest storage.
-When a lower cap would remove occupied slots, those slots stay accessible until
-they are emptied. This version is installed on the test client and dedicated
-server. Growth, save/reload, client replication and item transfers have been
-checked with native inventories, including occupied overflow across a restart.
-
-## What changed in 0.1.3-alpha
-
-- Gain percentages and compact mint metre labels, with aligned numeric columns.
-- A quicker bounce/lift and a rising contour that gradually straightens.
-- Removed development keyboard shortcuts, hot reload and profiling code.
-- Shared text styling and boundary scaling; one release builder and fewer repeated material writes.
-
-The celebration can still start late after closing the Palbox. This does not
-postpone the gameplay radius change. No growth, cap or spacing defaults changed.
+The notes of each earlier version are in [publishing/](publishing/), one
+`release-<version>.txt` per version.
 
 ## Testing and current limits
 
-Observed with Palworld **v1.0.5.102999** and UE4SS Palworld fork **2281fa31**,
-using Windows game/server executables through Proton/Wine. Server/client radius
-replication, the 140% → 145% preview, and the screen-close animation replay were
-checked in game. The author approved the slower wave and screen-close behavior.
-The former periodic freezes stopped on the test setup; broader hardware
-performance has not been established.
+Tested with Palworld **v1.0.5.102999** and UE4SS Palworld fork **2281fa31**,
+using the Windows game and server executables through Proton/Wine, on a
+dedicated server with one client. Checked in game across the alpha versions: radius replication
+from server to client, the Base Upgrade rows, chest growth and shrinking with
+occupied slots kept across a restart, and the upgrade celebration.
 
-The 0.1.5 candidate passes ten standalone regression suites. Native tests also
-cover empty-slot removal, garbage collection and shared Guild Chest sizing.
-The three World Settings rows were checked through the normal new-world menu;
-the form was cancelled without creating a world. For 0.1.6, six targeted regression suites passed. An isolated timer test reproduced
-the invalid-callback error with async scheduling; the same workload completed
-2,000 callbacks without errors using game-thread timers. A real level 10–11
-upgrade, menu close/reopen and full animation also completed without errors.
-The earlier native crash has not been reproduced; long-session stability remains
-unverified.
+### Known limits
 
-This is an alpha. Saving World Settings and starting a new world, placement rejection,
-Pal work and resource access throughout expanded areas, the full reset lifecycle,
-conflicts with other range mods, and native Windows OS execution still need
-broader in-game verification. The added reward and settings labels are currently English.
+This is an alpha. These still need broader in-game verification:
+
+- saving World Settings and starting a new world;
+- placement rejection near another base;
+- Pal work and resource access throughout the expanded area;
+- the full reset and removal lifecycle;
+- other range mods installed alongside;
+- native Windows, long sessions and other hardware.
+
+The added reward and settings labels are English only. The celebration can
+start late after closing the Palbox; the gameplay radius is already updated.
+
 On a client, while the server's preview is missing or out of date, Base Upgrade keeps
 its last complete Growing Grounds values, or shows no Growing Grounds row on a first open.
 At the maximum base level only the next value is hidden. With `resetToVanilla=true`
