@@ -158,3 +158,29 @@ W.sliderUpdated(obj('unowned slider'))
 menu.alive=false;W.refresh();slider.BP_PalTextBlock_Value:SetText('native');W.sliderUpdated(slider)
 assert(slider.BP_PalTextBlock_Value.text=='native','cleanup releases slider ownership')
 print('PASS: native post-notification rewrites, keyboard/mouse repaint, unowned slider isolation and cleanup')
+
+-- The slider maxima are the shared limits, not copies of them.
+-- The cleanup test above closed the menu; reopen it, which builds a fresh row group.
+menu.alive=true;W.setup(menu,a,false)
+local rows={panel.children[#panel.children-2],panel.children[#panel.children-1],panel.children[#panel.children]}
+assert(rows[1].max==Range.limits.growthPercentPerLevel and rows[2].max==Range.limits.maxRangeBonusPercent
+    and rows[3].max==Range.limits.maxChestBonusSlots,'slider maxima equal Range.limits')
+-- One source: with the chest limit raised in a fresh copy of the modules, settings and slider follow.
+local raised=dofile(root..'src/range.lua')
+raised.limits.maxChestBonusSlots=45
+assert(raised.settings({maxChestBonusSlots=45}).maxChestBonusSlots==45 and raised.settings({maxChestBonusSlots=46}).maxChestBonusSlots==45)
+assert(Range.settings({maxChestBonusSlots=45}).maxChestBonusSlots==40,'the unraised copy keeps its own limit')
+local store2=factory('',raised,defaults,fs)
+local panel2=obj('panel2',{children={}})
+panel2.GetChildrenCount,panel2.GetChildAt,panel2.AddChild=panel.GetChildrenCount,panel.GetChildAt,panel.AddChild
+local menu2=obj('menu2',{ScrollBox_DifficultySetting=panel2,
+    WorldSettings_BaseCampWorkerNum=obj('nativeRow2',{OptionType=1}),GetOwningPlayer=function() end})
+local outer2=obj('outer2',{WBP_Title_WorldSettings=menu2})
+local W2=dofile(root..'src/world_settings.lua')({range=raised,settings=store2,worldId=function() return a end,
+    valid=E.valid,log=E.log,guard=E.guard})
+W2.setup(menu2,a,false)
+assert(panel2.children[3].max==45,'slider maximum follows the raised limit')
+W2.change(panel2.children[3],45);W2.saved(outer2,true)
+assert(store2.get(a).maxChestBonusSlots==45,'a value up to the raised limit is saved')
+assert(factory('',raised,defaults,fs).get(a).maxChestBonusSlots==45,'and read back')
+print('PASS: slider maxima equal Range.limits and follow it from one source')

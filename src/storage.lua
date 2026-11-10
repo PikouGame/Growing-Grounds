@@ -74,6 +74,8 @@ return function(E)
         local ok,maximum=pcall(E.runtime.maxLevel)
         return ok and maximum or nil
     end
+    -- The largest bonus any release has added; not the current limit, so older enlargements stay recognised.
+    local LARGEST_RELEASE_BONUS = 40
     local function resize(job)
         if not current(job) then return end
         local container=job.container
@@ -81,7 +83,7 @@ return function(E)
         assert(integer(before) and before>0,'Invalid native chest capacity')
         -- Do not cut back an unrelated storage expansion that exceeds our
         -- entire supported bonus. Its own mod remains responsible for it.
-        if before>job.baseline+40 then return end
+        if before>job.baseline+LARGEST_RELEASE_BONUS then return end
         local policy=E.runtime.policy(job.base)
         local bonus=E.config.resetToVanilla and 0 or E.range.storageBonus(job.base:GetLevel(),policy,levels())
         local desired=job.baseline+bonus

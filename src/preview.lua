@@ -21,11 +21,12 @@ return function(E)
         if not location then return end
         local x,y,z=location.X,location.Y,location.Z
         if not finite(x) or not finite(y) or not finite(z) then return end
+        local limits=E.range.limits
         local payload=z-MAGIC
         local level,rangeEnabled,chestCap
         if payload>=1 then
             local flags=math.floor(payload/(MAX_LEVEL+1))
-            if flags<0 or flags>81 then return end
+            if flags<0 or flags>limits.maxChestBonusSlots*2+1 then return end
             level=payload-flags*(MAX_LEVEL+1)
             rangeEnabled,chestCap=flags%2==1,math.floor(flags/2)
         else
@@ -33,7 +34,8 @@ return function(E)
         end
         if level<1 or level>MAX_LEVEL or math.abs(level-math.floor(level+0.5))>0.01 then return end
         level=math.floor(level+0.5)
-        if x<9999 or x>40001 or (y~=-100 and (y<9999 or y>40001)) then return end
+        local maxPercent=(100+limits.maxRangeBonusPercent)*100+1
+        if x<9999 or x>maxPercent or (y~=-100 and (y<9999 or y>maxPercent)) then return end
         return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil,
             rangeEnabled=rangeEnabled,chestCap=chestCap}
     end

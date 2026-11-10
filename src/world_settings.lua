@@ -7,11 +7,11 @@ return function(E)
     local outerPath = '/Game/Pal/Blueprint/UI/Title/WBP_WorldSetting.WBP_WorldSetting_C'
     local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
-        {key='growthPercentPerLevel', title='Growing Grounds: Range growth per level (%)', min=0, max=20,
+        {key='growthPercentPerLevel', title='Growing Grounds: Range growth per level (%)', min=0, max=E.range.limits.growthPercentPerLevel,
             tip='Adds a percentage of the original radius each level after level 1. Default: 4%.'},
-        {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=300,
+        {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=E.range.limits.maxRangeBonusPercent,
             tip='0 disables range growth. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
-        {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=40,
+        {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=E.range.limits.maxChestBonusSlots,
             tip='0 disables bonus slots. These slots arrive steadily over all base levels; the last level gives them all. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
     }
     local function object(path)

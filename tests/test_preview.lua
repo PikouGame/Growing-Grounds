@@ -47,7 +47,7 @@ local function box(name)
 end
 local host,remote=box('serverPalbox'),box('clientPalbox')
 boxes={host}
-local E={runtime={baseline=function() return 3500 end, bonuses=function() return {rangeEnabled=true,chestCap=20} end},valid=function(o) return o and o:IsValid() end,log=function() end}
+local E={range=dofile(root..'src/range.lua'),runtime={baseline=function() return 3500 end, bonuses=function() return {rangeEnabled=true,chestCap=20} end},valid=function(o) return o and o:IsValid() end,log=function() end}
 local make=dofile(root..'src/preview.lua')
 local publisher=make(E)
 publisher.refresh();publisher.publish(host,base,145);publisher.finish()
@@ -138,3 +138,36 @@ for _,invalid in ipairs({400000,400000+1001*82+9,400009.5}) do
     assert(client.read(base,3500,9,4900)==nil)
 end
 print('PASS: authoritative bonus policy, independent disabled flags, 0..40 chest cap and legacy compatibility')
+
+-- The decoder's bounds follow Range.limits: the exact maxima round-trip, one above is refused.
+local limits=E.range.limits
+assert(limits.maxChestBonusSlots==40 and limits.maxRangeBonusPercent==300)
+local function probe(x,y,flags)
+    cc.RelativeLocation={X=x,Y=y,Z=400000+9+1001*flags}
+    client.refresh()
+    local _,value=client.read(base,3500,9,x/100*3500/100)
+    return value
+end
+local top=limits.maxChestBonusSlots*2+1
+local cap=probe(40000,-100,top)
+assert(cap and cap.chestCap==40 and cap.rangeEnabled,'chest cap at the maximum round-trips')
+assert(probe(40000,-100,top+1)==nil and probe(40000,-100,top+2)==nil,'chest cap one above the maximum is refused')
+assert(probe(40000,40000,top),'+300 percent range bonus round-trips as current and next')
+assert(probe(40001,-100,top),'range bonus at the upper bound is accepted')
+assert(probe(40002,-100,top)==nil and probe(14000,40002,top)==nil,'range bonus one hundredth above is refused')
+-- One source: a fresh Range with raised limits moves the decoder with it.
+local raised=dofile(root..'src/range.lua')
+raised.limits.maxChestBonusSlots=45;raised.limits.maxRangeBonusPercent=350
+local E2={range=raised,runtime=E.runtime,valid=E.valid,log=E.log}
+local wide=make(E2)
+wide.refresh()
+local function wideRead(x,y,flags)
+    cc.RelativeLocation={X=x,Y=y,Z=400000+9+1001*flags}
+    wide.refresh()
+    local _,value=wide.read(base,3500,9,x/100*3500/100)
+    return value
+end
+assert(wideRead(45000,-100,91),'raised chest cap and range bonus are accepted by the decoder')
+assert(wideRead(45000,-100,93)==nil and wideRead(45002,-100,91)==nil,'and the raised bounds still refuse one above')
+assert(probe(45000,-100,91)==nil,'the unraised decoder still refuses them')
+print('PASS: preview bounds follow Range.limits at each maximum and one above')

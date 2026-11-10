@@ -3,6 +3,9 @@
 -- server-authoritative guild/base level. Never feed the modified radius back in.
 local Range = {}
 
+-- The one source of the setting maxima: clamps, sliders and the preview decoder derive from it.
+Range.limits = {growthPercentPerLevel=20, maxRangeBonusPercent=300, maxChestBonusSlots=40}
+
 local function finite(value)
     return type(value) == "number" and value == value
         and value ~= math.huge and value ~= -math.huge
@@ -26,9 +29,10 @@ function Range.settings(settings)
     if not finite(cap) then cap = 100 end
     local slots = settings.maxChestBonusSlots
     if not finite(slots) then slots = 20 end
-    return {growthPercentPerLevel=math.max(0, math.min(20, growth)),
-        maxRangeBonusPercent=math.max(0, math.min(300, cap)),
-        maxChestBonusSlots=math.max(0, math.min(40, math.floor(slots)))}
+    local limits = Range.limits
+    return {growthPercentPerLevel=math.max(0, math.min(limits.growthPercentPerLevel, growth)),
+        maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
+        maxChestBonusSlots=math.max(0, math.min(limits.maxChestBonusSlots, math.floor(slots)))}
 end
 
 function Range.percent(level, settings)
