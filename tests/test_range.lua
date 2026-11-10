@@ -239,3 +239,41 @@ E.preview={read=function() return 140,{rangeEnabled=true} end} -- older server: 
 same(remote,nil,nil,false)
 E.preview=nil
 print('PASS: preview rows follow the spread schedule on host and client, unchanged steps, small caps, off and reset')
+
+-- The runtime's maximum must equal Range.radius at the cap for every integer cap,
+-- or the separation check rejects the base (cap 57 used to differ by one bit).
+local function capRuntime(baseline)
+    settings.BaseCampAreaRange=baseline
+    settings.GetFullName=function() return 'settings'..baseline end
+    return dofile(root..'src/runtime.lua')(E)
+end
+for _,baselineRadius in ipairs({3500,2700}) do
+    local capped=capRuntime(baselineRadius)
+    for cap=0,300 do
+        E.config={growthPercentPerLevel=20,maxRangeBonusPercent=cap}
+        local only=newBase(35,baselineRadius,true)
+        collection={only}
+        capped.apply(only)
+        near(only.AreaRange,baselineRadius*(100+cap)/100)
+        only.AreaRange=baselineRadius
+        capped.refresh()
+        near(only.AreaRange,baselineRadius*(100+cap)/100)
+        near(capped.snapshot(only).nextPercent,100+cap)
+    end
+end
+-- Cap 57 with 4% growth crosses the cap between levels 15 and 16.
+do
+    local capped=capRuntime(3500)
+    E.config={growthPercentPerLevel=4,maxRangeBonusPercent=57}
+    for level,expected in pairs({[15]=3500*1.56,[16]=3500*1.57,[35]=3500*1.57}) do
+        local only=newBase(level,3500,true)
+        collection={only}
+        capped.apply(only);near(only.AreaRange,expected)
+        local shot=capped.snapshot(only)
+        near(shot.currentPercent,expected/35)
+        near(shot.nextPercent,157)
+        only.AreaRange=3500
+        capped.refresh();near(only.AreaRange,expected)
+    end
+end
+print('PASS: every integer cap plans and applies its capped radius through apply, snapshot and refresh')

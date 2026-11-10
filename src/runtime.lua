@@ -69,7 +69,7 @@ return function(E)
                 local level = model:GetLevel()
                 if nextGroup and guid(model:GetGroupIdBelongTo()) == nextGroup then level = nextLevel end
                 local position = model:GetTransform().Translation
-                local maximum=E.config.resetToVanilla and baseline or baseline * (1 + policy.maxRangeBonusPercent / 100)
+                local maximum=E.config.resetToVanilla and baseline or baseline * ((100 + policy.maxRangeBonusPercent) / 100)
                 entries[#entries+1] = {
                     id=guid(model:GetId()), baseline=baseline, x=position.X, y=position.Y,
                     desired=fullGrowth and maximum or (E.config.resetToVanilla and baseline or E.range.radius(baseline, level, policy)),
