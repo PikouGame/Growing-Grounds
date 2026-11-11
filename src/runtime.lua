@@ -108,6 +108,12 @@ return function(E)
             return maximum
         end)
     end
+    -- The size of the level table, or nil until it loads: Range then assumes its
+    -- known 35 levels and the next refresh reconciles.
+    function R.levels()
+        local ok, maximum = pcall(R.maxLevel)
+        return ok and maximum or nil
+    end
     function R.snapshot(model)
         local baseline, level = R.baseline(model), model:GetLevel()
         local radius, maximum = model:GetRange(), R.maxLevel()

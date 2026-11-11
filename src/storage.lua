@@ -69,12 +69,6 @@ return function(E)
             if integer(n) and n>0 then return n,actor end
         end
     end
-    -- The slot schedule spans the game's level table. Range assumes its known
-    -- 35 levels until that table loads; refresh() then reconciles every chest.
-    local function levels()
-        local ok,maximum=pcall(E.runtime.maxLevel)
-        return ok and maximum or nil
-    end
     local function announce(job)
         job.container.OnUpdateContentsDelegate:Broadcast(job.container)
         if E.valid(job.actor) then job.actor:FlushNetDormancy();job.actor:ForceNetUpdate() end
@@ -130,7 +124,7 @@ return function(E)
         -- entire supported bonus. Its own mod remains responsible for it.
         if before>job.baseline+LARGEST_RELEASE_BONUS then return end
         local policy=E.runtime.policy(job.base)
-        local bonus=E.config.resetToVanilla and 0 or E.range.storageBonus(job.base:GetLevel(),policy,levels())
+        local bonus=E.config.resetToVanilla and 0 or E.range.storageBonus(job.base:GetLevel(),policy,E.runtime.levels())
         local desired=job.baseline+bonus
         if before==desired then overflow[job.name]=nil;reported[job.name]=nil;return end
         local target,moved=desired,false
@@ -226,7 +220,7 @@ return function(E)
         table.sort(parts)
         parts[#parts+1]=tostring(E.range.settings(E.policy and E.policy() or E.config).maxChestBonusSlots)
         parts[#parts+1]=tostring(E.config.resetToVanilla)
-        parts[#parts+1]=tostring(levels())
+        parts[#parts+1]=tostring(E.runtime.levels())
         local now=table.concat(parts,';')
         if not S.dirty and signature==now then
             if cursor>#jobs then

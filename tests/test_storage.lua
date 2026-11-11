@@ -75,7 +75,7 @@ E.valid=function(o)return o and o:IsValid()end
 E.guard=function(_,fn)local ok,err=pcall(fn);if not ok then errors[#errors+1]=err end;return ok end
 E.log=function()end
 E.runtime={isAuthority=function(b)return b.authority end,policy=function()return Range.settings(E.config)end,
-    maxLevel=function()return assert(tableLevels,'Base-level table not loaded')end}
+    levels=function()return tableLevels end}
 E.objects={all=function(name)scans[name]=(scans[name] or 0)+1;return lists[name]end,
     find=function(path)
         if path:find('GameplayStatics',1,true) then return {GetGameInstance=function()return owner end} end

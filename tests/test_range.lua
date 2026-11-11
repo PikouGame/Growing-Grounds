@@ -376,6 +376,20 @@ do
 end
 print('PASS: a refresh resolves policy and level table once, remembers nothing afterwards, even when it throws')
 
+-- The level-table size is public for planning and storage: nil until the table loads.
+do
+    local plain=FindFirstOf
+    local levelRuntime=dofile(root..'src/runtime.lua')(E)
+    FindFirstOf=function() return nil end
+    assert(levelRuntime.levels()==nil, 'an unloaded level table gives nil, not an error')
+    FindFirstOf=function() return obj({GetMaxLevel=function() return 40 end}) end
+    assert(levelRuntime.levels()==40, 'a loaded level table gives its size')
+    FindFirstOf=function() return obj({GetMaxLevel=function() return 0 end}) end
+    assert(levelRuntime.levels()==nil, 'an invalid level table gives nil')
+    FindFirstOf=plain
+end
+print('PASS: the runtime reports the level-table size, or nil until it loads')
+
 -- Shrink before expand: a base that gives room back is written before another
 -- base grows, whatever the enumeration order.
 do
