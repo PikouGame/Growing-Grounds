@@ -140,7 +140,7 @@ return function(E)
         -- The server authors the cap; both sides spread it over the same table.
         local cap=bonuses and bonuses.chestCap
         local function chest(at)
-            return cap and cap>0 and E.range.storageBonus(at,{maxChestBonusSlots=cap},maximum) or nil
+            return cap and cap>0 and E.range.storageAtCap(at,cap,maximum) or nil
         end
         return {
             level=level, maximum=maximum, radius=radius, baseline=baseline,

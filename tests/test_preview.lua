@@ -137,7 +137,7 @@ cc.RelativeLocation={X=14000,Y=14500,Z=400000+9+1001*41}
 client.refresh()
 local nextValue,metadata=client.read(base,3500,9,4900)
 assert(nextValue==145 and metadata.rangeEnabled and metadata.chestCap==20)
-for _,cap in ipairs({0,20,40}) do
+for _,cap in ipairs({0,18,20,40,42}) do
     for _,enabled in ipairs({false,true}) do
         cc.RelativeLocation.Z=400000+9+1001*(cap*2+(enabled and 1 or 0))
         client.refresh()
@@ -149,15 +149,15 @@ cc.RelativeLocation.Z=232009
 client.refresh()
 local _,legacy=client.read(base,3500,9,4900)
 assert(legacy and legacy.chestCap==nil and legacy.rangeEnabled==nil,'never infer missing settings from an older server')
-for _,invalid in ipairs({400000,400000+1001*82+9,400009.5}) do
+for _,invalid in ipairs({400000,400000+1001*86+9,400009.5}) do
     cc.RelativeLocation.Z=invalid;client.refresh()
     assert(client.read(base,3500,9,4900)==nil)
 end
-print('PASS: authoritative bonus policy, independent disabled flags, 0..40 chest cap and legacy compatibility')
+print('PASS: authoritative bonus policy, independent disabled flags, 0..42 chest cap and legacy compatibility')
 
 -- The decoder's bounds follow Range.limits: the exact maxima round-trip, one above is refused.
 local limits=E.range.limits
-assert(limits.maxChestBonusSlots==40 and limits.maxRangeBonusPercent==300)
+assert(limits.maxChestBonusSlots==42 and limits.maxRangeBonusPercent==300)
 local function probe(x,y,flags)
     cc.RelativeLocation={X=x,Y=y,Z=400000+9+1001*flags}
     client.refresh()
@@ -166,7 +166,7 @@ local function probe(x,y,flags)
 end
 local top=limits.maxChestBonusSlots*2+1
 local cap=probe(40000,-100,top)
-assert(cap and cap.chestCap==40 and cap.rangeEnabled,'chest cap at the maximum round-trips')
+assert(cap and cap.chestCap==42 and cap.rangeEnabled,'chest cap at the maximum round-trips')
 assert(probe(40000,-100,top+1)==nil and probe(40000,-100,top+2)==nil,'chest cap one above the maximum is refused')
 assert(probe(40000,40000,top),'+300 percent range bonus round-trips as current and next')
 assert(probe(40001,-100,top),'range bonus at the upper bound is accepted')

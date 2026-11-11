@@ -114,7 +114,7 @@ return function(E)
         return true
     end
     -- The largest bonus any release has added; not the current limit, so older enlargements stay recognised.
-    local LARGEST_RELEASE_BONUS = 40
+    local LARGEST_RELEASE_BONUS = 42
     local function resize(job)
         if not current(job) then return end
         local container=job.container

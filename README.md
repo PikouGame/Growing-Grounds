@@ -8,7 +8,7 @@ last base level. The Base Upgrade screen shows your current and next bonus with
 metres beside each value: **26% 44.1m → 29% 45.2m**.
 The numbers follow Palworld's own reward-row layout.
 
-Chests grow with your base: **20 bonus slots** by default, arriving steadily
+Chests grow with your base: **18 bonus slots** by default, arriving steadily
 from your first upgrade to the final base level. Guild Chests receive the bonus
 once for their shared inventory.
 
@@ -33,7 +33,7 @@ you close the screen.
 ## Your world's settings
 
 - **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.
-- **Bonus chest slots:** 20 by default, spread evenly over all base levels; adjustable from 0 to 40. Guild Chests share one bonus.
+- **Bonus chest slots:** 18 by default, spread evenly over all base levels; adjustable from 0 to 42 in steps of six. Guild Chests share one bonus.
 - Local worlds have two Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
@@ -76,6 +76,9 @@ PalSchema. Steam Workshop deployment of this mod remains unverified.
 Not released yet. One setting fewer, a bonus that lasts to the last level,
 and the game's own languages.
 
+- **Chest bonus caps use multiples of six:** 18 by default, up to 42. Existing
+  caps round to the nearest step (20 becomes 18; 40 becomes 42). Slots still
+  arrive gradually, one at a time. Occupied overflow slots remain until emptied.
 - **The range bonus is spread over all base levels**, like the chest slots.
   The maximum you choose (+100% by default) is reached at the last base level,
   35, and every level before it brings its share. The "growth per level"

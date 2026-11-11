@@ -4,7 +4,8 @@
 local Range = {}
 
 -- The one source of the setting maxima: clamps, sliders and the preview decoder derive from it.
-Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=40}
+Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=42}
+Range.chestSlotStep = 6
 
 local function finite(value)
     return type(value) == "number" and value == value
@@ -30,10 +31,12 @@ function Range.settings(settings)
     if not finite(cap) then cap = 100 end
     if settings.growthPercentPerLevel == 0 then cap = 0 end
     local slots = settings.maxChestBonusSlots
-    if not finite(slots) then slots = 20 end
+    if not finite(slots) then slots = 18 end
     local limits = Range.limits
+    slots = math.max(0, math.min(limits.maxChestBonusSlots, slots))
+    slots = math.floor(slots / Range.chestSlotStep + 0.5) * Range.chestSlotStep
     return {maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
-        maxChestBonusSlots=math.max(0, math.min(limits.maxChestBonusSlots, math.floor(slots)))}
+        maxChestBonusSlots=slots}
 end
 
 -- A cap spread evenly over the game's base levels: level 1 gives 0, the last
@@ -54,8 +57,16 @@ function Range.percent(level, settings, maxLevel)
     return 100 + spread(Range.settings(settings).maxRangeBonusPercent, level, maxLevel)
 end
 
+-- A replicated cap is already server-authored. Do not round a legacy server's
+-- 20 or 40 to our new settings grid and display slots it did not grant.
+function Range.storageAtCap(level, cap, maxLevel)
+    assert(finite(cap) and cap >= 0 and cap % 1 == 0 and cap <= Range.limits.maxChestBonusSlots,
+        'invalid chest bonus cap')
+    return spread(cap, level, maxLevel)
+end
+
 function Range.storageBonus(level, settings, maxLevel)
-    return spread(Range.settings(settings).maxChestBonusSlots, level, maxLevel)
+    return Range.storageAtCap(level, Range.settings(settings).maxChestBonusSlots, maxLevel)
 end
 
 function Range.radius(originalRadius, level, settings, maxLevel)

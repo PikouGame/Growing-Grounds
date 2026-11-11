@@ -19,7 +19,7 @@ function fs.rename(a,b)
 end
 function fs.remove(path) files[path]=nil;return true end
 local a,b=string.rep('A',32),string.rep('B',32)
-local defaults={maxRangeBonusPercent=100,maxChestBonusSlots=20}
+local defaults={maxRangeBonusPercent=100,maxChestBonusSlots=18}
 local store=factory('',Range,defaults,fs)
 assert(store.get(a).maxRangeBonusPercent==100)
 assert(not pcall(store.save,'../../config.lua',defaults))
@@ -85,21 +85,23 @@ assert(logs[#logs]=='World Settings: range bonus cap and chest bonus cap rows re
 assert(panel.children[1].Text_OptionTitle.text=='Growing Grounds: Maximum range bonus')
 assert(panel.children[1].tip=='The range bonus arrives steadily over all base levels; the last level gives it all. 0 disables it. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.')
 assert(panel.children[2].Text_OptionTitle.text=='Growing Grounds: Maximum bonus chest slots')
-assert(panel.children[2].tip=='These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.')
+assert(panel.children[2].tip=='These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 18. Guild Chests share one bonus. Occupied extra slots remain until emptied.')
 W.change(panel.children[1],70)
 W.change(panel.children[2],40)
-assert(store.get(a).maxChestBonusSlots==20,'chest slider changes only its draft')
+assert(store.get(a).maxChestBonusSlots==18,'chest slider changes only its draft')
 assert(menu.IsEditedSettingFlag and menu.IsEditedInCustomSetting)
 assert(store.get(a).maxRangeBonusPercent==100,'drag is draft only')
 W.saved(outer,false);assert(store.get(a).maxRangeBonusPercent==100,'native save failure must not commit')
 W.setup(menu,a,false);assert(#panel.children==2 and panel.children[1].value==100,'cancel/reopen discards draft without duplicates')
-assert(panel.children[2].value==20,'cancel discards chest draft')
+assert(panel.children[2].value==18,'cancel discards chest draft')
 assert(panel.children[1].min==0 and panel.children[1].max==300)
+assert(panel.children[1].OverrideSliderStepValue==1 and panel.children[2].OverrideSliderStepValue==6)
+assert(panel.children[2].min==0 and panel.children[2].max==42)
 assert(panel.children[1].WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text=='+100%')
 W.change(panel.children[1],65);W.change(panel.children[2],40)
 W.saved(outer,true)
 assert(store.get(a).maxRangeBonusPercent==65)
-assert(store.get(a).maxChestBonusSlots==40)
+assert(store.get(a).maxChestBonusSlots==42)
 assert(panel.children[1].WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text=='+65%')
 W.setup(menu,b,false)
 W.change(panel.children[1],30);W.saved(outer,true)
@@ -110,7 +112,7 @@ W.newGame(outer);W.refresh()
 assert(store.get(a).maxRangeBonusPercent==65,'new world must not overwrite selected old world')
 current=string.rep('C',32);W.refresh()
 assert(store.get(current).maxRangeBonusPercent==300 and not W.pendingNew)
-assert(store.get(current).maxRangeBonusPercent==300 and store.get(current).maxChestBonusSlots==40)
+assert(store.get(current).maxRangeBonusPercent==300 and store.get(current).maxChestBonusSlots==42)
 print('PASS: native menu draft/confirm/failure/cancel, no duplicate rows, correct world and new-world identity')
 
 -- Old totals migrate once; a different world's save must not change their meaning.
@@ -121,11 +123,11 @@ custom.save(b,{maxRangeBonusPercent=300,maxChestBonusSlots=40})
 assert(not files['world-settings.ini']:find('maxRangePercent='),'write only canonical bonus settings')
 custom=factory('',Range,{maxRangeBonusPercent=300,maxChestBonusSlots=30},fs)
 assert(custom.get(a).maxRangeBonusPercent==75 and custom.get(a).maxChestBonusSlots==30)
-assert(custom.get(b).maxRangeBonusPercent==300 and custom.get(b).maxChestBonusSlots==40)
+assert(custom.get(b).maxRangeBonusPercent==300 and custom.get(b).maxChestBonusSlots==42)
 files['world-settings.ini']='['..a..']\nmaxRangePercent=200\nmaxRangeBonusPercent=150\nmaxChestBonusSlots=-2\n'
 custom=factory('',Range,defaults,fs)
 assert(custom.get(a).maxRangeBonusPercent==150 and custom.get(a).maxChestBonusSlots==0)
-print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..40')
+print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..42 in steps of six')
 
 -- A world file written by an older version has three keys per section. It is read as the
 -- two settings, and written back with two. Only a growth of 0 (range off) still means something.
@@ -136,13 +138,13 @@ files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=5\nmaxRangeBonusPe
 local old=factory('',Range,defaults,fs)
 local read=old.get(a)
 assert(read.maxRangeBonusPercent==80 and read.maxChestBonusSlots==12 and read.growthPercentPerLevel==nil,'old section: growth ignored')
-assert(old.get(b).maxRangeBonusPercent==0 and old.get(b).maxChestBonusSlots==25,'old section with growth 0: range stays off, chests stay')
+assert(old.get(b).maxRangeBonusPercent==0 and old.get(b).maxChestBonusSlots==24,'old section with growth 0: range stays off, chests stay')
 assert(old.get(nil).maxRangeBonusPercent==100,'worlds without a section follow the defaults')
 local third=string.rep('C',32)
 old.save(third,{maxRangeBonusPercent=40,maxChestBonusSlots=5})
 local text=files['world-settings.ini']
 assert(not text:find('growthPercentPerLevel',1,true),'the file is rewritten with two keys per section')
-assert(text:find('['..b..']\nmaxRangeBonusPercent=0\nmaxChestBonusSlots=25\n',1,true),'the world that was off is written off')
+assert(text:find('['..b..']\nmaxRangeBonusPercent=0\nmaxChestBonusSlots=24\n',1,true),'the world that was off is written off')
 assert(text:find('['..a..']\nmaxRangeBonusPercent=80\nmaxChestBonusSlots=12\n',1,true))
 assert(lines(text)==1+3*3,'one comment line and three lines per section, got '..lines(text))
 old=factory('',Range,{maxRangeBonusPercent=250,maxChestBonusSlots=20},fs)
@@ -151,7 +153,7 @@ assert(old.get(a).maxRangeBonusPercent==80 and old.get(third).maxRangeBonusPerce
 -- Growth 0 switches off the legacy total as well, and a saved-again world stays off.
 files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=0\nmaxRangePercent=175\n'
 old=factory('',Range,defaults,fs)
-assert(old.get(a).maxRangeBonusPercent==0 and old.get(a).maxChestBonusSlots==20)
+assert(old.get(a).maxRangeBonusPercent==0 and old.get(a).maxChestBonusSlots==18)
 old.save(a,old.get(a))
 assert(files['world-settings.ini']:find('maxRangeBonusPercent=0\n',1,true) and not files['world-settings.ini']:find('growth',1,true))
 assert(factory('',Range,defaults,fs).get(a).maxRangeBonusPercent==0,'saving an off world again keeps it off')
@@ -159,13 +161,13 @@ assert(factory('',Range,defaults,fs).get(a).maxRangeBonusPercent==0,'saving an o
 files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=20\nmaxRangeBonusPercent=100\nmaxChestBonusSlots=20\n'
 assert(factory('',Range,defaults,fs).get(a).maxRangeBonusPercent==100)
 local shipped=dofile(root..'config.lua')
-assert(shipped.growthPercentPerLevel==nil and shipped.maxRangeBonusPercent==100)
+assert(shipped.growthPercentPerLevel==nil and shipped.maxRangeBonusPercent==100 and shipped.maxChestBonusSlots==18)
 for growth,expected in pairs({[4]=100,[5]=100,[0]=0}) do
     local config=load('return {growthPercentPerLevel='..growth..',maxRangeBonusPercent=100,maxChestBonusSlots=20,resetToVanilla=false}')()
     local fromOld=factory('',Range,config,fs)
     files['world-settings.ini'],files['world-settings.ini.bak']=nil,nil
     assert(fromOld.get(nil).maxRangeBonusPercent==expected,'old config.lua growth '..growth)
-    assert(fromOld.get(a).maxRangeBonusPercent==expected and fromOld.get(a).maxChestBonusSlots==20)
+    assert(fromOld.get(a).maxRangeBonusPercent==expected and fromOld.get(a).maxChestBonusSlots==18)
     files['world-settings.ini']='['..a..']\nmaxRangeBonusPercent=70\nmaxChestBonusSlots=20\n'
     assert(factory('',Range,config,fs).get(a).maxRangeBonusPercent==70,'a world that saved its own cap keeps it')
     assert(factory('',Range,config,fs).get(b).maxRangeBonusPercent==expected)
@@ -201,9 +203,9 @@ local rows={panel.children[#panel.children-1],panel.children[#panel.children]}
 assert(rows[1].max==Range.limits.maxRangeBonusPercent and rows[2].max==Range.limits.maxChestBonusSlots,'slider maxima equal Range.limits')
 -- One source: with the chest limit raised in a fresh copy of the modules, settings and slider follow.
 local raised=dofile(root..'src/range.lua')
-raised.limits.maxChestBonusSlots=45
-assert(raised.settings({maxChestBonusSlots=45}).maxChestBonusSlots==45 and raised.settings({maxChestBonusSlots=46}).maxChestBonusSlots==45)
-assert(Range.settings({maxChestBonusSlots=45}).maxChestBonusSlots==40,'the unraised copy keeps its own limit')
+raised.limits.maxChestBonusSlots=48
+assert(raised.settings({maxChestBonusSlots=48}).maxChestBonusSlots==48 and raised.settings({maxChestBonusSlots=49}).maxChestBonusSlots==48)
+assert(Range.settings({maxChestBonusSlots=45}).maxChestBonusSlots==42,'the unraised copy keeps its own limit')
 local store2=factory('',raised,defaults,fs)
 local panel2=obj('panel2',{children={}})
 panel2.GetChildrenCount,panel2.GetChildAt,panel2.AddChild=panel.GetChildrenCount,panel.GetChildAt,panel.AddChild
@@ -213,23 +215,25 @@ local outer2=obj('outer2',{WBP_Title_WorldSettings=menu2})
 local W2=dofile(root..'src/world_settings.lua')({range=raised,settings=store2,worldId=function() return a end,
     objects=E.objects,valid=E.valid,log=E.log,guard=E.guard,texts=E.texts})
 W2.setup(menu2,a,false)
-assert(panel2.children[2].max==45,'slider maximum follows the raised limit')
-W2.change(panel2.children[2],45);W2.saved(outer2,true)
-assert(store2.get(a).maxChestBonusSlots==45,'a value up to the raised limit is saved')
-assert(factory('',raised,defaults,fs).get(a).maxChestBonusSlots==45,'and read back')
+assert(panel2.children[2].max==48,'slider maximum follows the raised limit')
+W2.change(panel2.children[2],48);W2.saved(outer2,true)
+assert(store2.get(a).maxChestBonusSlots==48,'a value up to the raised limit is saved')
+assert(factory('',raised,defaults,fs).get(a).maxChestBonusSlots==48,'and read back')
 print('PASS: slider maxima equal Range.limits and follow it from one source')
 
--- The native slider reports floats; the chest cap is rounded to the nearest slot, not floored.
+-- Mouse floats snap directly to the six-slot grid, without intermediate integer rounding.
 W.setup(menu,a,false)
 local function drag(index,value)
     W.change(rows[index],value);W.saved(outer,true)
     return store.get(a)
 end
-assert(drag(2,18.9999).maxChestBonusSlots==19,'18.9999 saves as 19')
+assert(drag(2,18.9999).maxChestBonusSlots==18,'18.9999 stays at 18')
 assert(drag(2,18.4).maxChestBonusSlots==18,'18.4 saves as 18')
-assert(drag(2,18.5).maxChestBonusSlots==19 and drag(2,40.4).maxChestBonusSlots==40 and drag(2,-0.4).maxChestBonusSlots==0)
+assert(drag(2,18.5).maxChestBonusSlots==18 and drag(2,40.4).maxChestBonusSlots==42 and drag(2,-0.4).maxChestBonusSlots==0)
+assert(drag(2,20.9999).maxChestBonusSlots==18 and drag(2,21).maxChestBonusSlots==24,'midpoint snaps up at 21, not 20.5')
+assert(drag(2,2.9999).maxChestBonusSlots==0 and drag(2,3).maxChestBonusSlots==6,'off-to-six midpoint')
 assert(drag(1,64.6).maxRangeBonusPercent==65 and drag(1,64.4).maxRangeBonusPercent==64)
-assert(drag(1,999).maxRangeBonusPercent==300 and drag(2,999).maxChestBonusSlots==40,'maxima still clamp')
+assert(drag(1,999).maxRangeBonusPercent==300 and drag(2,999).maxChestBonusSlots==42,'maxima still clamp')
 do
 -- An unreadable file: defaults, one log line, a retry only after five seconds, saved values return.
 files['world-settings.ini']='['..a..']\nmaxRangeBonusPercent=9\n'
@@ -274,7 +278,7 @@ store=factory('',Range,defaults,readFs,function(m)logged[#logged+1]=m end,functi
 for _=1,3 do now=now+60;assert(store.get(a).maxRangeBonusPercent==100) end
 assert(#logged==0 and opens==1,'missing file: silent and read once')
 end
-print('PASS: sliders round to the nearest integer before clamping')
+print('PASS: range slider rounds to whole percents, chest slider snaps directly to six-slot caps')
 
 -- The two rows, their tooltips and Off are shown in the game's language.
 do
@@ -290,7 +294,7 @@ do
     W.change(range,0);W.change(chest,0)
     assert(shown(range)=='Désactivé' and shown(chest)=='Désactivé')
     W.change(range,65);W.change(chest,7)
-    assert(shown(range)=='+65%' and shown(chest)=='7')
+    assert(shown(range)=='+65%' and shown(chest)=='6')
     -- A language changed while the menu is open is followed at the next paint.
     language='ko'
     W.change(range,0)

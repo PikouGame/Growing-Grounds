@@ -83,7 +83,7 @@ near(Range.percent(10,nil,40),100+ref(10,100,40));near(Range.percent(35,nil,40),
 near(Range.percent(40,nil,40),200)
 -- The bonus is the same cap spread over a table of any size, for each bonus alike.
 for level=1,40 do
-    assert(Range.percent(level,{maxRangeBonusPercent=20},40)-100==Range.storageBonus(level,{maxChestBonusSlots=20},40))
+    assert(Range.percent(level,{maxRangeBonusPercent=18},40)-100==Range.storageBonus(level,{maxChestBonusSlots=18},40))
 end
 -- Old totals (maxRangePercent) keep the effect they had at the cap; so does growth 0.
 near(Range.percent(35,{maxRangePercent=300}),200)
@@ -260,16 +260,16 @@ near(Range.percent(35,{maxRangePercent=200,maxRangeBonusPercent=50}),150)
 near(Range.percent(35,{maxRangeBonusPercent=math.huge}),200)
 -- Chest slots: the cap is spread over the game's 35 levels, to the nearest slot.
 local function slots(level,cap,max) return Range.storageBonus(level,{maxChestBonusSlots=cap},max) end
-for level,expected in pairs({[1]=0,[2]=1,[3]=1,[4]=2,[10]=5,[11]=6,[20]=11,[34]=19,[35]=20}) do
- near(slots(level,20,35),expected)
+for level,expected in pairs({[1]=0,[2]=1,[3]=1,[4]=2,[10]=5,[11]=5,[12]=6,[20]=10,[34]=17,[35]=18}) do
+ near(slots(level,18,35),expected)
  near(Range.storageBonus(level),expected) -- default cap, fallback level table
 end
-for level,expected in pairs({[1]=0,[2]=1,[4]=4,[18]=20,[34]=39,[35]=40}) do near(slots(level,40,35),expected) end
+for level,expected in pairs({[1]=0,[2]=1,[4]=4,[18]=21,[34]=41,[35]=42}) do near(slots(level,42,35),expected) end
 for level=1,45 do near(slots(level,0,35),0) end
 -- Above the table maximum the bonus stays on the cap, never beyond it.
-for _,level in ipairs({36,45,1000}) do near(slots(level,20,35),20);near(slots(level,40,35),40) end
+for _,level in ipairs({36,45,1000}) do near(slots(level,18,35),18);near(slots(level,42,35),42) end
 -- Every cap and table size: starts at 0, ends on the cap, never steps down.
-for cap=0,40 do
+for cap=0,42,6 do
  for _,max in ipairs({2,35,50}) do
   local previous=0
   for level=1,max+3 do
@@ -282,11 +282,11 @@ for cap=0,40 do
 end
 -- An unreadable level table falls back to the game's 35 levels.
 for _,bad in ipairs({0,1,2.5,math.huge,0/0,'35'}) do near(Range.storageBonus(10,nil,bad),5) end
-near(Range.storageBonus(10,nil,40),5);near(Range.storageBonus(35,nil,40),17);near(Range.storageBonus(40,nil,40),20)
-near(Range.settings({maxChestBonusSlots=999}).maxChestBonusSlots,40)
+near(Range.storageBonus(10,nil,40),4);near(Range.storageBonus(35,nil,40),16);near(Range.storageBonus(40,nil,40),18)
+near(Range.settings({maxChestBonusSlots=999}).maxChestBonusSlots,42)
 near(Range.settings({maxChestBonusSlots=-1}).maxChestBonusSlots,0)
-near(Range.settings({maxChestBonusSlots=3.9}).maxChestBonusSlots,3)
-near(Range.settings({maxChestBonusSlots=0/0}).maxChestBonusSlots,20)
+near(Range.settings({maxChestBonusSlots=3.9}).maxChestBonusSlots,6)
+near(Range.settings({maxChestBonusSlots=0/0}).maxChestBonusSlots,18)
 -- Future growth reservation remains non-overlapping even at four times radius.
 local large=Range.separate({
  {baseline=3500,desired=14000,maximum=14000,x=0,y=0},
@@ -312,9 +312,10 @@ local function same(model,current,following,maximum)
 end
 same(solo,1,1,false) -- level 2 -> 3 adds no slot, both values are still reported
 solo.level=3;same(solo,1,2,false)
-solo.level=10;same(solo,5,6,false)
-solo.level=34;same(solo,19,20,false)
-solo.level=35;same(solo,20,20,true)
+solo.level=10;same(solo,5,5,false)
+solo.level=11;same(solo,5,6,false)
+solo.level=34;same(solo,17,18,false)
+solo.level=35;same(solo,18,18,true)
 solo.level=1;same(solo,0,1,false)
 E.config.maxChestBonusSlots=10;same(solo,0,0,false) -- a small cap starts later, the row stays
 E.config.maxChestBonusSlots=0;same(solo,nil,nil,false)
@@ -324,7 +325,12 @@ E.config={maxChestBonusSlots=0}
 E.preview={read=function() return 140,{rangeEnabled=true,chestCap=40} end}
 local remote=newBase(10,4760,false)
 same(remote,11,12,false)
+E.preview={read=function() return 140,{rangeEnabled=true,chestCap=20} end}
+same(remote,5,6,false) -- do not resnap an older server's cap to 18 on the client
+E.preview={read=function() return 140,{rangeEnabled=true,chestCap=42} end}
+remote.level=35;same(remote,42,42,true)
 E.preview={read=function() return 140,{rangeEnabled=true} end} -- older server: radius only
+remote.level=10
 same(remote,nil,nil,false)
 E.preview=nil
 print('PASS: preview rows follow the spread schedule on host and client, unchanged steps, small caps, off and reset')
@@ -604,3 +610,17 @@ do
     FindAllOf=previous
 end
 print('PASS: a shrinking base is written before an expanding one in either enumeration order')
+
+-- New settings snap to six; legacy server previews keep the cap actually granted.
+for _,case in ipairs({{-1,0},{0,0},{2.9999,0},{3,6},{5,6},{18,18},{20,18},{20.9999,18},{21,24},{25,24},{39,42},{40,42},{42,42},{999,42}}) do
+    near(Range.settings({maxChestBonusSlots=case[1]}).maxChestBonusSlots,case[2])
+end
+for cap=0,42,6 do
+    near(Range.settings({maxChestBonusSlots=cap}).maxChestBonusSlots,cap)
+    near(Range.storageBonus(35,{maxChestBonusSlots=cap},35),cap)
+end
+near(Range.settings().maxChestBonusSlots,18)
+near(54+Range.storageBonus(35),72)
+near(Range.storageAtCap(35,20,35),20);near(Range.storageAtCap(35,40,35),40)
+for _,cap in ipairs({-1,1.5,43,math.huge,0/0,'18'}) do assert(not pcall(Range.storageAtCap,35,cap,35)) end
+print('PASS: default18, six-slot caps through42, migration rounding, 72-slot Guild Chest and authoritative legacy previews')

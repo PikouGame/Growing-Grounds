@@ -117,7 +117,7 @@ assert(scans.PalMapObjectItemChestModel==1 and allocations==15,'stable levels do
 owner.ReferencedObjects={foreign}
 S=dofile(root..'src/storage.lua')(E);S.refresh();drain()
 assert(wood:Num()==15 and allocations==15,'reload uses native baseline, never compounds the previous bonus')
-base.level=11;S.refresh();drain()
+base.level=12;S.refresh();drain()
 assert(wood:Num()==16 and metal:Num()==30 and guild:Num()==86)
 -- Lowering a cap retains every occupied slot and shrinks after it is emptied.
 wood:Get(15).amount=4
@@ -128,7 +128,7 @@ assert(metal:Num()==24 and guild:Num()==80)
 wood:Get(15).amount=0;S.refresh();drain()
 assert(wood:Num()==10 and wood:Get(0)==original)
 E.config.maxChestBonusSlots=999;base.level=100;S.refresh();drain()
-assert(wood:Num()==50 and metal:Num()==64 and guild:Num()==120,'absolute bonus limit40')
+assert(wood:Num()==52 and metal:Num()==66 and guild:Num()==122,'absolute bonus limit42')
 E.config.resetToVanilla=true;S.refresh();drain()
 assert(wood:Num()==10 and guild:Num()==80)
 assert(#owner.ReferencedObjects==1 and owner.ReferencedObjects[1]==foreign,'shrink releases only mod references')
@@ -161,12 +161,12 @@ S.changed();S.refresh();drain();assert(#errors==1)
 -- A real change (a higher base level) earns the failed chest one new attempt.
 StaticConstructObject=function(_,outer)allocations=allocations+1;return slot(-1,outer,0)end
 S.changed();S.refresh();drain();assert(failure:Num()==10 and #errors==1,'same signature never retries')
-base.level=11;S.refresh();drain()
+base.level=12;S.refresh();drain()
 assert(failure:Num()==16 and #errors==1,'a changed signature retries a failed chest')
 print('PASS: server-only native baselines, guild dedup, initialized empty slots, item identity, cap/reset overflow safety, bounded jobs, reload, stable no-scan and failure isolation')
 
 -- A world saved by 0.1.6 at level 11 holds 10 extra slots per chest. The spread
--- schedule asks for 6. The surplus takes the same path as a lowered cap:
+-- schedule asks for 5 with the new 18-slot cap. The surplus takes the same path as a lowered cap:
 -- empty slots go, every slot that holds an item stays exactly where it is.
 for i=#errors,1,-1 do errors[i]=nil end
 StaticConstructObject=function(_,outer,name)
@@ -174,7 +174,7 @@ StaticConstructObject=function(_,outer,name)
     return slot(-1,outer,0)
 end
 base.level=11;E.config.maxChestBonusSlots=20
-assert(Range.storageBonus(11,E.config,35)==6)
+assert(Range.storageBonus(11,E.config,35)==5)
 local function saved(name,count,occupied)
     local c=container(name,count)
     c:Get(0).amount=0
@@ -197,7 +197,7 @@ local function intact(c,held,label)
     end
 end
 local everySlot={};for i=0,33 do everySlot[#everySlot+1]=i end
-local spare=saved('0.1.6 spare',34,{0,5,29})    -- nothing in the 10 old extra slots
+local spare=saved('0.1.6 spare',34,{0,5,28})    -- nothing in the 10 old extra slots
 local edge=saved('0.1.6 edge',34,{2,31})        -- one item in an extra slot the new schedule drops
 local full=saved('0.1.6 full',34,everySlot)     -- every old extra slot in use
 local sharedOld=saved('0.1.6 guild',90,{0,89})  -- Guild Chest, last old extra slot in use
@@ -209,7 +209,7 @@ owner.ReferencedObjects={foreign}
 local built=allocations
 S=dofile(root..'src/storage.lua')(E);S.refresh();drain()
 assert(#errors==0,table.concat(errors,'\n'))
-assert(spare:Num()==30,'unused old extra slots shrink to the new schedule')
+assert(spare:Num()==29,'unused old extra slots shrink to the new 18-slot schedule')
 assert(edge:Num()==32,'trailing empty slots go, the occupied slot and those before it stay')
 assert(full:Num()==34 and sharedOld:Num()==90,'a chest whose last old slot is in use keeps every slot')
 for i,c in ipairs(chests) do intact(c,before[i],c:GetFullName()) end
@@ -220,12 +220,12 @@ for i,c in ipairs(chests) do intact(c,before[i],c:GetFullName()) end
 -- Emptied slots are released on a later refresh, never an occupied one.
 edge:Get(31).amount=0;full:Get(33).amount=0;full:Get(32).amount=0;sharedOld:Get(89).amount=0
 S.refresh();drain()
-assert(edge:Num()==30 and full:Num()==32 and sharedOld:Num()==86 and #errors==0)
+assert(edge:Num()==29 and full:Num()==32 and sharedOld:Num()==85 and #errors==0)
 for index=0,31 do assert(full:Get(index).amount==7) end
 assert(edge:Get(2).amount==7 and sharedOld:Get(0).amount==7)
--- Later upgrades grow again from the new schedule: 6 at level 12, 7 at level 13.
+-- Later upgrades grow again from the new schedule: 6 at level 12, 7 at level 14.
 base.level=12;S.refresh();drain();assert(spare:Num()==30 and edge:Num()==30 and full:Num()==32)
-base.level=13;S.refresh();drain()
+base.level=14;S.refresh();drain()
 assert(spare:Num()==31 and edge:Num()==31 and full:Num()==32 and sharedOld:Num()==87 and #errors==0)
 print('PASS: a 0.1.6 world under the lower schedule keeps every occupied slot, releases emptied ones and grows again')
 
@@ -235,11 +235,11 @@ local plain=container('plain',10);plain:Get(0).amount=0
 lists.PalMapObjectItemChestModel={(chest('plain model',plain,10))}
 tableLevels=nil;base.level=35
 S=dofile(root..'src/storage.lua')(E);S.refresh();drain()
-assert(plain:Num()==30 and #errors==0,'missing level table falls back to 35 levels')
+assert(plain:Num()==28 and #errors==0,'missing level table falls back to 35 levels')
 tableLevels=40;S.refresh();drain()
-assert(plain:Num()==27,'level 35 of 40 gives 17 of 20 slots')
-base.level=40;S.refresh();drain();assert(plain:Num()==30)
-base.level=41;S.refresh();drain();assert(plain:Num()==30 and #errors==0,'a level above the table stays on the cap')
+assert(plain:Num()==26,'level 35 of 40 gives 16 of 18 slots')
+base.level=40;S.refresh();drain();assert(plain:Num()==28)
+base.level=41;S.refresh();drain();assert(plain:Num()==28 and #errors==0,'a level above the table stays on the cap')
 print('PASS: level-table fallback, table change reconciliation and levels above the table')
 
 -- A reset names each chest that still holds items above its native size, once,
@@ -271,7 +271,7 @@ local function filled(name,count,native,extra)   -- every native slot in use, pl
     for index=0,native-1 do c:Get(index).amount=7 end
     return c
 end
-tableLevels=35;base.level=11;E.config.maxChestBonusSlots=20;E.config.resetToVanilla=false
+tableLevels=35;base.level=12;E.config.maxChestBonusSlots=18;E.config.resetToVanilla=false
 local busy,tidy=filled('busy',16,10,{12}),saved('tidy',16,{1})
 local unnamed,sharedBusy=filled('unnamed',16,10,{11}),filled('guild busy',86,80,{82})
 local unnamedModel=chest('unnamed model',unnamed,10)
@@ -322,7 +322,7 @@ print('PASS: a reset names each chest holding items above native size once, wait
 -- by exchanging slot objects: a chest with room returns to native size by itself.
 for i=#errors,1,-1 do errors[i]=nil end
 for i=#logs,1,-1 do logs[i]=nil end
-tableLevels=35;base.level=11;E.config.maxChestBonusSlots=20;E.config.resetToVanilla=false
+tableLevels=35;base.level=12;E.config.maxChestBonusSlots=18;E.config.resetToVanilla=false
 owner.ReferencedObjects={foreign}
 local grown=saved('grown',10,{4})                 -- enlarged in this session: its extra slots live on our references
 local roomy=saved('roomy',16,{3,12,15})           -- loaded from a save at 16 slots, room below
@@ -385,3 +385,36 @@ S.changed();S.refresh();drain()
 assert(#errors==1 and torn:Num()==16)
 for i=0,15 do assert(torn:Get(i)==tornSlots[i] and tornSlots[i].SlotIndex==i,'a failed packing left a slot moved') end
 print('PASS: a full reset pass packs stacks into free native slots by exchanging slot objects, keeps lifetime references, and neither a retry nor a lowered cap packs')
+
+-- Real Guild Chest baseline: a legacy 20-slot cap normalizes to 18 without
+-- deleting occupied overflow. The new 42-slot maximum must remain removable.
+do
+    for i=#errors,1,-1 do errors[i]=nil end
+    tableLevels=35;base.level=35;E.config={maxChestBonusSlots=20,resetToVanilla=false}
+    local guild54=saved('legacy guild54',74,{0,73})
+    local first,last=guild54:Get(0),guild54:Get(73)
+    lists.PalMapObjectItemChestModel={}
+    group.ItemStorage.ItemContainer=guild54
+    owner.ReferencedObjects={foreign}
+    local find=E.objects.find
+    E.objects.find=function(path)
+        if path:find('PalUtility',1,true) then return {GetGameSetting=function()return {GuildChestSlotNum=54}end} end
+        return find(path)
+    end
+    S=dofile(root..'src/storage.lua')(E);S.refresh();drain()
+    assert(guild54:Num()==74 and guild54:Get(73)==last and last.amount==7,'20 -> 18 keeps occupied overflow')
+    last.amount=0;S.refresh();drain()
+    assert(guild54:Num()==72 and guild54:Get(0)==first and first.amount==7,'default18 gives 12 complete rows once emptied')
+    E.config.maxChestBonusSlots=42;S.refresh();drain()
+    assert(guild54:Num()==96 and guild54:Get(0)==first,'maximum42 gives 16 complete rows')
+    E.config.resetToVanilla=true;S.refresh();drain()
+    assert(guild54:Num()==54 and guild54:Get(0)==first,'42 slots are recognized as ours during removal')
+    E.config.resetToVanilla=false;S.refresh();drain()
+    local high=guild54:Get(95);high.amount=7
+    E.config.maxChestBonusSlots=18;S.refresh();drain()
+    assert(guild54:Num()==96 and guild54:Get(95)==high and high.amount==7,'42 -> 18 also retains occupied slots')
+    high.amount=0;S.refresh();drain()
+    assert(guild54:Num()==72 and guild54:Get(0)==first and #errors==0)
+    E.objects.find=find
+end
+print('PASS: Guild Chest 54 -> 72/96, old20 -> 18 overflow preservation and reset from42')

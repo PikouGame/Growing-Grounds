@@ -8,8 +8,8 @@ return function(E)
     local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
         -- title and tip are keys of the texts, read in the game's language at each paint.
-        {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent},
-        {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots},
+        {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent, step=1},
+        {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots, step=E.range.chestSlotStep},
     }
     local function object(path) return E.objects.find(path) end
     local function stringValue(value)
@@ -43,7 +43,7 @@ return function(E)
                 row = object('/Script/UMG.Default__WidgetBlueprintLibrary'):Create(menu,class,menu:GetOwningPlayer())
                 assert(E.valid(row), 'Cannot create World Settings row')
                 row.OptionType = example.OptionType
-                row.IsOverrideSliderStep, row.OverrideSliderStepValue = true, 1
+                row.IsOverrideSliderStep, row.OverrideSliderStepValue = true, spec.step
                 local path = row:GetFullName()
                 state.rows[spec.key] = path
                 local slider=row.WBP_OptionSettings_ListContentSlider:GetFullName()
@@ -78,8 +78,12 @@ return function(E)
         if not entry then return end
         local state = screens[entry.screen]
         if not state or state.initializing then return end
-        -- Round the native float first: Range.settings floors the chest cap.
-        if type(value)=='number' and value==value and math.abs(value)<math.huge then value=math.floor(value+0.5) end
+        -- Snap the native float directly to this setting's step. Rounding to
+        -- an integer first would move the six-slot midpoint (20.6 -> 24).
+        if type(value)=='number' and value==value and math.abs(value)<math.huge then
+            local step=entry.spec.step
+            value=math.floor(value/step+0.5)*step
+        end
         local normalized = E.range.settings({[entry.spec.key]=value})[entry.spec.key]
         normalized = math.max(entry.spec.min,math.min(entry.spec.max,math.floor(normalized+0.5)))
         if state.draft[entry.spec.key]==normalized then

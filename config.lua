@@ -7,9 +7,10 @@ return {
     -- Old maxRangePercent totals remain supported without changing their effect.
     -- An old growthPercentPerLevel line is ignored, except 0, which still switches range off.
     maxRangeBonusPercent = 100,
-    -- Bonus chest slots at the last base level (0..40), spread evenly over the
-    -- levels before it: with 20, +1 at level 2, 5 at level 10, 20 at level 35.
-    maxChestBonusSlots = 20,
+    -- Bonus chest slots at the last base level (0..42, in steps of 6), spread
+    -- evenly over the levels: with 18, +1 at level 2, 5 at level 10, 18 at level 35.
+    -- Other values round to the nearest step (20 -> 18; 40 -> 42).
+    maxChestBonusSlots = 18,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- wait for "reset complete" in UE4SS.log, save, then remove the mod.
     resetToVanilla = false,

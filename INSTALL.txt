@@ -26,9 +26,12 @@ beyond the new boundary may lose coverage. Keep a backup. A maximum of +136%
 gives the former 4% per level exactly; levels above 26 then keep growing.
 An old growthPercentPerLevel line is ignored, except 0, which still switches
 the range bonus off.
+Bonus chest caps now use 0, 6, 12, 18, 24, 30, 36 or 42; default 18. Existing
+caps round to the nearest step (20 -> 18, 40 -> 42). Occupied extra slots remain
+until emptied. Update host/server and clients together for the new 42-slot cap.
 Updating from 0.1.6 or older: bonus chest slots are spread over all base levels,
 so existing chests follow that schedule at once (level 11: 10 bonus slots become
-6). Extra slots that hold items stay until emptied; nothing is deleted or moved.
+5 with the default 18-slot cap). Extra slots that hold items stay until emptied; nothing is deleted or moved.
 
 Configuration
 - maxRangeBonusPercent=100: radius BONUS at the last base level, spread evenly
@@ -37,9 +40,9 @@ Configuration
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
   +100. Do not add the new key beside the old one unless you intend to override it.
   Set either cap to 0 to disable its bonus and hide its reward row.
-- maxChestBonusSlots=20: bonus chest slots at the last base level, spread evenly
-  over all levels (with 20: 1 at level 2, 5 at level 10, 20 at level 35).
-  Bonus limit 0..40. Guild Chests share one bonus for the whole guild.
+- maxChestBonusSlots=18: bonus chest slots at the last base level, spread evenly
+  over all levels (with 18: 1 at level 2, 5 at level 10, 18 at level 35).
+  Bonus limit 0..42 in steps of 6; other values round to the nearest step. Guild Chests share one bonus for the whole guild.
   Lower limits retain occupied overflow slots until they are emptied.
 - resetToVanilla=false: see removal instructions before changing this.
 - upgradeAnimation=true: enables the automatic upgrade celebration.

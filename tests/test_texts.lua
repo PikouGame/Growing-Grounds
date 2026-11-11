@@ -41,7 +41,7 @@ assert(english.chestRow == 'Bonus Chest Slots')
 assert(english.rangeCapTitle == 'Growing Grounds: Maximum range bonus')
 assert(english.rangeCapTip == 'The range bonus arrives steadily over all base levels; the last level gives it all. 0 disables it. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.')
 assert(english.chestCapTitle == 'Growing Grounds: Maximum bonus chest slots')
-assert(english.chestCapTip == 'These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.')
+assert(english.chestCapTip == 'These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 18. Guild Chests share one bonus. Occupied extra slots remain until emptied.')
 assert(english.off == 'Off')
 print('PASS: English is the final text, verbatim')
 
@@ -65,7 +65,7 @@ for _, culture in ipairs(cultures) do
     for _, number in ipairs({'100', '300', '0'}) do
         assert(has(texts.rangeCapTip, number), culture .. ' range tip lost ' .. number)
     end
-    for _, number in ipairs({'20', '0'}) do
+    for _, number in ipairs({'18', '0'}) do
         assert(has(texts.chestCapTip, number), culture .. ' chest tip lost ' .. number)
     end
     assert(texts.rangeCapTip:find('%+%%?100') and texts.rangeCapTip:find('%+%%?300'),
