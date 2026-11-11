@@ -82,6 +82,11 @@ A gentler pace, so later base levels still have something to give.
 - The bonus chest slider rounds to the nearest slot (18.9999 is saved as 19).
 - Clients do less background work: they no longer plan base radii they never
   apply.
+- Removing the mod is tidier. With `resetToVanilla=true`, stacks sitting in
+  bonus slots are first moved into free native slots, the log names any chest
+  that still holds more stacks than its native size, and "reset complete"
+  tells you when the mod can be removed. Deleting the mod without a reset
+  still loses nothing: chests simply stay at their enlarged size.
 - **Existing worlds keep their own growth value.** Saved World Settings and a
   kept `config.lua` are never rewritten; the new default only reaches worlds
   that never saved one. To adopt it, set growth to 4: a level-11, 35 m base
