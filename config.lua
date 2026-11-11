@@ -11,13 +11,13 @@ return {
     -- evenly over the levels: with 18, +1 at level 2, 5 at level 10, 18 at level 35.
     -- Other values round to the nearest step (20 -> 18; 40 -> 42).
     maxChestBonusSlots = 18,
-    -- Extra regular Palbox pages, not individual Pal slots or Global Palbox
-    -- storage. One page per base upgrade: level 1 = 0; levels 33..35 = +32.
+    -- Extra regular Palbox boxes, not individual Pal slots or Global Palbox
+    -- storage. One box per base upgrade: level 1 = 0; levels 33..35 = +32.
     -- Cap 0..64, default 32. A higher cap still grants only one per upgrade.
     maxPalboxBonusPages = 32,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- wait for the chest reset in UE4SS.log; every player must also empty their
-    -- bonus Palbox pages and recover the native page count. See INSTALL.txt.
+    -- bonus Palbox boxes and recover the native box count. See INSTALL.txt.
     -- Save, then remove the mod.
     resetToVanilla = false,
     -- Presentation only. Master switch for the whole celebration: Palbox wave,

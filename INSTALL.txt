@@ -44,11 +44,11 @@ Configuration
   over all levels (with 18: 1 at level 2, 5 at level 10, 18 at level 35).
   Bonus limit 0..42 in steps of 6; other values round to the nearest step. Guild Chests share one bonus for the whole guild.
   Lower limits retain occupied overflow slots until they are emptied.
-- maxPalboxBonusPages=32: extra regular Palbox pages, one per base upgrade.
+- maxPalboxBonusPages=32: extra regular Palbox boxes, one per base upgrade.
   Level 1 gives 0; levels 33, 34 and 35 give +32 with the default cap.
-  Limit 0..64, whole pages. At level 35 even cap 64 grants only +34.
+  Limit 0..64, whole boxes. At level 35 even cap 64 grants only +34.
   Each player follows their guild level once; extra bases do not multiply it.
-  Global Palbox storage is unchanged. Occupied extra pages are retained.
+  Global Palbox storage is unchanged. Occupied extra boxes are retained.
 - resetToVanilla=false: see removal instructions before changing this.
 - upgradeAnimation=true: enables the automatic upgrade celebration.
 - upgradeRibbon=true: enables glow effects; false disables both wave and rise.
@@ -104,10 +104,10 @@ UE4SS.log names it ("ItemChest_02 keeps 30 slots instead of 24 until the slots a
 are emptied") and it shrinks once you empty them. Occupied slots are never removed.
 The "reset complete: N chests at native size" message covers chests only.
 Before removing GG, each player must also join with reset enabled and move
-all Pals out of bonus Palbox pages into the original pages, then close the
+all Pals out of bonus Palbox boxes into the original boxes, then close the
 Palbox. Offline players are not checked by an online player’s reset.
-Keep GG installed until every player has cleared those pages and their original
-page count has returned. Save, then remove BaseRangeGrowth on both sides. "reset waiting" means a chest still has to be
+Keep GG installed until every player has cleared those boxes and their original
+box count has returned. Save, then remove BaseRangeGrowth on both sides. "reset waiting" means a chest still has to be
 emptied; the last reset line is the current state.
 Buildings in the added area may lose coverage. An exact rollback requires the
 pre-install world backup, which also rolls back progress since that backup.

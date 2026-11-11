@@ -11,7 +11,7 @@ return function(E, Runtime)
     local specs = {
         {key='range', label='Base Range Bonus', text='rangeRow', icon='base-range.png'},
         {key='chest', label='Bonus Chest Slots', text='chestRow', icon='chest-bonus.png'},
-        {key='palbox', label='Bonus Palbox Pages', text='palboxRow', icon='palbox-bonus.png'},
+        {key='palbox', label='Bonus Palbox Boxes', text='palboxRow', icon='palbox-bonus.png'},
     }
     local function gain(value) return string.format('%.0f', value - 100) end
     local mint = {SpecifiedColor={R=0.27,G=0.78,B=0.60,A=1},ColorUseRule=0}

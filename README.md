@@ -12,8 +12,8 @@ Chests grow with your base: **18 bonus slots** by default, arriving steadily
 from your first upgrade to the final base level. Guild Chests receive the bonus
 once for their shared inventory.
 
-Your regular Palbox gains **one extra page per base upgrade**, starting with no
-bonus at level 1. The default cap is **32 extra pages**, reached at level 33;
+Your regular Palbox gains **one extra box per base upgrade**, starting with no
+bonus at level 1. The default cap is **32 extra boxes**, reached at level 33;
 levels 34 and 35 keep that bonus. Each player receives the bonus of their guild,
 regardless of its number of bases. The Global Palbox is separate.
 
@@ -39,8 +39,8 @@ you close the screen.
 
 - **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.
 - **Bonus chest slots:** 18 by default, spread evenly over all base levels; adjustable from 0 to 42 in steps of six. Guild Chests share one bonus.
-- **Bonus Palbox pages:** cap 0 to 64; default 32. A higher cap still grants only
-  one page per upgrade: level 35 can earn at most 34 extra pages.
+- **Bonus Palbox boxes:** cap 0 to 64; default 32. A higher cap still grants only
+  one box per upgrade: level 35 can earn at most 34 extra boxes.
 - Local worlds have three Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
@@ -84,9 +84,9 @@ Not released yet. Three bonuses, an upgrade preview and the game's own languages
 The Palbox bonus is a development candidate; native transfer/save/reload validation
 is still pending.
 
-- **Palbox pages grow with each base upgrade:** +1 page per upgrade, with a
+- **Palbox boxes grow with each base upgrade:** +1 box per upgrade, with a
   configurable bonus cap of 0–64 (32 by default). Reducing the cap keeps occupied
-  extra pages until they are emptied.
+  extra boxes until they are emptied.
 - **Chest bonus caps use multiples of six:** 18 by default, up to 42. Existing
   caps round to the nearest step (20 becomes 18; 40 becomes 42). Slots still
   arrive gradually, one at a time. Occupied overflow slots remain until emptied.
@@ -124,7 +124,7 @@ occupied slots kept across a restart, and the upgrade celebration.
 
 This is an alpha. These still need broader in-game verification:
 
-- Palbox expansion, replication, occupied-page protection and save/reload;
+- Palbox expansion, replication, occupied-box protection and save/reload;
 - other Palbox capacity mods installed alongside;
 - saving World Settings and starting a new world;
 - placement rejection near another base;
