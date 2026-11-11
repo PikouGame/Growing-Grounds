@@ -1,0 +1,77 @@
+Growing Grounds save archives — development tool
+
+Status
+The archive core is an offline Python 3.9+ tool. It is not yet called by the
+UE4SS mod, is not included in release ZIPs, and does not schedule backups.
+Python is already available on the development machines; no package is needed.
+Automatic world-load integration and native Windows testing remain pending.
+
+Automatic policy prototype (tools/backup_policy.py)
+PK requires automatic operation, with no backup storm after quick relaunches.
+The policy reads successful archive manifests across launches: a 30-minute
+cooldown, unchanged-save detection, three recent copies and one per previous
+day for seven days. One copy can serve both retention categories. The protected
+baseline is separate. A single archive directory shares a 2 GiB budget across
+worlds and reserves 1 GiB of free disk space. These are configurable defaults.
+When space is tight, verified older history can be pruned, preserving every
+baseline and the latest verified backup of each world. If those copies plus
+the new archive cannot fit, it skips creation and reports storage-limit.
+ZIP writes themselves are bounded by the remaining budget. Unexpected clock
+rollback skips creation instead of resetting the cooldown. No worker is running
+automatically yet: the adapter that establishes a complete save checkpoint and
+executes outside the game thread still needs implementation/native validation.
+
+Contents
+Each ZIP contains the complete selected world directory except its existing
+backup/ rotations, plus GG config.lua and any world-settings.ini / .bak.
+World data includes all Players files and other files present in that world.
+It does not include other worlds, account-wide Global Palbox storage, game
+binaries, server passwords or client-side files that only exist on another PC.
+For a dedicated server, run it on the server's authoritative save directory;
+a client's LocalData.sav cache cannot replace the world save.
+
+manifest.json records the world ID, UTC creation time, mod version, reason,
+backup type, file sizes and SHA-256 hashes. Archive contents are checked against
+the manifest before publication and again before restoration. Hashes detect
+corruption; they are not a signature establishing who created an archive.
+
+Consistency and storage
+Stop the game/server cleanly before creating an archive. --source-stopped is
+an explicit operator confirmation, not process detection. The tool also checks
+the file inventory and reads each file again to detect changes, but that does
+not make a live copy a consistent game save. Do not use it on a running world.
+Keep the archive destination outside the world and mod directories. Account
+cloud synchronization must not modify the source during the operation.
+
+The first baseline is protected and cannot be replaced by this tool. Rotating
+backups retain the latest five by default, separately per world. Old rotating
+archives are removed only after a new one passes verification. Baselines,
+unrecognized files and corrupt archives are left untouched. Consequently this
+is a count limit, not a hard disk quota. Keep archives on another disk as well
+if you want protection against drive failure; this tool does not upload data.
+A failed write does not remove a previous backup. .partial files left by an
+interrupted process are not valid archives. A stale .gg-backup.lock requires
+checking that no backup is running before manually removing that lock.
+
+Commands (replace placeholders with the actual paths)
+python3 tools/save_backup.py create --world WORLD_GUID_FOLDER --mod BASE_RANGE_GROWTH_FOLDER --destination ARCHIVE_FOLDER --kind baseline --version MOD_VERSION --reason before-update --source-stopped
+python3 tools/save_backup.py create --world WORLD_GUID_FOLDER --mod BASE_RANGE_GROWTH_FOLDER --destination ARCHIVE_FOLDER --keep 5 --version MOD_VERSION --source-stopped
+python3 tools/save_backup.py verify ARCHIVE.zip
+python3 tools/save_backup.py restore-copy ARCHIVE.zip NEW_REVIEW_FOLDER
+
+Restoring
+restore-copy always writes a new folder with world/, settings/ and manifest.json.
+It refuses an existing destination and checks extracted bytes. It never replaces
+an active save or runs config.lua. A RESTORE-INCOMPLETE.txt marker means the
+extraction did not finish; do not use that copy.
+While the game/server remains stopped, review the world ID and date, preserve
+the current world, then install the restored world and its matching GG settings.
+Use a compatible mod version: loading expanded Palbox storage without the mod
+may remove slots. Restoring rolls back world/player progress together.
+Before trusting an automatic feature, test a restored copy in the actual game.
+
+Verification
+python3 -m unittest discover -s tests -p test_save_backup.py -v
+Tests cover full-file round trips, baseline/rotation protection, client-cache
+rejection, corruption, unsafe paths, source changes, failed writes and locking.
+Those checks do not establish that a world loads in Palworld.
