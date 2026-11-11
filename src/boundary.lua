@@ -17,9 +17,9 @@ return function(E,Motion)
         local o=StaticFindObject(p)
         if E.valid(o) then objects[p]=o;return o end
     end
-    local Ribbon=dofile(E.root..'src/ribbon.lua')(E,{
-        path=path,resolve=resolve,forget=function(p) objects[p]=nil end,
-    })
+    local access={path=path,resolve=resolve,forget=function(p) objects[p]=nil end}
+    local Ribbon=dofile(E.root..'src/ribbon.lua')(E,access)
+    local Marker=dofile(E.root..'src/marker.lua')(E,access,Ribbon)
     local function now(actor)
         return resolve('/Script/Engine.Default__KismetSystemLibrary'):GetGameTimeInSeconds(actor)
     end
@@ -59,6 +59,13 @@ return function(E,Motion)
             s.animation.waiting=nil;s.animation.start=time
         end
     end
+    local function markerOpen(s)
+        for p in pairs(s.marker.screens) do
+            local screen=resolve(p)
+            if screen and screen:IsActivated() then return true end
+        end
+        return false
+    end
     local schedule
     local function tick()
         queued=false
@@ -67,16 +74,17 @@ return function(E,Motion)
         -- batches rather than retaining heights between upgrades.
         local active,budget,deadline=false,Ribbon.sampleLimit,os.clock()+Ribbon.sampleBudget
         for key,s in pairs(states) do
-            if s.animation or s.ribbon then
+            if s.animation or s.ribbon or s.marker then
                 local actor=resolve(s.actor)
-                if not actor then Ribbon.cleanup(s);clearScreens(s);states[key]=nil
+                if not actor then Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s);states[key]=nil
                 else
                     local ok=E.guard('boundary animation',function()
                         local time=now(actor)
                         waitForScreen(s,time)
                         if s.animation then
                             if time<s.animation.start then
-                                scale(actor,s.radius,true);Ribbon.cleanup(s);clearScreens(s);Motion.finish(s);return
+                                scale(actor,s.radius,true);Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s)
+                                Motion.finish(s);return
                             end
                             local radius,t=Motion.sample(s,time)
                             scale(actor,radius)
@@ -98,11 +106,17 @@ return function(E,Motion)
                                 end
                             end
                         end
-                        if s.animation or s.ribbon then active=true end
+                        if s.marker then
+                            local markerOK,used=E.guard('next boundary marker',function()
+                                return Marker.step(s,actor,time,budget,deadline,markerOpen(s))
+                            end)
+                            if markerOK then budget=budget-used else Marker.fail(s) end
+                        end
+                        if s.animation or s.ribbon or s.marker then active=true end
                     end)
                     if not ok then
                         E.guard('boundary fallback',function() scale(actor,s.radius,true) end)
-                        Ribbon.cleanup(s);clearScreens(s);Motion.finish(s)
+                        Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s);Motion.finish(s)
                     end
                 end
             end
@@ -116,6 +130,7 @@ return function(E,Motion)
     end
     local function start(s,actor)
         Ribbon.cleanup(s)
+        if s.marker then s.marker.dismissed=true end -- the celebration takes over
         clearScreens(s)
         local ok,found=E.guard('upgrade screen capture',function() return upgradeScreens(s) end)
         s.upgradeScreens=ok and found or nil
@@ -133,14 +148,33 @@ return function(E,Motion)
         local previous=states[key]
         local enabled=E.config.upgradeAnimation~=false and not E.config.resetToVanilla and not dedicated(actor)
         local s,action=Motion.observe(previous,base:GetLevel(),radius,now(actor),enabled)
-        if previous and s~=previous then Ribbon.cleanup(previous);clearScreens(previous) end
+        if previous and s~=previous then Ribbon.cleanup(previous);Marker.cleanup(previous);clearScreens(previous) end
         s.actor,s.base,s.live=actorPath,base:GetFullName(),true;states[key]=s
         if action=='start' then start(s,actor) elseif not s.animation then scale(actor,s.radius) end
+    end
+    -- The reward rows report what Base Upgrade shows for this base: the radius
+    -- after the next upgrade, or false. No menu is read and no range is
+    -- calculated here, so an idle base costs nothing.
+    function B.mark(base,screen,radius)
+        local name=base:GetFullName()
+        for _,s in pairs(states) do
+            local actor=s.base==name and resolve(s.actor)
+            if actor then
+                local shown=radius and E.config.nextBoundaryMarker~=false and not E.config.resetToVanilla
+                    and not s.animation and not s.ribbon and radius or false
+                if not E.guard('next boundary marker',function() Marker.aim(s,actor,shown,screen) end) then
+                    Marker.fail(s)
+                end
+                if s.marker then schedule() end
+            end
+        end
     end
     function B.beginRefresh() for _,s in pairs(states) do s.live=false end end
     function B.endRefresh()
         for key,s in pairs(states) do
-            if not s.live then Ribbon.cleanup(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil end
+            if not s.live then
+                Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil
+            end
         end
     end
     return B

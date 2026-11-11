@@ -24,4 +24,7 @@ return {
     upgradeWave = true,
     -- Height in centimetres above the sampled terrain profile (kept within 100..2000).
     upgradeEffectHeight = 600,
+    -- While Base Upgrade is open, a soft glow on the ground shows where the
+    -- boundary will be after the upgrade. false turns it off.
+    nextBoundaryMarker = true,
 }
