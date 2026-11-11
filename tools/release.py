@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import re
 import shutil
 import zipfile
 
@@ -14,6 +15,7 @@ RUNTIME = [
     'src/storage.lua',
     'src/preview.lua', 'src/objects.lua', 'src/changes.lua',
     'src/motion.lua', 'src/boundary.lua', 'src/ring.lua', 'src/ribbon.lua', 'src/wave.lua',
+    'src/marker.lua', 'src/texts.lua', 'src/language.lua',
     'assets/base-range.svg', 'assets/base-range.png',
     'assets/chest-bonus.svg', 'assets/chest-bonus.png',
     'assets/contour-gradient.svg', 'assets/contour-gradient.png',
@@ -48,6 +50,13 @@ for name in RUNTIME:
     if name.endswith('.lua'):
         assert 'RegisterKeyBind' not in (ROOT / name).read_text(), name
 assert VERSION in (ROOT / 'Scripts/main.lua').read_text()
+# Every module and image the runtime loads must ship: one left out breaks the mod at load.
+loaded = set()
+for name in RUNTIME:
+    if name.endswith('.lua'):
+        loaded.update(re.findall(r"'((?:src|assets)/[\w-]+\.(?:lua|png))'", (ROOT / name).read_text()))
+missing = sorted(loaded - set(RUNTIME))
+assert not missing, f'loaded at runtime but not in the archive: {missing}'
 
 manual = {f'BaseRangeGrowth/{name}': (ROOT / name).read_bytes()
           for name in RUNTIME + DOCS}
