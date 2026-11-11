@@ -1,28 +1,114 @@
 local root = assert(arg[1], 'pass the mod root with trailing slash')
 local Range = dofile(root .. 'src/range.lua')
 local function near(a,b) assert(math.abs(a-b)<0.00001, tostring(a)..' != '..tostring(b)) end
+-- The rule, read independently of src/range.lua: the cap spread over the levels
+-- of the table, to the nearest unit, the whole cap at the last level and after.
+local function ref(level,cap,levels)
+    levels=levels or 35
+    if level>=levels then return cap end
+    return math.min(cap,math.floor(cap*(level-1)/(levels-1)+0.5))
+end
+-- The default cap, +100%, over the game's 35 levels.
+local expectedPercent={[1]=0,[2]=3,[3]=6,[10]=26,[11]=29,[12]=32,[26]=74,[34]=97,[35]=100,[36]=100,[99]=100}
+for level,bonus in pairs(expectedPercent) do
+    near(Range.percent(level),100+bonus)
+    near(Range.percent(level,nil,35),100+bonus)
+    near(Range.percent(level,{maxRangeBonusPercent=100},35),100+bonus)
+    near(Range.radius(3500,level),3500*(100+bonus)/100)
+end
 near(Range.radius(3500,1),3500)
-near(Range.radius(3500,2),3640)
-near(Range.radius(3500,8),4480)
-near(Range.radius(3500,11),4900)
-near(Range.radius(3500,25),6860)
-near(Range.radius(3500,26),7000)
+near(Range.radius(3500,11),4515)
 near(Range.radius(3500,35),7000)
--- The shipped config and the fallback agree on 4%; the 0..20 setting remains.
-near(Range.settings().growthPercentPerLevel,4)
-near(dofile(root..'config.lua').growthPercentPerLevel,4)
-near(Range.settings({growthPercentPerLevel=99}).growthPercentPerLevel,20)
-near(Range.settings({growthPercentPerLevel=-1}).growthPercentPerLevel,0)
--- A world that keeps the former 5% keeps the former radii.
-near(Range.radius(3500,11,{growthPercentPerLevel=5}),5250)
-near(Range.radius(3500,21,{growthPercentPerLevel=5}),7000)
+near(Range.radius(3500,36),7000)
+-- The shipped config and the fallback agree on +100%; the 0..300 limit remains.
+near(Range.settings().maxRangeBonusPercent,100)
+near(dofile(root..'config.lua').maxRangeBonusPercent,100)
+near(Range.settings({maxRangeBonusPercent=999}).maxRangeBonusPercent,300)
+near(Range.settings({maxRangeBonusPercent=-1}).maxRangeBonusPercent,0)
+near(Range.settings({maxRangeBonusPercent=0/0}).maxRangeBonusPercent,100)
+near(Range.settings({maxRangeBonusPercent=math.huge}).maxRangeBonusPercent,100)
+-- The settings are exactly the two caps; the removed growth setting is gone.
+do
+    local keys={}
+    for k in pairs(Range.settings({growthPercentPerLevel=4,maxRangePercent=150,other=1})) do keys[#keys+1]=k end
+    table.sort(keys)
+    assert(table.concat(keys,',')=='maxChestBonusSlots,maxRangeBonusPercent',table.concat(keys,','))
+    keys={}
+    for k in pairs(Range.limits) do keys[#keys+1]=k end
+    table.sort(keys)
+    assert(table.concat(keys,',')=='maxChestBonusSlots,maxRangeBonusPercent',table.concat(keys,','))
+end
+-- Any cap, any table: nearest whole percent, the whole cap on the last level and after,
+-- never above it, never down. A level table of 35, 40, 2 and a missing one.
+for _,levels in ipairs({35,40,2,50}) do
+    for cap=0,300 do
+        local previous=0
+        for level=1,levels+4 do
+            local bonus=Range.percent(level,{maxRangeBonusPercent=cap},levels)-100
+            assert(bonus==ref(level,cap,levels),string.format('cap %d level %d of %d: %s',cap,level,levels,tostring(bonus)))
+            assert(bonus>=previous and bonus<=cap and bonus%1==0)
+            previous=bonus
+        end
+        assert(Range.percent(1,{maxRangeBonusPercent=cap},levels)==100)
+        assert(Range.percent(levels,{maxRangeBonusPercent=cap},levels)==100+cap)
+        assert(Range.percent(levels+1,{maxRangeBonusPercent=cap},levels)==100+cap)
+    end
+end
+for cap=0,300 do
+    local previous=0
+    for level=1,38 do
+        local bonus=Range.percent(level,{maxRangeBonusPercent=cap})-100
+        assert(bonus==ref(level,cap) and bonus>=previous and bonus<=cap)
+        previous=bonus
+    end
+    assert(Range.percent(35,{maxRangeBonusPercent=cap})==100+cap,'a missing table ends at 35 levels')
+end
+-- A fractional cap is reached exactly at the last level and never exceeded before it.
+for _,cap in ipairs({0.4,0.9,1,57.3,150,299.9,300}) do
+    local previous=100
+    for level=1,36 do
+        local percent=Range.percent(level,{maxRangeBonusPercent=cap})
+        assert(percent<=100+cap and percent>=previous,cap..' level '..level..': '..percent)
+        if level>=35 then assert(percent==100+cap,cap..' at level '..level) end
+        previous=percent
+    end
+    near(Range.percent(34,{maxRangeBonusPercent=cap}),100+math.min(cap,math.floor(cap*33/34+0.5)))
+    assert(Range.radius(3500,35,{maxRangeBonusPercent=cap})==3500*((100+cap)/100))
+end
+-- An unreadable level table falls back to the game's 35 levels.
+for _,bad in ipairs({0,1,2.5,-3,math.huge,0/0,'35',false}) do
+    near(Range.percent(10,nil,bad),126);near(Range.radius(3500,10,nil,bad),3500*1.26)
+end
+near(Range.percent(10,nil,40),100+ref(10,100,40));near(Range.percent(35,nil,40),100+ref(35,100,40))
+near(Range.percent(40,nil,40),200)
+-- The bonus is the same cap spread over a table of any size, for each bonus alike.
+for level=1,40 do
+    assert(Range.percent(level,{maxRangeBonusPercent=20},40)-100==Range.storageBonus(level,{maxChestBonusSlots=20},40))
+end
+-- Old totals (maxRangePercent) keep the effect they had at the cap; so does growth 0.
 near(Range.percent(35,{maxRangePercent=300}),200)
-near(Range.percent(35,{growthPercentPerLevel=0}),100)
-near(Range.percent(8,{growthPercentPerLevel=10,maxRangePercent=150}),150)
-near(Range.percent(35,{maxRangePercent=0/0,growthPercentPerLevel=math.huge}),200)
+near(Range.percent(8,{maxRangePercent=150}),100+ref(8,50))
+near(Range.percent(35,{maxRangePercent=0/0}),200)
+near(Range.percent(35,{maxRangePercent=50}),100)
 near(Range.placementDistance(3500),14000)
 for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.percent,bad)) end
 for _,bad in ipairs({0,-1,math.huge,0/0,'3500'}) do assert(not pcall(Range.radius,bad,8)) end
+for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.storageBonus,bad)) end
+-- Legacy growth per level: 0 switched range off and still does; any other value is ignored.
+do
+    local off={growthPercentPerLevel=0}
+    near(Range.settings(off).maxRangeBonusPercent,0)
+    near(Range.settings({growthPercentPerLevel=0,maxRangeBonusPercent=100}).maxRangeBonusPercent,0)
+    near(Range.settings({growthPercentPerLevel=0,maxRangePercent=175}).maxRangeBonusPercent,0)
+    near(Range.settings({growthPercentPerLevel=0,maxRangeBonusPercent=300,maxChestBonusSlots=12}).maxChestBonusSlots,12)
+    near(Range.percent(35,off),100);near(Range.radius(3500,35,off),3500)
+    for _,growth in ipairs({4,5,20,99,0.5,-1,math.huge,0/0,'0','x'}) do
+        near(Range.settings({growthPercentPerLevel=growth}).maxRangeBonusPercent,100)
+        near(Range.settings({growthPercentPerLevel=growth,maxRangeBonusPercent=60}).maxRangeBonusPercent,60)
+        near(Range.percent(35,{growthPercentPerLevel=growth,maxRangeBonusPercent=60}),160)
+    end
+    near(Range.percent(8,{growthPercentPerLevel=10,maxRangeBonusPercent=100}),100+ref(8,100))
+end
 
 local function valid(o) return o and o:IsValid() end
 local function obj(t) t.IsValid=function() return true end; return t end
@@ -61,15 +147,16 @@ local function structure(group,camp,inside)
 end
 local eligible=structure(groupId,zero,true)
 mapObjects={eligible,structure({A=8,B=0,C=0,D=0},zero,true),structure(groupId,baseId,true),structure(groupId,zero,false)}
+local function at(level,cap,baseline) return (baseline or 3500)*(100+ref(level,cap or 100))/100 end
 local Runtime=dofile(root..'src/runtime.lua')(E)
 base=newBase(8,3500,true)
-assert(Runtime.apply(base)); near(base.AreaRange,4480)
+assert(Runtime.apply(base)); near(base.AreaRange,at(8))
 assert(#registered==1 and registered[1]==eligible, 'only unassigned same-guild in-range structure qualifies')
-for i=1,20 do assert(not Runtime.apply(base)); near(base.AreaRange,4480) end
-base.level=9; assert(Runtime.apply(base)); near(base.AreaRange,4620)
+for i=1,20 do assert(not Runtime.apply(base)); near(base.AreaRange,at(8)) end
+base.level=9; assert(Runtime.apply(base)); near(base.AreaRange,at(9))
 local reloaded=dofile(root..'src/runtime.lua')(E)
-assert(not reloaded.apply(base)); near(base.AreaRange,4620)
-local second=newBase(2,3500,true); reloaded.apply(second); near(second.AreaRange,3640)
+assert(not reloaded.apply(base)); near(base.AreaRange,at(9))
+local second=newBase(2,3500,true); reloaded.apply(second); near(second.AreaRange,at(2))
 local client=newBase(8,3500,false)
 assert(not reloaded.apply(client)); near(client.AreaRange,3500)
 assert(reloaded.snapshot(client).nextPercent==nil, 'unmodded server must not advertise 132%')
@@ -78,7 +165,7 @@ client.AreaRange=4480; assert(reloaded.snapshot(client).nextPercent==nil,
 local levelOne=newBase(1,3500,false)
 assert(reloaded.snapshot(levelOne).nextPercent==nil, 'level-one vanilla radius cannot establish server support')
 base.bTemporary=true; base.level=10
-assert(not reloaded.apply(base)); near(base.AreaRange,4620)
+assert(not reloaded.apply(base)); near(base.AreaRange,at(9))
 base.bTemporary=false
 E.config.resetToVanilla=true; assert(reloaded.apply(base)); near(base.AreaRange,3500)
 E.config.resetToVanilla=false
@@ -148,7 +235,7 @@ print('PASS: legacy 200% ceiling, capped configuration, future placement spacing
 
 -- Exercise the engine adapter with two different guilds and both enumeration
 -- orders, rather than only testing the geometry helper.
-E.config={growthPercentPerLevel=5,maxRangeBonusPercent=100}
+E.config={maxRangeBonusPercent=100}
 local a,b=newBase(35,7000,true),newBase(35,7000,true)
 b.GetId=function() return {A=2,B=0,C=0,D=0} end
 b.GetGroupIdBelongTo=function() return {A=8,B=0,C=0,D=0} end
@@ -164,8 +251,9 @@ reloaded.refresh();near(b.AreaRange,7000)
 print('PASS: runtime applies stable proximity limits across guilds, ignores height bypass and never writes client radius')
 
 -- Bonus cap is +300% maximum, not 300% total. Legacy inputs retain old behavior.
-near(Range.percent(16,{growthPercentPerLevel=20,maxRangeBonusPercent=300}),400)
-near(Range.radius(3500,35,{growthPercentPerLevel=20,maxRangeBonusPercent=999}),14000)
+near(Range.percent(16,{maxRangeBonusPercent=300}),100+ref(16,300))
+near(Range.percent(35,{maxRangeBonusPercent=300}),400)
+near(Range.radius(3500,35,{maxRangeBonusPercent=999}),14000)
 near(Range.placementDistance(3500,{maxRangeBonusPercent=300}),28000)
 near(Range.percent(35,{maxRangePercent=999}),200)
 near(Range.percent(35,{maxRangePercent=200,maxRangeBonusPercent=50}),150)
@@ -204,7 +292,7 @@ local large=Range.separate({
  {baseline=3500,desired=14000,maximum=14000,x=0,y=0},
  {baseline=3500,desired=14000,maximum=14000,x=20000,y=0}})
 near(large[1],10000);near(large[2],10000)
-E.config={growthPercentPerLevel=20,maxRangeBonusPercent=300}
+E.config={maxRangeBonusPercent=300}
 b.authority=true;b.GetTransform=function()return {Translation={X=20000,Y=0,Z=0}}end
 reloaded.refresh();near(a.AreaRange,10000);near(b.AreaRange,10000)
 print('PASS: bonus cap/migration, fourfold radius and placement, occupied-neighbour protection, slot spread over the level table and cap')
@@ -251,7 +339,7 @@ end
 for _,baselineRadius in ipairs({3500,2700}) do
     local capped=capRuntime(baselineRadius)
     for cap=0,300 do
-        E.config={growthPercentPerLevel=20,maxRangeBonusPercent=cap}
+        E.config={maxRangeBonusPercent=cap}
         local only=newBase(35,baselineRadius,true)
         collection={only}
         capped.apply(only)
@@ -262,22 +350,116 @@ for _,baselineRadius in ipairs({3500,2700}) do
         near(capped.snapshot(only).nextPercent,100+cap)
     end
 end
--- Cap 57 with 4% growth crosses the cap between levels 15 and 16.
+-- Cap 57 spread over 35 levels: 123% at level 15, 125% at level 16, the whole cap at 35.
 do
     local capped=capRuntime(3500)
-    E.config={growthPercentPerLevel=4,maxRangeBonusPercent=57}
-    for level,expected in pairs({[15]=3500*1.56,[16]=3500*1.57,[35]=3500*1.57}) do
+    E.config={maxRangeBonusPercent=57}
+    for level,expected in pairs({[15]=3500*1.23,[16]=3500*1.25,[34]=3500*1.55,[35]=3500*1.57}) do
         local only=newBase(level,3500,true)
         collection={only}
         capped.apply(only);near(only.AreaRange,expected)
         local shot=capped.snapshot(only)
         near(shot.currentPercent,expected/35)
-        near(shot.nextPercent,157)
+        near(shot.nextPercent,100+ref(math.min(level+1,35),57))
         only.AreaRange=3500
         capped.refresh();near(only.AreaRange,expected)
     end
 end
+-- The planner's maximum and the radius at the last level are the same number, bit for bit,
+-- whatever the baseline, cap or size of the level table (Range.separate asserts maximum >= desired).
+do
+    local table_=35
+    local plain=FindFirstOf
+    FindFirstOf=function() return obj({GetMaxLevel=function() return table_ end}) end
+    for _,levels in ipairs({35,40,12}) do
+        table_=levels
+        for _,baselineRadius in ipairs({3500,2700,1234.567,10000/3}) do
+            local capped=capRuntime(baselineRadius)
+            for cap=0,300 do
+                E.config={maxRangeBonusPercent=cap}
+                local only=newBase(levels,baselineRadius,true)
+                collection={only}
+                capped.apply(only)
+                assert(only.AreaRange==baselineRadius*((100+cap)/100),
+                    string.format('table %d baseline %s cap %d: %s',levels,baselineRadius,cap,tostring(only.AreaRange)))
+                assert(Range.radius(baselineRadius,levels,{maxRangeBonusPercent=cap},levels)==only.AreaRange)
+            end
+        end
+    end
+    FindFirstOf=plain
+end
+-- The table's size reaches the plan: a base at level 20 gets 20/39 of a 40-level table, not 20/34.
+do
+    local plain=FindFirstOf
+    E.config={maxRangeBonusPercent=100}
+    for _,levels in ipairs({35,40}) do
+        FindFirstOf=function() return obj({GetMaxLevel=function() return levels end}) end
+        local only=newBase(20,3500,true)
+        collection={only}
+        capRuntime(3500).refresh()
+        near(only.AreaRange,3500*(100+ref(20,100,levels))/100)
+    end
+    assert(ref(20,100,35)~=ref(20,100,40))
+    FindFirstOf=plain
+end
+-- Before the level table loads, planning assumes the known 35 levels instead of failing.
+do
+    local plain=FindFirstOf
+    FindFirstOf=function() return nil end
+    E.config={maxRangeBonusPercent=100}
+    local only=newBase(11,3500,true)
+    collection={only}
+    local targets=capRuntime(3500).targets({only})
+    near(targets['1:0:0:0'],4515)
+    FindFirstOf=plain
+end
 print('PASS: every integer cap plans and applies its capped radius through apply, snapshot and refresh')
+
+-- The range is on while the cap is above 0. An old config.lua still names the removed growth
+-- per level: it is ignored, except 0, which switched range off and still does.
+do
+    local capped=capRuntime(3500)
+    local only=newBase(11,3500,true)
+    collection={only}
+    for _,case in ipairs({{cap=1,on=true},{cap=100,on=true},{cap=300,on=true},{cap=0,on=false},
+            {cap=100,growth=4,on=true},{cap=100,growth=5,on=true},{cap=100,growth=20,on=true},
+            {cap=100,growth=0,on=false},{cap=300,growth=0,on=false}}) do
+        E.config={maxRangeBonusPercent=case.cap,growthPercentPerLevel=case.growth}
+        local label='cap '..case.cap..' growth '..tostring(case.growth)
+        assert(capped.bonuses(only).rangeEnabled==case.on,label)
+        only.AreaRange=3500
+        capped.apply(only);capped.refresh()
+        near(only.AreaRange,case.on and 3500*(100+ref(11,case.cap))/100 or 3500)
+    end
+    near(only.AreaRange,3500)
+    E.config={maxRangeBonusPercent=100,growthPercentPerLevel=5,resetToVanilla=true}
+    assert(not capped.bonuses(only).rangeEnabled,'reset switches range off')
+    E.config={resetToVanilla=false}
+end
+print('PASS: the range follows its cap alone; an old growth key is ignored, 0 still switches range off')
+
+-- The server's preview of the next radius follows the size of the level table too.
+do
+    local plainAll,plainFirst=FindAllOf,FindFirstOf
+    local levels,got=35,nil
+    FindFirstOf=function() return obj({GetMaxLevel=function() return levels end}) end
+    local only=newBase(20,3500,true)
+    FindAllOf=function(class)
+        if class=='PalBaseCampModel' then return {only} end
+        return class=='BP_BuildObject_PalBoxV2_C' and {actor} or {}
+    end
+    E.preview={refresh=function() end,finish=function() end,publish=function(_,_,percent) got=percent end}
+    E.config={maxRangeBonusPercent=100}
+    for _,size in ipairs({35,40}) do
+        levels,got=size,nil
+        capRuntime(3500).refresh()
+        near(got,100+ref(21,100,size))
+    end
+    assert(ref(21,100,35)~=ref(21,100,40))
+    E.preview=nil
+    FindAllOf,FindFirstOf=plainAll,plainFirst
+end
+print('PASS: the preview of the next radius spreads the cap over the level table')
 
 -- Clients plan nothing: a refresh with no authority never separates radii and
 -- writes no AreaRange, yet still reports each base and updates its ring.
@@ -300,7 +482,7 @@ do
                 if key=='AreaRange' then writes=writes+1; radius=value else rawset(table,key,value) end
             end})
     end
-    E.config={growthPercentPerLevel=20,maxRangeBonusPercent=300}
+    E.config={maxRangeBonusPercent=300}
     local watcher=dofile(root..'src/runtime.lua')(E)
     local first=watched(newBase(10,3500,false))
     local second=watched(newBase(20,4200,false))
@@ -336,10 +518,10 @@ print('PASS: a client refresh plans and writes nothing but still reports bases a
 -- One refresh resolves the policy and the level table once, not once per base;
 -- nothing is remembered outside a refresh or after one that threw.
 do
-    local policyCalls,levelCalls,maxLevel,growth=0,0,35,20
+    local policyCalls,levelCalls,maxLevel,cap=0,0,35,300
     local plain=FindFirstOf
     FindFirstOf=function() levelCalls=levelCalls+1; return obj({GetMaxLevel=function() return maxLevel end}) end
-    E.policy=function() policyCalls=policyCalls+1; return {growthPercentPerLevel=growth,maxRangeBonusPercent=300,maxChestBonusSlots=20} end
+    E.policy=function() policyCalls=policyCalls+1; return {maxRangeBonusPercent=cap,maxChestBonusSlots=20} end
     E.config={resetToVanilla=false}
     local memoRuntime=dofile(root..'src/runtime.lua')(E)
     local five={}
@@ -351,27 +533,27 @@ do
     end
     collection=five
     memoRuntime.refresh()
-    for _,one in ipairs(five) do near(one.AreaRange,Range.radius(3500,10,{growthPercentPerLevel=20,maxRangeBonusPercent=300})) end
+    for _,one in ipairs(five) do near(one.AreaRange,Range.radius(3500,10,{maxRangeBonusPercent=300})) end
     assert(policyCalls<=2 and levelCalls<=2, 'policy '..policyCalls..', level table '..levelCalls)
     -- A policy change between refreshes is seen by the second one.
-    growth=4
+    cap=150
     memoRuntime.refresh()
-    for _,one in ipairs(five) do near(one.AreaRange,Range.radius(3500,10,{growthPercentPerLevel=4,maxRangeBonusPercent=300})) end
+    for _,one in ipairs(five) do near(one.AreaRange,Range.radius(3500,10,{maxRangeBonusPercent=150})) end
     -- Outside a refresh every call resolves again.
     policyCalls,levelCalls=0,0
     memoRuntime.policy(five[1]);memoRuntime.policy(five[1]);memoRuntime.maxLevel();memoRuntime.maxLevel()
     assert(policyCalls==2 and levelCalls==2)
     -- A refresh that throws midway leaves no memo behind and rethrows its error.
     five[4].GetTransform=function() error('planning failed') end
-    growth=20
+    cap=300
     local ok,message=pcall(memoRuntime.refresh)
     assert(not ok and tostring(message):find('planning failed',1,true), tostring(message))
     five[4].GetTransform=function() return {Translation={X=400000,Y=0,Z=0}} end
-    growth=8;maxLevel=12
-    near(memoRuntime.policy(five[1]).growthPercentPerLevel,8)
+    cap=80;maxLevel=12
+    near(memoRuntime.policy(five[1]).maxRangeBonusPercent,80)
     assert(memoRuntime.maxLevel()==12 and memoRuntime.snapshot(five[1]).maximum==12)
     memoRuntime.refresh()
-    near(five[4].AreaRange,Range.radius(3500,10,{growthPercentPerLevel=8,maxRangeBonusPercent=300}))
+    near(five[4].AreaRange,Range.radius(3500,10,{maxRangeBonusPercent=80},12))
     E.policy,FindFirstOf=nil,plain
 end
 print('PASS: a refresh resolves policy and level table once, remembers nothing afterwards, even when it throws')
@@ -404,7 +586,7 @@ do
             end})
     end
     local previous=FindAllOf
-    E.config={growthPercentPerLevel=20,maxRangeBonusPercent=100}
+    E.config={maxRangeBonusPercent=100}
     for _,shrinkFirst in ipairs({true,false}) do
         order={}
         local grows=recorded(newBase(35,3500,true),'grows')

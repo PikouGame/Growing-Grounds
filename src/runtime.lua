@@ -46,7 +46,7 @@ return function(E)
     end
     function R.bonuses(model)
         local policy=R.policy(model)
-        return {rangeEnabled=not E.config.resetToVanilla and policy.maxRangeBonusPercent>0 and policy.growthPercentPerLevel>0,
+        return {rangeEnabled=not E.config.resetToVanilla and policy.maxRangeBonusPercent>0,
             chestCap=E.config.resetToVanilla and 0 or policy.maxChestBonusSlots}
     end
     function R.updatePlacement(context)
@@ -76,6 +76,8 @@ return function(E)
     end
     function R.targets(models, nextGroup, nextLevel, fullGrowth)
         local entries, byId = {}, {}
+        -- nil until the level table loads: Range assumes 35 levels, the next refresh reconciles.
+        local levels = R.levels()
         for _, model in ipairs(models) do
             if E.valid(model) and model:IsAvailable() and not model.bTemporary then
                 local baseline = R.baseline(model)
@@ -86,7 +88,7 @@ return function(E)
                 local maximum=E.config.resetToVanilla and baseline or baseline * ((100 + policy.maxRangeBonusPercent) / 100)
                 entries[#entries+1] = {
                     id=guid(model:GetId()), baseline=baseline, x=position.X, y=position.Y,
-                    desired=fullGrowth and maximum or (E.config.resetToVanilla and baseline or E.range.radius(baseline, level, policy)),
+                    desired=fullGrowth and maximum or (E.config.resetToVanilla and baseline or E.range.radius(baseline, level, policy, levels)),
                     maximum=maximum,
                 }
             end
@@ -254,7 +256,7 @@ return function(E)
                             and not E.config.resetToVanilla then
                         local id=guid(model:GetId())
                         local baseline=R.baseline(model)
-                        local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model))
+                        local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model),R.maxLevel())
                         previewValues[id]=math.min(limits[id],future)/baseline*100
                     end
                 end

@@ -1,11 +1,11 @@
 return {
     -- Host/server defaults. Local worlds can override these in World Settings.
-    -- Each level after 1 adds this percentage of the ORIGINAL radius (0..20).
-    growthPercentPerLevel = 4,
-    -- Maximum radius BONUS: +100% doubles the radius (35m -> 70m).
+    -- Maximum radius BONUS, reached at the last base level and spread evenly over
+    -- the levels before it: +100% doubles the radius (35m -> 70m).
     -- World Settings: 0..+300%. +300% means 4x radius, not area.
     -- Set either cap to 0 to disable that bonus. Occupied extra chest slots are preserved.
     -- Old maxRangePercent totals remain supported without changing their effect.
+    -- An old growthPercentPerLevel line is ignored, except 0, which still switches range off.
     maxRangeBonusPercent = 100,
     -- Bonus chest slots at the last base level (0..40), spread evenly over the
     -- levels before it: with 20, +1 at level 2, 5 at level 10, 20 at level 35.

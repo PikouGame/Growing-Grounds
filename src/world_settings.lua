@@ -7,12 +7,10 @@ return function(E)
     local outerPath = '/Game/Pal/Blueprint/UI/Title/WBP_WorldSetting.WBP_WorldSetting_C'
     local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
-        {key='growthPercentPerLevel', title='Growing Grounds: Range growth per level (%)', min=0, max=E.range.limits.growthPercentPerLevel,
-            tip='Adds a percentage of the original radius each level after level 1. Default: 4%.'},
         {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=E.range.limits.maxRangeBonusPercent,
-            tip='0 disables range growth. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
+            tip='The range bonus arrives steadily over all base levels; the last level gives it all. 0 disables it. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
         {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=E.range.limits.maxChestBonusSlots,
-            tip='0 disables bonus slots. These slots arrive steadily over all base levels; the last level gives them all. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
+            tip='These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
     }
     local function object(path) return E.objects.find(path) end
     local function stringValue(value)
@@ -73,7 +71,7 @@ return function(E)
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
-        E.log('World Settings: growth, range bonus cap and chest bonus cap rows ready')
+        E.log('World Settings: range bonus cap and chest bonus cap rows ready')
     end
     function W.change(row, value)
         local entry = owned[row:GetFullName()]

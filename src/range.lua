@@ -4,7 +4,7 @@
 local Range = {}
 
 -- The one source of the setting maxima: clamps, sliders and the preview decoder derive from it.
-Range.limits = {growthPercentPerLevel=20, maxRangeBonusPercent=300, maxChestBonusSlots=40}
+Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=40}
 
 local function finite(value)
     return type(value) == "number" and value == value
@@ -19,44 +19,49 @@ end
 -- Public settings use bonuses: +100% doubles the original radius.
 -- Legacy totals retain the old 100..200 clamp before conversion, so updating
 -- cannot enlarge a world whose old config exceeded the former hard ceiling.
+-- A legacy growth per level of 0 was the other way to switch range off: it
+-- still does. Any other legacy growth value is ignored.
 function Range.settings(settings)
     settings = settings or {}
-    local growth, cap = settings.growthPercentPerLevel, settings.maxRangeBonusPercent
+    local cap = settings.maxRangeBonusPercent
     if cap == nil and finite(settings.maxRangePercent) then
         cap = math.max(100, math.min(200, settings.maxRangePercent)) - 100
     end
-    if not finite(growth) then growth = 4 end
     if not finite(cap) then cap = 100 end
+    if settings.growthPercentPerLevel == 0 then cap = 0 end
     local slots = settings.maxChestBonusSlots
     if not finite(slots) then slots = 20 end
     local limits = Range.limits
-    return {growthPercentPerLevel=math.max(0, math.min(limits.growthPercentPerLevel, growth)),
-        maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
+    return {maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
         maxChestBonusSlots=math.max(0, math.min(limits.maxChestBonusSlots, math.floor(slots)))}
 end
 
-function Range.percent(level, settings)
+-- A cap spread evenly over the game's base levels: level 1 gives 0, the last
+-- level gives the whole cap, and each level between rounds to the nearest whole
+-- unit. maxLevel is the size of the game's level table; 35 in Palworld 1.0.
+local function spread(cap, level, maxLevel)
     validLevel(level)
-    local policy = Range.settings(settings)
-    return 100 + math.min(policy.maxRangeBonusPercent, policy.growthPercentPerLevel * (level - 1))
-end
-
--- The chest cap is spread evenly over the levels: level 1 gives 0, the last level
--- gives the whole cap, rounded to the nearest slot.
--- maxLevel is the size of the game's level table; 35 in Palworld 1.0.
-function Range.storageBonus(level, settings, maxLevel)
-    validLevel(level)
-    local cap = Range.settings(settings).maxChestBonusSlots
     if not (finite(maxLevel) and maxLevel >= 2 and maxLevel % 1 == 0) then maxLevel = 35 end
     local upgrades = maxLevel - 1
-    -- Nearest whole slot. Integer numerators keep an exact half rounding up.
-    return math.floor((2 * cap * math.min(level - 1, upgrades) + upgrades) / (2 * upgrades))
+    local done = level - 1
+    -- A fractional cap is only reached exactly, at the last level.
+    if done >= upgrades then return cap end
+    -- Integer numerators keep an exact half rounding up.
+    return math.min(cap, math.floor((2 * cap * done + upgrades) / (2 * upgrades)))
 end
 
-function Range.radius(originalRadius, level, settings)
+function Range.percent(level, settings, maxLevel)
+    return 100 + spread(Range.settings(settings).maxRangeBonusPercent, level, maxLevel)
+end
+
+function Range.storageBonus(level, settings, maxLevel)
+    return spread(Range.settings(settings).maxChestBonusSlots, level, maxLevel)
+end
+
+function Range.radius(originalRadius, level, settings, maxLevel)
     assert(finite(originalRadius) and originalRadius > 0,
         "original radius must be finite and positive")
-    local result = originalRadius * (Range.percent(level, settings) / 100)
+    local result = originalRadius * (Range.percent(level, settings, maxLevel) / 100)
     assert(finite(result), "calculated radius overflow")
     return result
 end
