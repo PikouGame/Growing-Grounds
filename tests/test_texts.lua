@@ -2,7 +2,7 @@ local root = assert(arg[1], 'pass the mod root with trailing slash')
 local Texts = dofile(root .. 'src/texts.lua')
 
 local cultures = {'en','ja','de','es','es-MX','fr','id','it','ko','pl','pt-BR','ru','th','tr','vi','zh-Hans','zh-Hant'}
-local keys = {'rangeRow','chestRow','rangeCapTitle','rangeCapTip','chestCapTitle','chestCapTip','palboxRow','palboxCapTitle','palboxCapTip','off'}
+local keys = {'rangeRow','chestRow','rangeCapTitle','rangeCapTip','chestCapTitle','chestCapTip','palboxRow','palboxCapTitle','palboxCapTip','chestCapacity','off'}
 
 local function same(a, b, what)
     assert(#a == #b, what .. ': ' .. #a .. ' items, expected ' .. #b)
@@ -12,9 +12,9 @@ local function has(text, part) return text:find(part, 1, true) ~= nil end
 
 same(Texts.cultures, cultures, 'cultures')
 same(Texts.keys, keys, 'keys')
-print('PASS: the 17 cultures and the 10 keys are listed in order')
+print('PASS: the 17 cultures and the 11 keys are listed in order')
 
--- Every culture has exactly the ten keys, each one a trimmed single line.
+-- Every culture has exactly the eleven keys, each one a trimmed single line.
 for _, culture in ipairs(cultures) do
     local texts = Texts.get(culture)
     local count = 0
@@ -32,7 +32,7 @@ for _, culture in ipairs(cultures) do
     end
     assert(count == #keys, culture .. ' has ' .. count .. ' keys, expected ' .. #keys)
 end
-print('PASS: every culture has exactly the ten keys, non-empty, single-line and trimmed')
+print('PASS: every culture has exactly the eleven keys, non-empty, single-line and trimmed')
 
 -- English is the source text, verbatim.
 local english = Texts.get('en')
@@ -215,7 +215,7 @@ assert(Texts.get('fr_FR').off == Texts.get('fr').off)
 local first = Texts.get('de')
 first.off = 'changed'
 assert(Texts.get('de').off == 'Aus', 'get must hand out a copy')
-print('PASS: get returns all ten keys for odd input and a fresh table each time')
+print('PASS: get returns all eleven keys for odd input and a fresh table each time')
 
 -- The language reader: asks the engine each time, follows a change, reads
 -- English when the engine cannot answer, and logs only when the answer changes.
@@ -259,3 +259,10 @@ for _,culture in ipairs(cultures) do
     for _,number in ipairs({'0','1','32','64'}) do assert(has(t.palboxCapTip,number),culture..' Palbox tip lost '..number) end
 end
 print('PASS: Palbox settings and reward labels provided in all 17 cultures')
+
+for _,culture in ipairs(cultures) do
+    local label=Texts.get(culture).chestCapacity
+    local _,count=label:gsub("%%d", "")
+    assert(count==2 and string.format(label,24,10):find("24 + 10",1,true),culture)
+end
+print("PASS: capacity labels keep native and extra counts in all 17 cultures")

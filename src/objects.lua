@@ -7,6 +7,7 @@ return function(E)
         PalBaseCampModel='/Script/Pal.PalBaseCampModel',
         BP_BuildObject_PalBoxV2_C='/Game/Pal/Blueprint/MapObject/BuildObject/BP_BuildObject_PalBoxV2.BP_BuildObject_PalBoxV2_C',
         WBP_IngameMenu_Mission_C='/Game/Pal/Blueprint/UI/UserInterface/IngameMenu/Task/WBP_IngameMenu_Mission.WBP_IngameMenu_Mission_C',
+        WBP_ItemChest_C='/Game/Pal/Blueprint/UI/MapObject/ItemChest/WBP_ItemChest.WBP_ItemChest_C',
         PalGameInstance='/Script/Pal.PalGameInstance',
         PalMasterDataTableAccess_BaseCampLevelData='/Script/Pal.PalMasterDataTableAccess_BaseCampLevelData',
         PalMapObjectItemChestModel='/Script/Pal.PalMapObjectItemChestModel',

@@ -40,6 +40,7 @@ return function(E)
     end
     function C.install(refresh)
         LoopInGameThreadWithDelay(250,function()
+            if E.chestUI then E.guard('chest UI observer',E.chestUI.check) end
             local ok,changed=E.guard('base change observer',C.check)
             if ok and changed then refresh() end
         end)

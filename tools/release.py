@@ -12,7 +12,7 @@ RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',
     'src/settings.lua', 'src/world_settings.lua',
-    'src/storage.lua', 'src/palbox.lua',
+    'src/storage.lua', 'src/palbox.lua', 'src/chest_ui.lua',
     'src/preview.lua', 'src/objects.lua', 'src/changes.lua',
     'src/motion.lua', 'src/boundary.lua', 'src/ring.lua', 'src/ribbon.lua', 'src/wave.lua',
     'src/marker.lua', 'src/texts.lua', 'src/language.lua',

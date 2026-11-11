@@ -22,6 +22,7 @@ local function run()
             end
             if name=='ui' then return {refresh=count('ui')} end
             if name=='preview' then return {} end
+            if name=='chest_ui' then return {refresh=noop,check=noop} end
             if name=='world_settings' then return {refresh=noop,installHooks=noop} end
             if name=='palbox' then return {refresh=count('palbox')} end
             if name=='storage' then return {refresh=count('storage'),changed=noop} end

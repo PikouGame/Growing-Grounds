@@ -88,7 +88,8 @@ for _=1,100 do assert(not F.check()) end
 assert(scans==before,'frequent fallback cannot reintroduce the freezing scans')
 
 -- Observe directly on the game thread; one native loop cannot backlog itself.
-local timer,refreshes=nil,0
+local timer,refreshes,chestChecks=nil,0,0
+E.chestUI={check=function() chestChecks=chestChecks+1 end}
 LoopInGameThreadWithDelay=function(interval,fn) assert(interval==250);timer=fn end
 LoopAsync=function() error('Observer must never run asynchronously') end
 C.install(function() refreshes=refreshes+1 end)
@@ -96,6 +97,7 @@ nextWorld.level=2
 timer();assert(refreshes==1,'native timer detects a changed base')
 for _=1,20 do timer() end
 assert(refreshes==1,'unchanged world triggers no full refresh')
+assert(chestChecks==21,'chest UI uses the existing native observer without forcing runtime refreshes')
 local saved=nextWorld.GetRange
 nextWorld.GetRange=function() error('destroyed during check') end
 timer()

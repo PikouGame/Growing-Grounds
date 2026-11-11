@@ -32,6 +32,7 @@ local Runtime = dofile(root .. 'src/runtime.lua')(env)
 env.runtime=Runtime
 env.preview=dofile(root .. 'src/preview.lua')(env)
 local UI = dofile(root .. 'src/ui.lua')(env, Runtime)
+env.chestUI=dofile(root .. 'src/chest_ui.lua')(env)
 local WorldSettings = dofile(root .. 'src/world_settings.lua')(env)
 local Storage = dofile(root .. 'src/storage.lua')(env)
 local Palbox = dofile(root .. 'src/palbox.lua')(env)
@@ -44,6 +45,7 @@ local function refresh()
         guard('storage refresh', Storage.refresh)
         guard('Palbox refresh', Palbox.refresh)
         guard('UI refresh', UI.refresh)
+        guard('chest UI refresh', env.chestUI.refresh)
         guard('World Settings refresh', WorldSettings.refresh)
         pending = false
     end)
@@ -59,7 +61,7 @@ guard('client level hook', function()
 end)
 env.objects.install(function(name)
     if name=='PalBaseCampModel' or name=='PalPlayerState' then ExecuteInGameThreadWithDelay(500,refresh)
-    elseif name=='BP_BuildObject_PalBoxV2_C' or name=='WBP_IngameMenu_Mission_C' then
+    elseif name=='BP_BuildObject_PalBoxV2_C' or name=='WBP_IngameMenu_Mission_C' or name=='WBP_ItemChest_C' then
         ExecuteInGameThreadWithDelay(100,refresh)
     elseif name=='PalMapObjectItemChestModel' or name=='PalGroupGuild' then
         Storage.changed()

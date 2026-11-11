@@ -90,6 +90,10 @@ Proton/Wine. Native Windows validation of this beta is still pending.
 - **Chest bonus caps use multiples of six:** 18 by default, up to 42. Existing
   caps round to the nearest step (20 becomes 18; 40 becomes 42). Slots still
   arrive gradually, one at a time. Occupied overflow slots remain until emptied.
+- **Open chests show their native and extra capacity** just above the slot grid,
+  for example "24 + 10 slots". The count reflects the actual inventory, including
+  occupied extra slots retained after reducing a cap. The label follows the
+  game's language and disappears when the chest has no extra slots.
 - **The range bonus is spread over all base levels**, like the chest slots.
   The maximum you choose (+100% by default) is reached at the last base level,
   35, and every level before it brings its share. The "growth per level"
@@ -187,6 +191,7 @@ lua tests/test_changes.lua ./
 lua tests/test_range.lua ./
 lua tests/test_settings.lua ./
 lua tests/test_storage.lua ./
+lua tests/test_chest_ui.lua ./
 lua tests/test_objects.lua ./
 lua tests/test_preview.lua ./
 lua tests/test_ui.lua ./
