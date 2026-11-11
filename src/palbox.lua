@@ -4,11 +4,63 @@
 return function(E)
     local P={}
     local retained,failed,reported={},{},{}
+    local dimensions={}
     local jobs,cursor,pending={},1,false
     local function find(path) return E.objects.find(path) end
     local function integer(n) return type(n)=='number' and n>=0 and n<math.huge and n%1==0 end
     local function identity(a,b)
         return E.valid(a) and E.valid(b) and a:GetAddress()==b:GetAddress()
+    end
+    -- Native load clamps storage to PalBoxPageNum. Reserve the supported
+    -- ceiling before loading a player, then apply their earned personal size.
+    -- Keep the original dimensions separately; never treat our ceiling as base.
+    function P.prepare(context)
+        if not E.valid(context) or not E.runtime.isAuthority(context) then return end
+        local settings=find('/Script/Pal.Default__PalUtility'):GetGameSetting(context)
+        if not E.valid(settings) then return end
+        local name=settings:GetFullName()
+        local record=dimensions[name]
+        if not record then
+            local pages,size=settings.PalBoxPageNum,settings.PalBoxSlotNumInPage
+            assert(integer(pages) and pages>0 and pages<=1024 and integer(size) and size>0 and size<=100,
+                'Invalid native Palbox page dimensions')
+            record={pages=pages,size=size,settings=settings}
+            dimensions[name]=record
+        end
+        local ceiling=record.pages+E.range.limits.maxPalboxBonusPages
+        if settings.PalBoxPageNum==record.pages then
+            settings.PalBoxPageNum=ceiling
+            E.log(string.format('Palbox load capacity reserved: %d native + %d possible bonus pages',record.pages,E.range.limits.maxPalboxBonusPages))
+        end
+        assert(settings.PalBoxPageNum==ceiling and settings.PalBoxSlotNumInPage==record.size,
+            'Another mod changed Palbox dimensions')
+        return record
+    end
+    local function replication(record,player)
+        local component=record.component
+        if #record.slots==0 then
+            if E.valid(component) then component:K2_DestroyComponent(record.controller) end
+            record.component=nil;return
+        end
+        local controller=player and player:GetOwner() or record.controller
+        if not E.valid(controller) then return end
+        assert(controller:IsA('/Script/Engine.PlayerController'),'Palbox replication requires its owning player controller')
+        if not E.valid(component) or not identity(controller,record.controller) then
+            if E.valid(component) then component:K2_DestroyComponent(record.controller) end
+            local class=find('/Script/Pal.PalObjectReplicatorComponent')
+            assert(E.valid(class),'Palbox object replicator unavailable')
+            component=controller:AddComponentByClass(class,true,{
+                Rotation={X=0,Y=0,Z=0,W=1},Translation={X=0,Y=0,Z=0},Scale3D={X=1,Y=1,Z=1},
+            },false)
+            assert(E.valid(component),'Cannot create Palbox object replicator')
+            record.component,record.controller=component,controller
+            component:SetComponentTickEnabled(false)
+        end
+        local objects={}
+        for _,entry in ipairs(record.slots) do objects[#objects+1]=entry.object end
+        component.ReplicateObject=objects
+        component:SetIsReplicated(true)
+        controller:ForceNetUpdate()
     end
     local function release(record,from)
         local remove,keep={},{}
@@ -26,6 +78,7 @@ return function(E)
             record.owner.ReferencedObjects=survivors
         end
         record.slots=keep
+        replication(record)
     end
     local function prune()
         for name,record in pairs(retained) do
@@ -59,11 +112,9 @@ return function(E)
         local storage=player:GetPalStorage()
         if not E.valid(storage) or not E.valid(storage.TargetContainer) then return end
         local container=storage.TargetContainer
-        local settings=find('/Script/Pal.Default__PalUtility'):GetGameSetting(player)
-        if not E.valid(settings) then return end
-        local native,size=settings.PalBoxPageNum,settings.PalBoxSlotNumInPage
-        assert(integer(native) and native>0 and native<=1024 and integer(size) and size>0 and size<=100,
-            'Invalid native Palbox page dimensions')
+        local original=P.prepare(player)
+        if not original then return end
+        local native,size=original.pages,original.size
         assert(storage.SlotNumInPage==size,'Another mod changed the Palbox page size')
         local before=container:Num()
         if before==0 then return end
@@ -158,6 +209,9 @@ return function(E)
                 release(record,before);error(err)
             end
             record.count=target
+            -- SlotArray alone replicates unresolved references for runtime
+            -- additions. Native proof requires this owner-only subobject channel.
+            replication(record,job.player)
         else
             local kept={}
             for index=0,target-1 do kept[index+1]=container:Get(index) end
@@ -190,11 +244,21 @@ return function(E)
         end)
     end
     function P.refresh()
+        -- Dedicated worlds have bases before players join. The join pre-hook
+        -- below also primes the setting before a player initializes storage.
+        for _,base in ipairs(E.objects.all('PalBaseCampModel')) do
+            if E.valid(base) and E.runtime.isAuthority(base) then P.prepare(base);break end
+        end
         prune()
         if pending or cursor<=#jobs then return end
         jobs={};cursor=1
         for _,player in ipairs(E.objects.all('PalPlayerState')) do jobs[#jobs+1]=player end
         pump()
     end
+    E.guard('Palbox load hook',function()
+        RegisterHook('/Script/Pal.PalPlayerState:RequestJoinPlayer_ToServer',function(context)
+            E.guard('Palbox load capacity',function() P.prepare(context:get()) end)
+        end)
+    end)
     return P
 end

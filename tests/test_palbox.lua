@@ -18,6 +18,9 @@ local containers={}
 local manager=obj('manager')
 function manager:GetContainer(id) return containers[id] end
 local slotClass=obj('class')
+local replicatorClass=obj('replicatorClass')
+local hooks={}
+RegisterHook=function(path,fn) hooks[path]=fn end
 local function slot(index,container)
     local s=obj('slot',{index=index,empty=true,locked=false,PermissionTribeID=7,bIsReplicateCharacterParameter=false})
     function s:GetSlotIndex() return self.index end
@@ -45,9 +48,10 @@ local E={range=Range,config={},valid=valid,
     runtime={isAuthority=function(p) return p.server end,policy=function(p) return Range.settings(p.policy) end},
     objects={find=function(p)
         if p=='/Script/Pal.PalIndividualCharacterSlot' then return slotClass end
+        if p=='/Script/Pal.PalObjectReplicatorComponent' then return replicatorClass end
         if p=='/Script/Engine.Default__GameplayStatics' then return gameplay end
         assert(p=='/Script/Pal.Default__PalUtility');return util
-    end,all=function(name) assert(name=='PalPlayerState');return players end}}
+    end,all=function(name) if name=='PalBaseCampModel' then return {} end;assert(name=='PalPlayerState');return players end}}
 local function newPlayer(level,server)
     local guild=obj('guild',{level=level})
     function guild:GetBaseCampLevel() return self.level end
@@ -65,6 +69,19 @@ local function newPlayer(level,server)
     function s:OnUpdateCharacterContainer_InServer() self.cacheUpdated=(self.cacheUpdated or 0)+1 end
     s.SlotObserver=obj('observer',{OnUpdateContainerSize=function(_,given) assert(given==c) end})
     local p=obj('player',{GuildBelongTo=guild,server=server,policy={},updates=0})
+    local controller=obj('controller',{components={}})
+    function controller:IsA(path) return path=='/Script/Engine.PlayerController' end
+    function controller:ForceNetUpdate() end
+    function controller:AddComponentByClass(class)
+        assert(class==replicatorClass)
+        local component=obj('replicator')
+        function component:SetComponentTickEnabled(v) assert(v==false) end
+        function component:SetIsReplicated(v) self.replicates=v end
+        function component:K2_DestroyComponent(owner) assert(owner==controller);self.alive=false end
+        self.components[#self.components+1]=component
+        return component
+    end
+    function p:GetOwner() return controller end
     function p:GetPalStorage() return s end
     function p:ForceNetUpdate() self.updates=self.updates+1 end
     players[#players+1]=p
@@ -82,6 +99,10 @@ g.level=2;P.refresh();assert(#timers==1 and c:Num()==960);drain()
 assert(c:Num()==990 and s.PageNum==33 and created==30)
 for i=960,989 do assert(c:Get(i):GetSlotIndex()==i and c:Get(i).id==c:GetId() and c:Get(i):IsEmpty()) end
 assert(#owner.ReferencedObjects==30 and c.updates==1 and s.cacheUpdated==1 and p.updates==1)
+assert(native.PalBoxPageNum==96,'load ceiling is separate from the original 32-page baseline')
+local network=p:GetOwner().components[1]
+assert(network.replicates and #network.ReplicateObject==30)
+assert(network.ReplicateObject[1]==c:Get(960),'runtime slots travel on their owning controller channel')
 assert(cc:Num()==960 and cs.PageNum==32,'clients cannot grant pages')
 for _=1,3 do P.refresh();drain() end
 assert(created==30 and c.updates==1,'steady state allocates/writes nothing')
@@ -103,6 +124,7 @@ extra.locked=false;s.SyncPageIndex=65;P.refresh();drain();assert(c:Num()==1980,'
 s.SyncPageIndex=0;P.refresh();drain()
 assert(c:Num()==960 and s.PageNum==32 and c:Get(5)==occupied and occupied.pal=='original-pal')
 assert(#owner.ReferencedObjects==0,'release only our obsolete references')
+assert(not network.alive,'last owned slot removed destroys its dedicated replicator')
 -- Different guilds grant different personal bonuses; no base-count multiplier.
 local p2,s2,c2=newPlayer(3,true)
 p.policy.maxPalboxBonusPages=2;P.refresh();drain()
@@ -122,6 +144,16 @@ p4.policy.maxPalboxBonusPages=1;P.refresh();drain();assert(c4:Num()==990,'change
 local px,sx,cx=newPlayer(35,true)
 for i=960,2999 do cx.SlotArray[i+1]=slot(i,cx) end
 sx.PageNum=100;P.refresh();drain();assert(cx:Num()==3000 and sx.PageNum==100)
+-- Native loading may reserve the ceiling; keep the saved Pal's exact slot,
+-- then reduce to the personal earned size without using 96 as the baseline.
+local pl,sl,cl=newPlayer(3,true)
+for i=960,2879 do cl.SlotArray[i+1]=slot(i,cl) end
+sl.PageNum=96
+local savedPal=cl:Get(960);savedPal.empty=false;savedPal.pal='saved-bonus-pal'
+hooks['/Script/Pal.PalPlayerState:RequestJoinPlayer_ToServer']({get=function() return pl end})
+P.refresh();drain()
+assert(cl:Num()==1020 and sl.PageNum==34 and cl:Get(960)==savedPal)
+assert(#pl:GetOwner().components==0,'native-created load slots do not need a duplicate subobject channel')
 -- World travel drops only references owned by this module.
 local foreign=obj('foreign');owner.ReferencedObjects[#owner.ReferencedObjects+1]=foreign
 players={};world=obj('new-world');P.refresh();drain()
