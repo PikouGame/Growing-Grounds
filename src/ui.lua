@@ -17,6 +17,55 @@ return function(E, Runtime)
     local metreGap = 3
     local metreScale = 0.45
     local valueGutter = 4 -- clearance between the annotation and native chevrons
+    local function fitTitle(row)
+        local title = row.Text_Efefct
+        local titleName = title:GetFullName()
+        local parent = title:GetParent()
+        if parent:IsA('/Script/UMG.ScaleBox') then return end
+        -- The native row is icon, Auto title, Fill spacer, current, arrow,
+        -- next. Once the spacer reaches zero, an Auto title pushes the values
+        -- outside the row. Give its space to a shrink-only title instead.
+        local tail, found = {}, false
+        for index=0,parent:GetChildrenCount()-1 do
+            local child=parent:GetChildAt(index)
+            -- Repeated UObject lookups can produce different Lua handles.
+            if child:GetFullName()==titleName then found=true end
+            if found then
+                local slot=child.Slot
+                local p,s=slot.Padding,slot.Size
+                tail[#tail+1]={child=child,padding={Left=p.Left,Top=p.Top,Right=p.Right,Bottom=p.Bottom},
+                    size={Value=s.Value,SizeRule=s.SizeRule},horizontal=slot.HorizontalAlignment,
+                    vertical=slot.VerticalAlignment}
+            end
+        end
+        assert(found,'Reward title is missing from its row')
+        local box=StaticConstructObject(object('/Script/UMG.ScaleBox'),row.WidgetTree,FName('GG_TitleFit'))
+        assert(E.valid(box),'Cannot create fitted reward title')
+        box:SetStretch(2) -- EStretch::ScaleToFit, preserving the aspect ratio.
+        box:SetStretchDirection(1) -- EStretchDirection::DownOnly.
+        title:RemoveFromParent()
+        local titleSlot=box:AddChild(title)
+        titleSlot:SetHorizontalAlignment(1) -- HAlign_Left
+        titleSlot:SetVerticalAlignment(Center)
+        -- Reappend the tail in its original order using runtime panel APIs.
+        -- Keep the native number widgets, padding and visibility intact.
+        for index,entry in ipairs(tail) do
+            local child=index==1 and box or entry.child
+            if index>1 then child:RemoveFromParent() end
+            local slot=parent:AddChildToHorizontalBox(child)
+            if index==1 then
+                entry.size={Value=1,SizeRule=1} -- Fill the remaining width.
+                entry.horizontal=0 -- HAlign_Fill
+                entry.padding.Right=entry.padding.Right+valueGutter
+            elseif child:IsA('/Script/UMG.Spacer') and entry.size.SizeRule==1 then
+                entry.size={Value=1,SizeRule=0} -- The title now owns the flexible space.
+            end
+            slot:SetPadding(entry.padding)
+            slot:SetSize(entry.size)
+            slot:SetHorizontalAlignment(entry.horizontal)
+            slot:SetVerticalAlignment(entry.vertical)
+        end
+    end
     local function metres(cm)
         -- Round a positive radius to the nearest tenth, then omit a trailing .0.
         local value = string.format('%.1f', math.floor(cm / 10 + 0.5) / 10):gsub('%.0$', '')
@@ -92,6 +141,7 @@ return function(E, Runtime)
         for _,spec in ipairs(specs) do if E.valid(rows[spec.key]) then rewards[#rewards+1]=rows[spec.key] end end
         for _, reward in ipairs(rewards) do
             if E.valid(reward) then
+                fitTitle(reward)
                 for _, field in ipairs({'Text_Num_Pre','Text_Num_Aft'}) do
                     local box = reward[field]:GetParent()
                     if reward == rows.range then box = box:GetParent() end

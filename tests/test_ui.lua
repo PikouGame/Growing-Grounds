@@ -1,8 +1,13 @@
 local root = assert(arg[1])
 local function obj(t) t.IsValid=function() return true end; return t end
+local widgetId=0
 local function widget(t)
     t=t or {}
+    widgetId=widgetId+1
+    local id=widgetId
+    t.GetFullName=t.GetFullName or function() return 'widget-'..id end
     t.GetParent=function(self) return self.parent end
+    t.IsA=function(self,path) return self.class==path end
     t.SetVisibility=function(self,v) self.visibility=v end
     t.RemoveFromParent=function(self)
         if self.parent then
@@ -28,23 +33,32 @@ local function label()
         GetDesiredSize=function(self)
             if self.unmeasurable then return {X=0,Y=0} end
             -- The percent glyph need not have the same width as a digit.
-            return {X=self.value=='%' and self.Font.Size*0.75 or #self.value*self.Font.Size*0.5,Y=self.Font.Size}
+            return {X=self.value=='%' and self.Font.Size*0.75 or utf8.len(self.value)*self.Font.Size*0.5,Y=self.Font.Size}
         end})
 end
-local function panel(width)
-    local p=widget({children={},WidthOverride=width})
+local function panel(width,class)
+    local p=widget({children={},WidthOverride=width,class=class or '/Script/UMG.HorizontalBox'})
     p.GetChildrenCount=function(self) return #self.children end
-    p.GetChildAt=function(self,i) return self.children[i+1] end
+    p.GetChildAt=function(self,i)
+        local child=self.children[i+1]
+        -- UE4SS can return a fresh Lua handle for the same UObject.
+        if child and child.freshHandle then return setmetatable({},{__index=child,__newindex=child}) end
+        return child
+    end
     p.AddChild=function(self,child)
         child:RemoveFromParent();child.parent=self;self.children[#self.children+1]=child
-        child.Slot={Padding={Left=0,Right=0,Top=0,Bottom=0},SetPadding=function(slot,v) slot.padding=v;slot.Padding=v end,
-            SetVerticalAlignment=function(slot,v) slot.vertical=v end,
-            SetHorizontalAlignment=function(slot,v) slot.horizontal=v end}
+        child.Slot={Padding={Left=0,Right=0,Top=0,Bottom=0},Size={Value=1,SizeRule=0},
+            HorizontalAlignment=0,VerticalAlignment=0,
+            SetPadding=function(slot,v) slot.padding=v;slot.Padding=v end,
+            SetSize=function(slot,v) slot.Size=v end,
+            SetVerticalAlignment=function(slot,v) slot.vertical=v;slot.VerticalAlignment=v end,
+            SetHorizontalAlignment=function(slot,v) slot.horizontal=v;slot.HorizontalAlignment=v end}
         return child.Slot
     end
     p.AddChildToHorizontalBox=p.AddChild
     p.SetWidthOverride=function(self,v) self.WidthOverride=v end
     p.GetDesiredSize=function(self)
+        if self.WidthOverride then return {X=self.WidthOverride,Y=20} end
         local x=0
         for _,child in ipairs(self.children) do
             x=x+child:GetDesiredSize().X+(child.Slot.padding and child.Slot.padding.Left or 0)
@@ -65,12 +79,24 @@ parent.parent=rowStack
 local texture=obj({})
 local function row(name)
     local pre,aft=label(),label()
-    local preBox,aftBox=panel(72),panel(72)
+    local preBox,aftBox=panel(72,'/Script/UMG.SizeBox'),panel(72,'/Script/UMG.SizeBox')
     preBox:AddChild(pre);aftBox:AddChild(aft)
+    -- Native reward hierarchy from WBP_IngameMenu_MissionLevelEffect:
+    -- icon (24 + 12 padding), auto title, fill spacer, values (72), arrow (24).
+    local content=panel()
+    local icon=panel(24,'/Script/UMG.SizeBox')
+    content:AddChild(icon):SetPadding({Left=0,Right=12,Top=0,Bottom=0})
+    local title=label();title.freshHandle=true;content:AddChild(title):SetVerticalAlignment(2)
+    local spacer=widget({class='/Script/UMG.Spacer',GetDesiredSize=function() return {X=0,Y=0} end})
+    content:AddChild(spacer):SetSize({Value=1,SizeRule=1})
+    content:AddChild(preBox):SetPadding({Left=0,Right=0,Top=1,Bottom=0})
+    local arrow=widget({GetDesiredSize=function() return {X=24,Y=32} end})
+    content:AddChild(arrow):SetVerticalAlignment(2)
+    content:AddChild(aftBox):SetPadding({Left=0,Right=0,Top=1,Bottom=0})
     return widget({GetFullName=function() return name end,WidgetTree=obj({}),
-        Text_Efefct=label(),Text_Num_Pre=pre,Text_Num_Aft=aft,
+        Text_Efefct=title,Text_Num_Pre=pre,Text_Num_Aft=aft,content=content,
         Image_Icon=widget({SetBrushFromTexture=function(self,v) self.texture=v end}),
-        Image_Arrow=widget(),SizeBox_Aft=aftBox,
+        Image_Arrow=arrow,SizeBox_Aft=aftBox,
         GetDesiredSize=function() return {X=588,Y=32} end,
         ForceLayoutPrepass=function() prepasses=prepasses+1 end,
         SetEffectInfo=function(self,_,_,_,canLevelup)
@@ -101,9 +127,18 @@ StaticFindObject=function(path)
     if path:find('KismetRenderingLibrary',1,true) then return {ImportFileAsTexture2D=function() return texture end} end
     return obj({path=path})
 end
-local constructed=0
+local constructed,titleBoxes=0,0
 StaticConstructObject=function(class,outer,name)
-    assert(outer:IsValid() and name:match('GG_Text_Num_'))
+    assert(outer:IsValid())
+    if class.path=='/Script/UMG.ScaleBox' then
+        assert(name=='GG_TitleFit')
+        titleBoxes=titleBoxes+1
+        local box=panel(nil,class.path)
+        box.SetStretch=function(self,v) self.stretch=v end
+        box.SetStretchDirection=function(self,v) self.direction=v end
+        return box
+    end
+    assert(name:match('GG_Text_Num_'))
     constructed=constructed+1
     if class.path=='/Script/UMG.HorizontalBox' then return panel() end
     if class.path=='/Script/UMG.Spacer' then
@@ -185,6 +220,63 @@ for _,field in ipairs({'Text_Num_Pre','Text_Num_Aft'}) do
 end
 assertCentred(w)
 assertTextAlignment(w)
+-- A long title must not steal width from the numeric columns. Model the
+-- native horizontal box allocation: Auto children keep desired width, Fill
+-- children share the remaining space, clamped at zero. Physical DPI scale
+-- does not change that allocation; changing available logical width does.
+local function arrange(row,width,dpi)
+    local fixed,fill=0,0
+    for _,child in ipairs(row.content.children) do
+        local slot=child.Slot
+        fixed=fixed+slot.Padding.Left+slot.Padding.Right
+        if slot.Size.SizeRule==1 then fill=fill+slot.Size.Value
+        else fixed=fixed+child:GetDesiredSize().X end
+    end
+    local remaining=math.max(0,width-fixed)
+    local x,positions=0,{}
+    for _,child in ipairs(row.content.children) do
+        local slot=child.Slot
+        x=x+slot.Padding.Left
+        local space=slot.Size.SizeRule==1 and remaining*slot.Size.Value/fill or child:GetDesiredSize().X
+        positions[child]={left=x*dpi,width=space*dpi,centre=(x+space/2)*dpi}
+        x=x+space+slot.Padding.Right
+    end
+    return positions,x*dpi
+end
+local function assertRewardLayout(rows,width,dpi)
+    local expected
+    for _,reward in ipairs(rows) do
+        local placed,right=arrange(reward,width,dpi)
+        local arrow=placed[reward.Image_Arrow].centre
+        if expected then assert(math.abs(arrow-expected)<0.001,'a long title must not shift its arrow right') end
+        expected=expected or arrow
+        assert(right<=width*dpi+0.001,'all rewards stay within the row width')
+        local title=reward.Text_Efefct
+        local box=title:GetParent()
+        local area=placed[title] or placed[box]
+        local natural=title:GetDesiredSize().X*dpi
+        local factor=1
+        if box.class=='/Script/UMG.ScaleBox' then
+            assert(box.stretch==2 and box.direction==1,'titles fit proportionally, shrinking only')
+            assert(title.Slot.horizontal==1 and title.Slot.vertical==2,'titles stay left aligned and vertically centred')
+            factor=math.min(1,area.width/natural)
+        end
+        assert(area.left+natural*factor<=placed[reward.content.children[#reward.content.children-2]].left+0.001,
+            'the complete title fits before the value columns')
+        assert(title.Font.Size==20,'fitting leaves the native font unchanged')
+        assert(reward.content.children[#reward.content.children-2].Slot.Padding.Top==1,
+            'fitting preserves native numeric slot padding')
+    end
+end
+nativePal.Text_Efefct:SetText('Nombre max de Pals actifs à la base')
+nativeBase.Text_Efefct:SetText('Nombre de bases pouvant être construites')
+for _,width in ipairs({520,588,632}) do
+    for _,dpi in ipairs({2/3,1,4/3}) do assertRewardLayout({nativePal,nativeBase},width,dpi) end
+end
+local titleCount=titleBoxes
+for i=1,25 do UI.refresh() end
+assert(titleBoxes==titleCount,'idle refresh must not wrap titles again')
+print('PASS: long titles fit without shifting native arrows; allocation at three widths and DPI scales, no idle wrapping')
 local initialWidth=nativeBase.SizeBox_Aft.WidthOverride
 local steady,layouts=writes,prepasses
 for i=1,25 do UI.refresh() end
@@ -292,6 +384,11 @@ assert(chest.Text_Num_Pre.value=='9' and chest.Text_Num_Aft.value=='10')
 assert(rewardSection.Slot.position.Y+rewardSection.Slot.size.Y==300,'bottom separator stays fixed')
 assert(rewardSection.Slot.position.Y==112,'fourth row shifts the complete title/reward group by one native row')
 assert(chest.Image_Icon.texture==texture and chest.SizeBox_Aft.WidthOverride==nativeBase.SizeBox_Aft.WidthOverride)
+for _,width in ipairs({520,588,632}) do
+    for _,dpi in ipairs({2/3,1,4/3}) do
+        assertRewardLayout({nativePal,nativeBase,current(),chest},width,dpi)
+    end
+end
 -- Reproduce upgrade -> close -> reopen before the preview packet. Keep both
 -- complete rewards, then replace them together when metadata catches up.
 local retained=current()
@@ -408,6 +505,7 @@ assert(rangeRow.Text_Efefct.value=='Bonus de rayon de la base' and chestRow.Text
     'a rebuilt row keeps the current language')
 language='ja';UI.refresh()
 assert(rangeRow.Text_Efefct.value==Texts.get('ja').rangeRow and chestRow.Text_Efefct.value==Texts.get('ja').chestRow)
+assertRewardLayout({nativePal,nativeBase,rangeRow,chestRow},588,2/3)
 language='en';UI.refresh()
 assert(rangeRow.Text_Efefct.value=='Base Range Bonus' and chestRow.Text_Efefct.value=='Bonus Chest Slots')
 FindAllOf=function() return {} end
