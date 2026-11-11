@@ -188,6 +188,11 @@ return function(E, Runtime)
         local radius=state.baseline*state.nextPercent/100
         return radius>state.radius+1 and radius
     end
+    local function maximumRadius(state)
+        if state.rangeEnabled==false or not state.maximumPercent then return false end
+        local radius=state.baseline*state.maximumPercent/100
+        return radius>state.radius+1 and radius
+    end
     local function paintRange(row, state, title)
         local before = math.floor(state.currentPercent + 0.5)
         row:SetEffectInfo(before, state.nextPercent or before, state.atMaximum, state.canLevelup)
@@ -252,7 +257,9 @@ return function(E, Runtime)
         if state.previewPending then return end
         -- The ground shows the same next radius as the row, from the same values.
         if E.boundary and E.boundary.mark then
-            E.guard('next boundary marker',function() E.boundary.mark(model,screen,nextRadius(state)) end)
+            E.guard('boundary previews',function()
+                E.boundary.mark(model,screen,nextRadius(state),maximumRadius(state))
+            end)
         end
         local key=screen:GetFullName()
         if not columns[key] then

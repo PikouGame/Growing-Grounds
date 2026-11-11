@@ -2,7 +2,7 @@ return function(E)
     local R = {}
     local scale=dofile(E.root..'src/ring.lua')(E)
     local baselines, seen, originalSpacing = {}, {}, {}
-    local overlapWarned, previewValues = false, nil
+    local overlapWarned, previewValues, maximumValues = false, nil, nil
     local function find(path) return E.objects.find(path) end
     local function all(name) return E.objects.all(name) end
     local function first(name) return E.objects.first(name) end
@@ -127,6 +127,7 @@ return function(E)
         -- growth settings or nearby-base limits. Use a server-authored preview.
         local nextRadius
         local nextPercent
+        local maximumPercent
         local bonuses
         local previewPending
         if authority then
@@ -135,8 +136,11 @@ return function(E)
             if #models == 0 then models = {model} end
             nextRadius = R.targets(models, guid(model:GetGroupIdBelongTo()), math.min(level+1,maximum))[guid(model:GetId())]
             nextPercent=not E.config.resetToVanilla and nextRadius and nextRadius/baseline*100 or nil
+            local outer=R.targets(models,nil,nil,true)[guid(model:GetId())]
+            maximumPercent=not E.config.resetToVanilla and outer and outer/baseline*100 or nil
         elseif E.preview then
             nextPercent,bonuses,previewPending=E.preview.read(model,baseline,level,radius)
+            maximumPercent=not previewPending and bonuses and bonuses.maximumPercent or nil
         end
         -- The server authors the cap; both sides spread it over the same table.
         local cap=bonuses and bonuses.chestCap
@@ -151,6 +155,7 @@ return function(E)
             level=level, maximum=maximum, radius=radius, baseline=baseline,
             currentPercent=radius / baseline * 100,
             nextPercent=nextPercent,
+            maximumPercent=maximumPercent,
             previewPending=previewPending,
             rangeEnabled=bonuses and bonuses.rangeEnabled,
             chestCurrent=chest(level),
@@ -223,7 +228,8 @@ return function(E)
         if not positive(radius) then return end
         if E.preview and R.isAuthority(base) then
             E.guard('server preview',function()
-                E.preview.publish(actor,base,previewValues and previewValues[guid(concrete.BaseCampId)])
+                local id=guid(concrete.BaseCampId)
+                E.preview.publish(actor,base,previewValues and previewValues[id],maximumValues and maximumValues[id])
             end)
         end
         if E.boundary then
@@ -254,7 +260,7 @@ return function(E)
         local planned = anyAuthority and R.targets(models) or nil
         if E.preview and E.valid(context) and R.isAuthority(context) then
             E.guard('preview values',function()
-                previewValues={}
+                previewValues={};maximumValues={}
                 -- Maximum proximity budgets are independent of levels; calculate
                 -- once for all bases instead of an O(n^3) per-base prediction pass.
                 local limits=R.targets(models,nil,nil,true)
@@ -265,6 +271,7 @@ return function(E)
                         local baseline=R.baseline(model)
                         local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model),R.maxLevel())
                         previewValues[id]=math.min(limits[id],future)/baseline*100
+                        maximumValues[id]=limits[id]/baseline*100
                     end
                 end
             end)

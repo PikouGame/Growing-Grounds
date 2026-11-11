@@ -28,7 +28,8 @@ local function box(name)
     function b:AddComponentByClass(c,manual,transform,defer)
         assert(c==class and manual and not defer,'never alter the native root or attach gameplay children')
         created=created+1
-        local component=obj(name..'.SceneComponent'..created,{RelativeLocation=transform.Translation})
+        local component=obj(name..'.SceneComponent'..created,{RelativeLocation=transform.Translation,
+            RelativeScale3D=transform.Scale3D or {X=1,Y=1,Z=1}})
         function component:GetClass() return class end
         function component:GetOwner() return b end
         function component:SetMobility(v) assert(v==2) end
@@ -38,6 +39,7 @@ local function box(name)
         function component:K2_SetRelativeLocation(v)
             self.RelativeLocation={X=v.X,Y=v.Y,Z=v.Z}
         end
+        function component:SetRelativeScale3D(v) self.RelativeScale3D={X=v.X,Y=v.Y,Z=v.Z} end
         function component:SetIsReplicated(v) assert(not failSetup,'simulated native failure');self.replicates=v end
         function component:K2_DestroyComponent(owner) assert(owner==b);self.alive=false;destroyed=destroyed+1 end
         self.components[#self.components+1]=component
@@ -216,3 +218,45 @@ server=false;boxes={remote};client.refresh()
 local _,policy=client.read(base,3500,9,4900)
 assert(policy and policy.palboxCap==32 and policy.chestCap==18)
 print('PASS: Palbox wire cap0..64, legacy absence, malformed payload rejection and publisher/client round-trip')
+
+-- The optional maximum uses the same invisible component, with independent
+-- replication arrival and old identity-scale components handled explicitly.
+server=true;boxes={newHost}
+pp.refresh();pp.publish(newHost,base,145,200);pp.finish()
+local maximumComponent=newHost.components[1]
+local function maximumRead()
+    local _,value=client.read(base,3500,9,4900)
+    return value and value.maximumPercent
+end
+server=false;boxes={remote}
+cc.RelativeLocation=maximumComponent.RelativeLocation
+cc.RelativeScale3D={X=1,Y=1,Z=1};client.refresh()
+assert(maximumRead()==nil,'old servers and not-yet-delivered scale never invent a maximum')
+local beforeMaximum=client.revision(base)
+cc:SetRelativeScale3D(maximumComponent.RelativeScale3D)
+assert(maximumRead()==200 and client.revision(base)~=beforeMaximum,'late maximum wakes the UI watcher')
+for _,invalid in ipairs({{X=40002,Y=14000,Z=cc.RelativeLocation.Z},
+    {X=20000,Y=14500,Z=cc.RelativeLocation.Z},{X=20000,Y=14000,Z=cc.RelativeLocation.Z+1},
+    {X=0/0,Y=14000,Z=cc.RelativeLocation.Z},{X=20000,Y=math.huge,Z=cc.RelativeLocation.Z}}) do
+    cc.RelativeScale3D=invalid
+    assert(maximumRead()==nil and client.read(base,3500,9,4900)==145,
+        'malformed/stale maximum hides only the optional outer ring')
+end
+for _,maximum in ipairs({100,157.3,200,400}) do
+    server=true;boxes={newHost}
+    local beforeCount=created
+    pp.refresh();pp.publish(newHost,base,145,maximum);pp.finish()
+    assert(created==beforeCount,'maximum adds no replicated object')
+    local beforeUpdates=updates
+    pp.refresh();pp.publish(newHost,base,145,maximum);pp.finish()
+    assert(updates==beforeUpdates,'unchanged maximum does not wake the Palbox')
+    cc:SetRelativeScale3D(maximumComponent.RelativeScale3D)
+    server=false;boxes={remote};client.refresh()
+    assert(math.abs(maximumRead()-maximum)<0.00001)
+end
+server=true;boxes={newHost}
+pp.refresh();pp.publish(newHost,base,145);pp.finish()
+cc:SetRelativeScale3D(maximumComponent.RelativeScale3D)
+server=false;boxes={remote};client.refresh()
+assert(maximumRead()==nil,'removing the maximum clears its payload')
+print('PASS: maximum preview round-trip, split replication, legacy absence, malformed values and no extra component')

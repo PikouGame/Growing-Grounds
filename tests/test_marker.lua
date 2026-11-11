@@ -323,3 +323,41 @@ assert(created==beforeNoGround and #queue==0 and #errors==1 and errors[1]:find('
 noGround=false
 near(actor.AreaRange.RelativeScale3D.X,98)
 print('PASS: failed marker setup is cleaned, reported once, not repeated for the same radius; no ground draws nothing')
+
+-- Two previews share one terrain budget. The outer preview has real gaps,
+-- stays still after fading in and never writes the gameplay boundary.
+B.beginRefresh();B.endRefresh();pump(1);refresh();errors={}
+local beforeBoth,traceBoth=created,traces
+B.mark(base,screen,5075,7000);pump(20)
+assert(created==beforeBoth+2 and traces-traceBoth==112+152,'both bounded samples complete once')
+local nextMarker,outer=objects['/World.Marker'..(beforeBoth+1)],objects['/World.Marker'..(beforeBoth+2)]
+assert(nextMarker.visible and outer.visible and #errors==0)
+local geometry=outer.geometry[1]
+assert(#geometry.indices==152/2*6,'exactly half of the outer ring segments remain')
+for i=1,#geometry.indices,6 do assert(geometry.indices[i]%4==0,'every alternate arc is a gap') end
+near(outer.materials[1].Color01.G,2);near(outer.materials[1].Color01.B,1.4)
+near(actor.AreaRange.RelativeScale3D.X,98)
+local steadyTraces,steadySections=traces,sections
+pump(50)
+near(outer.materials[1].AlphaScale01,0.45)
+assert(traces==steadyTraces and sections==steadySections,'steady preview never resamples or rebuilds')
+screenActive=false;pump(20)
+assert(not outer.alive and not nextMarker.alive and #queue==0,'closing destroys both previews')
+screenActive=true
+local beforeCoincident=created
+B.mark(base,screen,7000,7000);pump(10)
+assert(created==beforeCoincident+1,'matching next and maximum draws just one ring')
+B.mark(base,screen,false,false);pump(20)
+E.config.nextBoundaryMarker=false
+B.mark(base,screen,7000,7000);pump(10)
+assert(created==beforeCoincident+2 and #component.geometry[1].indices==152/2*6,
+    'when next is disabled, maximum remains independently available')
+E.config.maximumBoundaryMarker=false
+B.mark(base,screen,5075,7000);pump(20)
+assert(#queue==0 and not component.alive,'both local switches off stop all visual work')
+E.config.nextBoundaryMarker=nil;E.config.maximumBoundaryMarker=nil
+B.mark(base,screen,5075,7000);pump(10)
+local beforeRemoved=destroyed
+B.beginRefresh();B.endRefresh();pump(1)
+assert(destroyed==beforeRemoved+2 and #queue==0,'removing a base clears both previews')
+print('PASS: dotted maximum, independent switches, shared budgets, no duplicate rings, static geometry and cleanup')

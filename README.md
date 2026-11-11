@@ -103,6 +103,11 @@ Proton/Wine. Native Windows validation of this beta is still pending.
   growing (82.6 m at level 35) and new Palboxes reserve more room.
 - **The next boundary shows on the ground** while Base Upgrade is open, at the
   radius the range row prints. `nextBoundaryMarker=false` turns it off.
+- **Turquoise dashes show the maximum boundary** on that same screen, including
+  the space reserved for neighbouring bases. They disappear when the screen
+  closes and do not duplicate the current or next boundary. Disable them with
+  `maximumBoundaryMarker=false`. Multiplayer requires an updated server to
+  supply this maximum; older servers keep their existing next-level preview.
 - **The mod speaks the game's language**: rows, World Settings and tooltips in
   the 17 languages Palworld ships.
 - A world that had switched range off with growth 0 stays off.

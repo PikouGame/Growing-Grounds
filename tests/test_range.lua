@@ -447,19 +447,20 @@ print('PASS: the range follows its cap alone; an old growth key is ignored, 0 st
 -- The server's preview of the next radius follows the size of the level table too.
 do
     local plainAll,plainFirst=FindAllOf,FindFirstOf
-    local levels,got=35,nil
+    local levels,got,outer=35,nil,nil
     FindFirstOf=function() return obj({GetMaxLevel=function() return levels end}) end
     local only=newBase(20,3500,true)
     FindAllOf=function(class)
         if class=='PalBaseCampModel' then return {only} end
         return class=='BP_BuildObject_PalBoxV2_C' and {actor} or {}
     end
-    E.preview={refresh=function() end,finish=function() end,publish=function(_,_,percent) got=percent end}
+    E.preview={refresh=function() end,finish=function() end,publish=function(_,_,percent,maximum) got,outer=percent,maximum end}
     E.config={maxRangeBonusPercent=100}
     for _,size in ipairs({35,40}) do
         levels,got=size,nil
         capRuntime(3500).refresh()
         near(got,100+ref(21,100,size))
+        near(outer,200)
     end
     assert(ref(21,100,35)~=ref(21,100,40))
     E.preview=nil
@@ -645,3 +646,26 @@ end
 for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.palboxBonus,bad)) end
 for _,bad in ipairs({-1,65,1.5,math.huge,0/0,'32'}) do assert(not pcall(Range.palboxAtCap,2,bad)) end
 print('PASS: Palbox page caps 0..64, default 32, +1 per upgrade, plateau at levels 33..35')
+
+do
+    local priorAll,priorConfig,priorPreview=FindAllOf,E.config,E.preview
+    local first,neighbour=newBase(19,5355,true),newBase(1,3500,true)
+    neighbour.GetId=function() return {A=2,B=0,C=0,D=0} end
+    neighbour.GetTransform=function() return {Translation={X=10000,Y=0,Z=0}} end
+    FindAllOf=function(kind) return kind=='PalBaseCampModel' and {first,neighbour} or {} end
+    E.config={maxRangeBonusPercent=100}
+    local runtime=capRuntime(3500)
+    local target=runtime.targets({first,neighbour},nil,nil,true)['1:0:0:0']
+    assert(target<7000,'neighbour constrains the maximum')
+    near(runtime.snapshot(first).maximumPercent,target/3500*100)
+    first.authority=false
+    E.config.maxRangeBonusPercent=300
+    E.preview={read=function() return 156,{rangeEnabled=true,maximumPercent=180} end}
+    near(runtime.snapshot(first).maximumPercent,180)
+    E.preview={read=function() return nil,{maximumPercent=180},true end}
+    assert(runtime.snapshot(first).maximumPercent==nil,'pending snapshot cannot supply an outer ring')
+    E.preview={read=function() return 156,{rangeEnabled=true} end}
+    assert(runtime.snapshot(first).maximumPercent==nil,'legacy server maximum is unknown, not local +300%')
+    FindAllOf,E.config,E.preview=priorAll,priorConfig,priorPreview
+end
+print('PASS: maximum radius respects neighbours on authority and only server data on clients')

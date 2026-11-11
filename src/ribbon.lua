@@ -41,7 +41,9 @@ return function(E,A)
             for _=1,2 do normals[#normals+1]={X=math.cos(angle),Y=math.sin(angle),Z=0} end
             uv[#uv+1]={X=0.5,Y=vTop}
             uv[#uv+1]={X=0.5,Y=vBottom}
-            if i<job.count and p and job.points[(i+1)%job.count+1] then
+            -- Omit alternate segments for the maximum preview: real gaps,
+            -- without extra components, textures or per-frame mesh changes.
+            if i<job.count and (not job.dotted or i%2==0) and p and job.points[(i+1)%job.count+1] then
                 local a=2*i
                 for _,n in ipairs({a,a+1,a+2,a+2,a+1,a+3}) do indices[#indices+1]=n end
             end

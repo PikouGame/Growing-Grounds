@@ -20,6 +20,10 @@ return function(E,Motion)
     local access={path=path,resolve=resolve,forget=function(p) objects[p]=nil end}
     local Ribbon=dofile(E.root..'src/ribbon.lua')(E,access)
     local Marker=dofile(E.root..'src/marker.lua')(E,access,Ribbon)
+    local Maximum=dofile(E.root..'src/marker.lua')(E,access,Ribbon,true)
+    local markers={{key='marker',visual=Marker},{key='maximumMarker',visual=Maximum}}
+    local function clearMarkers(s) Marker.cleanup(s);Maximum.cleanup(s) end
+    local function active(s) return s.animation or s.ribbon or s.marker or s.maximumMarker end
     local function now(actor)
         return resolve('/Script/Engine.Default__KismetSystemLibrary'):GetGameTimeInSeconds(actor)
     end
@@ -59,8 +63,8 @@ return function(E,Motion)
             s.animation.waiting=nil;s.animation.start=time
         end
     end
-    local function markerOpen(s)
-        for p in pairs(s.marker.screens) do
+    local function markerOpen(job)
+        for p in pairs(job.screens) do
             local screen=resolve(p)
             if screen and screen:IsActivated() then return true end
         end
@@ -72,18 +76,18 @@ return function(E,Motion)
         -- Count and elapsed-time limits are shared by every active base.
         -- Each run samples fresh terrain. Spread work over short, bounded
         -- batches rather than retaining heights between upgrades.
-        local active,budget,deadline=false,Ribbon.sampleLimit,os.clock()+Ribbon.sampleBudget
+        local pending,budget,deadline=false,Ribbon.sampleLimit,os.clock()+Ribbon.sampleBudget
         for key,s in pairs(states) do
-            if s.animation or s.ribbon or s.marker then
+            if active(s) then
                 local actor=resolve(s.actor)
-                if not actor then Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s);states[key]=nil
+                if not actor then Ribbon.cleanup(s);clearMarkers(s);clearScreens(s);states[key]=nil
                 else
                     local ok=E.guard('boundary animation',function()
                         local time=now(actor)
                         waitForScreen(s,time)
                         if s.animation then
                             if time<s.animation.start then
-                                scale(actor,s.radius,true);Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s)
+                                scale(actor,s.radius,true);Ribbon.cleanup(s);clearMarkers(s);clearScreens(s)
                                 Motion.finish(s);return
                             end
                             local radius,t=Motion.sample(s,time)
@@ -106,22 +110,25 @@ return function(E,Motion)
                                 end
                             end
                         end
-                        if s.marker then
-                            local markerOK,used=E.guard('next boundary marker',function()
-                                return Marker.step(s,actor,time,budget,deadline,markerOpen(s))
-                            end)
-                            if markerOK then budget=budget-used else Marker.fail(s) end
+                        for _,entry in ipairs(markers) do
+                            local job=s[entry.key]
+                            if job then
+                                local markerOK,used=E.guard(entry.key=='marker' and 'next boundary marker' or 'maximum boundary marker',function()
+                                    return entry.visual.step(s,actor,time,budget,deadline,markerOpen(job))
+                                end)
+                                if markerOK then budget=budget-used else entry.visual.fail(s) end
+                            end
                         end
-                        if s.animation or s.ribbon or s.marker then active=true end
+                        if active(s) then pending=true end
                     end)
                     if not ok then
                         E.guard('boundary fallback',function() scale(actor,s.radius,true) end)
-                        Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s);Motion.finish(s)
+                        Ribbon.cleanup(s);clearMarkers(s);clearScreens(s);Motion.finish(s)
                     end
                 end
             end
         end
-        if active then schedule() end
+        if pending then schedule() end
     end
     schedule=function()
         if queued then return end
@@ -130,7 +137,9 @@ return function(E,Motion)
     end
     local function start(s,actor)
         Ribbon.cleanup(s)
-        if s.marker then s.marker.dismissed=true end -- the celebration takes over
+        for _,entry in ipairs(markers) do
+            if s[entry.key] then s[entry.key].dismissed=true end -- celebration takes over
+        end
         clearScreens(s)
         local ok,found=E.guard('upgrade screen capture',function() return upgradeScreens(s) end)
         s.upgradeScreens=ok and found or nil
@@ -148,24 +157,29 @@ return function(E,Motion)
         local previous=states[key]
         local enabled=E.config.upgradeAnimation~=false and not E.config.resetToVanilla and not dedicated(actor)
         local s,action=Motion.observe(previous,base:GetLevel(),radius,now(actor),enabled)
-        if previous and s~=previous then Ribbon.cleanup(previous);Marker.cleanup(previous);clearScreens(previous) end
+        if previous and s~=previous then Ribbon.cleanup(previous);clearMarkers(previous);clearScreens(previous) end
         s.actor,s.base,s.live=actorPath,base:GetFullName(),true;states[key]=s
         if action=='start' then start(s,actor) elseif not s.animation then scale(actor,s.radius) end
     end
-    -- The reward rows report what Base Upgrade shows for this base: the radius
-    -- after the next upgrade, or false. No menu is read and no range is
+    -- The reward rows report the next and maximum radius for this base,
+    -- or false for either missing preview. No menu is read and no range is
     -- calculated here, so an idle base costs nothing.
-    function B.mark(base,screen,radius)
+    function B.mark(base,screen,radius,maximum)
         local name=base:GetFullName()
         for _,s in pairs(states) do
             local actor=s.base==name and resolve(s.actor)
-            if actor then
-                local shown=radius and E.config.nextBoundaryMarker~=false and not E.config.resetToVanilla
-                    and not s.animation and not s.ribbon and radius or false
+            if actor and not dedicated(actor) then
+                local enabled=not E.config.resetToVanilla and not s.animation and not s.ribbon
+                local shown=enabled and radius and E.config.nextBoundaryMarker~=false and radius or false
                 if not E.guard('next boundary marker',function() Marker.aim(s,actor,shown,screen) end) then
                     Marker.fail(s)
                 end
-                if s.marker then schedule() end
+                local outer=enabled and maximum and E.config.maximumBoundaryMarker~=false
+                    and (not shown or maximum>shown+1) and maximum or false
+                if not E.guard('maximum boundary marker',function() Maximum.aim(s,actor,outer,screen) end) then
+                    Maximum.fail(s)
+                end
+                if s.marker or s.maximumMarker then schedule() end
             end
         end
     end
@@ -173,7 +187,7 @@ return function(E,Motion)
     function B.endRefresh()
         for key,s in pairs(states) do
             if not s.live then
-                Ribbon.cleanup(s);Marker.cleanup(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil
+                Ribbon.cleanup(s);clearMarkers(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil
             end
         end
     end

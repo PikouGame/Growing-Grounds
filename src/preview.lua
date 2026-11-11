@@ -3,6 +3,9 @@
 -- delivered to the live client. No game component is repurposed.
 -- X/Y are hundredths of current/next percent. Z carries a version marker, level,
 -- range-enabled flag and chest cap as exact integers. No extra replicated object.
+-- Scale is an optional extension: X=max percent in hundredths, Y/Z repeat the
+-- current radius and policy stamp. Identity scale means an older server; split
+-- location/scale replication never borrows the client's own range setting.
 return function(E)
     local P = {}
     local marker, records, reported = {}, {}, {}
@@ -71,13 +74,22 @@ return function(E)
         if record.component:GetFullName()~=record.path then return end
         -- P.refresh proved the owner and class when it recorded this component;
         -- the 250 ms watcher only needs the identity and the current value.
-        return decode(record.component.RelativeLocation)
+        local location=record.component.RelativeLocation
+        local value=decode(location)
+        local scale=record.component.RelativeScale3D
+        if value and scale and finite(scale.X) and finite(scale.Y) and finite(scale.Z)
+                and math.abs(scale.Y-location.X)<=0.01 and scale.Z==location.Z
+                and scale.X>=9999 and scale.X<=(100+E.range.limits.maxRangeBonusPercent)*100+1 then
+            value.maximumPercent=scale.X/100
+        end
+        return value
     end
     function P.revision(model)
         local value=state(model)
         if not value then return end
         return table.concat({value.level,value.current,tostring(value.nextPercent),
-            tostring(value.rangeEnabled),tostring(value.chestCap),tostring(value.palboxCap)},':')
+            tostring(value.rangeEnabled),tostring(value.chestCap),tostring(value.palboxCap),
+            tostring(value.maximumPercent)},':')
     end
     function P.read(model,baseline,level,radius)
         -- Policy remains server-authored during split replication. The UI must
@@ -87,11 +99,11 @@ return function(E)
             return nil,value,true
         end
         local id=guid(model:GetId())
-        local signature=table.concat({level,value.current,tostring(value.nextPercent)},':')
+        local signature=table.concat({level,value.current,tostring(value.nextPercent),tostring(value.maximumPercent)},':')
         if reported[id]~=signature then
             reported[id]=signature
-            E.log(string.format('received server preview: level=%d current=%.2f next=%s',
-                level,value.current,tostring(value.nextPercent)))
+            E.log(string.format('received server preview: level=%d current=%.2f next=%s maximum=%s',
+                level,value.current,tostring(value.nextPercent),tostring(value.maximumPercent)))
         end
         return value.nextPercent,value
     end
@@ -118,7 +130,7 @@ return function(E)
         end
         for _,state in pairs(marker) do state.live=false end
     end
-    function P.publish(palbox,model,nextPercent)
+    function P.publish(palbox,model,nextPercent,maximumPercent)
         if not authority(model) then return end
         local id=guid(model:GetId())
         local baseline=E.runtime.baseline(model)
@@ -131,6 +143,12 @@ return function(E)
                 (bonuses.palboxCap*FLAGS_RADIX+bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0))
         end
         assert(decode(location),'Invalid server preview')
+        local scale={X=1,Y=1,Z=1}
+        if maximumPercent then
+            assert(finite(maximumPercent) and maximumPercent>=100 and
+                maximumPercent<=100+E.range.limits.maxRangeBonusPercent+0.0001,'Invalid maximum preview')
+            scale={X=maximumPercent*100,Y=location.X,Z=location.Z}
+        end
         local state=marker[id]
         local component=state and state.component
         if not E.valid(component) or component:GetFullName()~=state.path then
@@ -154,6 +172,7 @@ return function(E)
                     component:SetVisibility(false,false)
                     component:SetHiddenInGame(true,false)
                     component:K2_SetRelativeLocation(location,false,{},true)
+                    component:SetRelativeScale3D(scale)
                     component:SetIsReplicated(true)
                     assert(ours(component),'Preview component setup did not stick')
                 end)
@@ -166,9 +185,13 @@ return function(E)
         end
         state.live=true
         local old=component.RelativeLocation
-        if math.abs(old.X-location.X)>0.01 or math.abs(old.Y-location.Y)>0.01 or old.Z~=location.Z then
+        local oldScale=component.RelativeScale3D
+        if math.abs(old.X-location.X)>0.01 or math.abs(old.Y-location.Y)>0.01 or old.Z~=location.Z
+                or not oldScale or math.abs(oldScale.X-scale.X)>0.01
+                or math.abs(oldScale.Y-scale.Y)>0.01 or oldScale.Z~=scale.Z then
             palbox:FlushNetDormancy()
             component:K2_SetRelativeLocation(location,false,{},true)
+            component:SetRelativeScale3D(scale)
             palbox:ForceNetUpdate()
         end
     end

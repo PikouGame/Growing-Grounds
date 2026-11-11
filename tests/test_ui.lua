@@ -441,7 +441,7 @@ print('PASS: centred digits with percent suffix, native unit styling, gain-only 
 -- the same values, or false when the screen has no larger radius to announce.
 local marks={}
 FindAllOf=function() return {screen} end
-E.boundary={mark=function(base,target,radius) marks[#marks+1]={base=base,screen=target,radius=radius} end}
+E.boundary={mark=function(base,target,radius,maximum) marks[#marks+1]={base=base,screen=target,radius=radius,maximum=maximum} end}
 local function marked(values)
     local fresh={}
     for k,v in pairs(snapshot) do fresh[k]=v end
@@ -472,6 +472,14 @@ last,count=marked({rangeEnabled=true,previewPending=true})
 assert(count==0,'values still arriving leave the marker as it is')
 last,count=marked({previewPending=false})
 assert(count==1 and last.radius==4900)
+last=marked({maximumPercent=200})
+assert(last.maximum==7000,'maximum uses server-supplied percent and native baseline')
+last=marked({maximumPercent=135})
+assert(last.maximum==false,'maximum already reached draws nothing')
+last=marked({maximumPercent=200,rangeEnabled=false})
+assert(last.maximum==false,'range off hides the maximum too')
+last=marked({maximumPercent='none',rangeEnabled=true})
+assert(last.maximum==false,'an old server does not inherit a local maximum')
 screen.active=false
 last,count=marked({})
 assert(count==0,'a closed screen reports nothing; the marker notices the close itself')

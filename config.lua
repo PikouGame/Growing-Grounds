@@ -34,4 +34,7 @@ return {
     -- While Base Upgrade is open, a soft glow on the ground shows where the
     -- boundary will be after the upgrade. false turns it off.
     nextBoundaryMarker = true,
+    -- On the same screen, turquoise dashes show the maximum reachable radius,
+    -- including neighbouring-base limits. Hidden if it matches the next ring.
+    maximumBoundaryMarker = true,
 }
