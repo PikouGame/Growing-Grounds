@@ -7,9 +7,10 @@ return function(E, Runtime)
     local SelfHitTestInvisible, Hidden, Collapsed, Center = 4, 2, 1, 2
     local function object(path) return E.objects.find(path) end
     local function text(value) return FText(value) end
+    -- label names the row in the log; text is its title's key in the game's language.
     local specs = {
-        {key='range', label='Base Range Bonus', icon='base-range.png'},
-        {key='chest', label='Bonus Chest Slots', icon='chest-bonus.png'},
+        {key='range', label='Base Range Bonus', text='rangeRow', icon='base-range.png'},
+        {key='chest', label='Bonus Chest Slots', text='chestRow', icon='chest-bonus.png'},
     }
     local function gain(value) return string.format('%.0f', value - 100) end
     local mint = {SpecifiedColor={R=0.27,G=0.78,B=0.60,A=1},ColorUseRule=0}
@@ -131,11 +132,11 @@ return function(E, Runtime)
         local radius=state.baseline*state.nextPercent/100
         return radius>state.radius+1 and radius
     end
-    local function paintRange(row, state)
+    local function paintRange(row, state, title)
         local before = math.floor(state.currentPercent + 0.5)
         row:SetEffectInfo(before, state.nextPercent or before, state.atMaximum, state.canLevelup)
         row.Image_Icon:SetBrushFromTexture(row.Texture, false)
-        row.Text_Efefct:SetText(text(specs[1].label))
+        row.Text_Efefct:SetText(text(title))
         row.Text_Num_Pre:SetText(text(gain(state.currentPercent)))
         local showNext=not state.atMaximum and state.nextPercent~=nil
         row.Text_Num_Aft:SetText(text(state.nextPercent and gain(state.nextPercent) or ''))
@@ -154,10 +155,10 @@ return function(E, Runtime)
     end
     local function paint(row, entry)
         local state=entry.state
-        if entry.kind=='range' then paintRange(row,state);return end
+        if entry.kind=='range' then paintRange(row,state,entry.title);return end
         row:SetEffectInfo(state.chestCurrent,state.chestNext or state.chestCurrent,state.atMaximum,state.canLevelup)
         row.Image_Icon:SetBrushFromTexture(row.Texture,false)
-        row.Text_Efefct:SetText(text(specs[2].label))
+        row.Text_Efefct:SetText(text(entry.title))
         row.Text_Num_Pre:SetText(text(tostring(state.chestCurrent)))
         row.Text_Num_Aft:SetText(text(state.chestNext and tostring(state.chestNext) or ''))
         local showNext=not state.atMaximum and state.chestNext~=nil
@@ -203,6 +204,7 @@ return function(E, Runtime)
             attached[key]={}
         end
         local grid=columns[key]
+        local texts=E.texts()
         state.canLevelup=screen.CanLevelup
         local rows,signatures={},{}
         local needsLayout=false
@@ -228,7 +230,7 @@ return function(E, Runtime)
                     wrapValue(row,'Text_Num_Pre');wrapValue(row,'Text_Num_Aft')
                 end
                 attached[key][spec.key]=row:GetFullName()
-                owned[row:GetFullName()]={kind=spec.key,state=state}
+                owned[row:GetFullName()]={kind=spec.key,state=state,title=texts[spec.text]}
                 parent:AddChildToVerticalBox(row):SetPadding({Left=0,Top=4,Right=0,Bottom=0})
                 needsLayout=true
                 E.log(spec.label..' row added')
@@ -236,7 +238,7 @@ return function(E, Runtime)
             if E.valid(row) then
                 rows[spec.key]=row
                 local name=row:GetFullName()
-                owned[name]={kind=spec.key,state=state}
+                owned[name]={kind=spec.key,state=state,title=texts[spec.text]}
                 if grid.visible[spec.key]~=enabled[spec.key] then
                     row:SetVisibility(enabled[spec.key] and SelfHitTestInvisible or Collapsed)
                     grid.visible[spec.key]=enabled[spec.key]
@@ -249,7 +251,7 @@ return function(E, Runtime)
                             tostring(state.atMaximum),tostring(state.canLevelup)},':')
                         or table.concat({state.chestCurrent,tostring(state.chestNext),tostring(state.atMaximum),tostring(state.canLevelup)},':')
                     signatures[name]=signature
-                    if lastWritten[name]~=signature or row.Text_Efefct:GetText():ToString()~=spec.label then
+                    if lastWritten[name]~=signature or row.Text_Efefct:GetText():ToString()~=texts[spec.text] then
                         paint(row,owned[name]);needsLayout=true
                     end
                 end

@@ -120,6 +120,9 @@ local snapshot={currentPercent=145,nextPercent=150,radius=5075,baseline=3500,atM
 local E={root=root,log=function() end,guard=function(_,fn) fn() end,valid=function(o) return o and o:IsValid() end}
 E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
 local Runtime={snapshot=function() return snapshot end}
+local Texts=dofile(root..'src/texts.lua')
+local language='en'
+E.texts=function() return Texts.get(language) end
 local UI=dofile(root..'src/ui.lua')(E,Runtime)
 local function current() return parent.children[3] end
 local function unit(w,field) return w[field]:GetParent():GetChildAt(2) end
@@ -381,3 +384,42 @@ UI.refresh()
 E.boundary=nil
 UI.refresh()
 print('PASS: the reward rows report the next radius to the ground marker, false when there is none, nothing while values arrive')
+
+-- Row titles follow the game's language, also when it changes while the screen
+-- is open; the log keeps its English names.
+local function rowTitled(title)
+    -- The newest match: rows of a screen that went away stay in this mock's list.
+    for i=#parent.children,1,-1 do
+        if parent.children[i].Text_Efefct.value==title then return parent.children[i] end
+    end
+end
+local logged={}
+E.log=function(message) logged[#logged+1]=message end
+local rangeRow,chestRow=rowTitled('Base Range Bonus'),rowTitled('Bonus Chest Slots')
+assert(rangeRow and chestRow and rangeRow~=chestRow)
+language='fr';UI.refresh()
+assert(rangeRow.Text_Efefct.value=='Bonus de rayon de la base' and chestRow.Text_Efefct.value=='Emplacements de coffre bonus',
+    'a language changed in the options repaints both titles')
+local quiet,measured=writes,prepasses
+UI.refresh();UI.refresh()
+assert(writes==quiet and prepasses==measured,'a translated title is not repainted on every refresh')
+reconstruct(rangeRow);reconstruct(chestRow)
+assert(rangeRow.Text_Efefct.value=='Bonus de rayon de la base' and chestRow.Text_Efefct.value=='Emplacements de coffre bonus',
+    'a rebuilt row keeps the current language')
+language='ja';UI.refresh()
+assert(rangeRow.Text_Efefct.value==Texts.get('ja').rangeRow and chestRow.Text_Efefct.value==Texts.get('ja').chestRow)
+language='en';UI.refresh()
+assert(rangeRow.Text_Efefct.value=='Base Range Bonus' and chestRow.Text_Efefct.value=='Bonus Chest Slots')
+FindAllOf=function() return {} end
+UI.refresh()
+FindAllOf=function() return {screen} end
+language='de';UI.refresh()
+local born,bornChest=rowTitled(Texts.get('de').rangeRow),rowTitled(Texts.get('de').chestRow)
+assert(born and bornChest and born~=rangeRow and bornChest~=chestRow,'new rows are born in the current language')
+local english=0
+for _,message in ipairs(logged) do
+    if message=='Base Range Bonus row added' or message=='Bonus Chest Slots row added' then english=english+1 end
+    assert(not message:find('Lagerradius',1,true),'log lines stay in English')
+end
+assert(english==2,'the log names the two rows in English whatever the language')
+print('PASS: reward row titles follow the game language at once, stay steady, survive a rebuild; the log stays English')

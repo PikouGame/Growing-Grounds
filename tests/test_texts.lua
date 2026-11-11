@@ -216,3 +216,39 @@ local first = Texts.get('de')
 first.off = 'changed'
 assert(Texts.get('de').off == 'Aus', 'get must hand out a copy')
 print('PASS: get returns all seven keys for odd input and a fresh table each time')
+
+-- The language reader: asks the engine each time, follows a change, reads
+-- English when the engine cannot answer, and logs only when the answer changes.
+do
+    local answer, asked, lines = 'fr', 0, {}
+    local library = {GetCurrentLanguage = function() asked = asked + 1; return answer end}
+    local E = {log = function(message) lines[#lines + 1] = message end,
+        objects = {find = function(path)
+            assert(path == '/Script/Engine.Default__KismetInternationalizationLibrary')
+            return library
+        end}}
+    local current = dofile(root .. 'src/language.lua')(E, Texts)
+    local french = current()
+    assert(french.off == 'Désactivé' and french.rangeRow == Texts.get('fr').rangeRow)
+    assert(current() == french and asked == 2 and #lines == 1, 'same language: same texts, engine asked, nothing logged again')
+    assert(lines[1] == 'texts: game language "fr" -> fr', lines[1])
+    answer = {ToString = function() return 'zh-Hant-TW' end}
+    assert(current().off == Texts.get('zh-Hant').off, 'an engine string object is read through ToString')
+    answer = 'pt-PT'
+    assert(current().off == Texts.get('pt-BR').off and lines[#lines] == 'texts: game language "pt-PT" -> pt-BR')
+    answer = 'xx'
+    assert(current().off == 'Off' and lines[#lines] == 'texts: game language "xx" -> en')
+    local before = #lines
+    library.GetCurrentLanguage = function() error('not exported by this build') end
+    local fallback = current()
+    assert(fallback.off == 'Off' and fallback.rangeRow == 'Base Range Bonus', 'an unreadable language reads English')
+    assert(lines[#lines] == 'texts: game language unreadable -> en' and #lines == before + 1)
+    current(); current()
+    assert(#lines == before + 1, 'a persistent failure is reported once')
+    E.objects.find = function() return nil end
+    assert(current().off == 'Off' and #lines == before + 1, 'a missing library is the same unreadable case')
+    library.GetCurrentLanguage = function() return 'ja' end
+    E.objects.find = function() return library end
+    assert(current().off == Texts.get('ja').off, 'the language is picked up again once readable')
+end
+print('PASS: the language reader follows the engine, falls back to English and logs each change once')

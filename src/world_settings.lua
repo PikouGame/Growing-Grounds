@@ -7,20 +7,20 @@ return function(E)
     local outerPath = '/Game/Pal/Blueprint/UI/Title/WBP_WorldSetting.WBP_WorldSetting_C'
     local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
-        {key='maxRangeBonusPercent', title='Growing Grounds: Maximum range bonus', min=0, max=E.range.limits.maxRangeBonusPercent,
-            tip='The range bonus arrives steadily over all base levels; the last level gives it all. 0 disables it. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.'},
-        {key='maxChestBonusSlots', title='Growing Grounds: Maximum bonus chest slots', min=0, max=E.range.limits.maxChestBonusSlots,
-            tip='These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 20. Guild Chests share one bonus. Occupied extra slots remain until emptied.'},
+        -- title and tip are keys of the texts, read in the game's language at each paint.
+        {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent},
+        {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots},
     }
     local function object(path) return E.objects.find(path) end
     local function stringValue(value)
         return type(value)=='string' and value or value:ToString()
     end
     local function paint(row, spec, value)
-        row.Text_OptionTitle:SetText(FText(spec.title))
-        row:SetToolTipText(FText(spec.tip))
-        if value~=nil and (spec.key=='maxRangeBonusPercent' or spec.key=='maxChestBonusSlots') then
-            local display=value==0 and 'Off' or (spec.key=='maxRangeBonusPercent' and string.format('+%g%%',value) or tostring(value))
+        local texts=E.texts()
+        row.Text_OptionTitle:SetText(FText(texts[spec.title]))
+        row:SetToolTipText(FText(texts[spec.tip]))
+        if value~=nil then
+            local display=value==0 and texts.off or (spec.key=='maxRangeBonusPercent' and string.format('+%g%%',value) or tostring(value))
             row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value:SetText(FText(display))
         end
     end

@@ -10,12 +10,16 @@ local function run()
     dofile=function(path)
         local name=assert(path:match('([^/]+)%.lua$'))
         if name=='config' then return config end
-        if name=='range' or name=='motion' then return {} end
+        if name=='range' or name=='motion' or name=='texts' then return {} end
         return function(env)
             if name=='objects' then return objects end
+            if name=='language' then return noop end
             if name=='settings' then return {key=noop,get=noop} end
             if name=='boundary' then return {} end
             if name=='runtime' then return {refresh=count('runtime')} end
+            if name=='ui' or name=='world_settings' then
+                assert(env.texts==noop,'the rows are built after the language reader exists')
+            end
             if name=='ui' then return {refresh=count('ui')} end
             if name=='preview' then return {} end
             if name=='world_settings' then return {refresh=noop,installHooks=noop} end

@@ -76,6 +76,9 @@ local logs={}
 local E={range=Range,settings=store,worldId=function() return current end,
     valid=function(o) return o and o:IsValid() end,log=function(m) logs[#logs+1]=m end,guard=function(_,fn) return fn() end}
 E.objects={find=function(p) return StaticFindObject(p) end,all=function(n) return FindAllOf and FindAllOf(n) or {} end,first=function(n) return FindFirstOf and FindFirstOf(n) end}
+local Texts=dofile(root..'src/texts.lua')
+local language='en'
+E.texts=function() return Texts.get(language) end
 local W=dofile(root..'src/world_settings.lua')(E)
 W.setup(menu,a,false);assert(#panel.children==2,'World Settings shows two rows')
 assert(logs[#logs]=='World Settings: range bonus cap and chest bonus cap rows ready',tostring(logs[#logs]))
@@ -208,7 +211,7 @@ local menu2=obj('menu2',{ScrollBox_DifficultySetting=panel2,
     WorldSettings_BaseCampWorkerNum=obj('nativeRow2',{OptionType=1}),GetOwningPlayer=function() end})
 local outer2=obj('outer2',{WBP_Title_WorldSettings=menu2})
 local W2=dofile(root..'src/world_settings.lua')({range=raised,settings=store2,worldId=function() return a end,
-    objects=E.objects,valid=E.valid,log=E.log,guard=E.guard})
+    objects=E.objects,valid=E.valid,log=E.log,guard=E.guard,texts=E.texts})
 W2.setup(menu2,a,false)
 assert(panel2.children[2].max==45,'slider maximum follows the raised limit')
 W2.change(panel2.children[2],45);W2.saved(outer2,true)
@@ -272,3 +275,29 @@ for _=1,3 do now=now+60;assert(store.get(a).maxRangeBonusPercent==100) end
 assert(#logged==0 and opens==1,'missing file: silent and read once')
 end
 print('PASS: sliders round to the nearest integer before clamping')
+
+-- The two rows, their tooltips and Off are shown in the game's language.
+do
+    local french=Texts.get('fr')
+    language='fr'
+    W.setup(menu,a,false)
+    -- Earlier blocks rebuilt the rows; the live pair is the last one in this mock's panel.
+    local range,chest=panel.children[#panel.children-1],panel.children[#panel.children]
+    local function shown(row) return row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text end
+    assert(range.Text_OptionTitle.text==french.rangeCapTitle and range.tip==french.rangeCapTip)
+    assert(chest.Text_OptionTitle.text==french.chestCapTitle and chest.tip==french.chestCapTip)
+    assert(french.rangeCapTitle=='Growing Grounds : bonus de rayon maximal' and french.off=='Désactivé')
+    W.change(range,0);W.change(chest,0)
+    assert(shown(range)=='Désactivé' and shown(chest)=='Désactivé')
+    W.change(range,65);W.change(chest,7)
+    assert(shown(range)=='+65%' and shown(chest)=='7')
+    -- A language changed while the menu is open is followed at the next paint.
+    language='ko'
+    W.change(range,0)
+    assert(range.Text_OptionTitle.text==Texts.get('ko').rangeCapTitle and shown(range)==Texts.get('ko').off)
+    language='en'
+    W.setup(menu,a,false)
+    assert(range.Text_OptionTitle.text=='Growing Grounds: Maximum range bonus' and chest.tip==Texts.get('en').chestCapTip)
+    assert(logs[#logs]=='World Settings: range bonus cap and chest bonus cap rows ready','the log stays in English')
+end
+print('PASS: World Settings rows, tooltips and Off follow the game language')

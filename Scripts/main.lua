@@ -18,6 +18,7 @@ end
 local function valid(object) return object and object:IsValid() end
 local env = {root=root, range=Range, config=Config, log=log, guard=guard, valid=valid}
 env.objects=dofile(root..'src/objects.lua')(env)
+env.texts=dofile(root..'src/language.lua')(env,dofile(root..'src/texts.lua'))
 env.settings = dofile(root .. 'src/settings.lua')(root, Range, Config, nil, log)
 env.worldId = function()
     local instance = env.objects.first('PalGameInstance')
