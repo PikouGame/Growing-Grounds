@@ -266,6 +266,14 @@ for _,heights in ipairs({{-500,-100,200,900},{-900,-600,-300,-50},{20,20,20,20}}
     local first=R.pose(job,0,0)
     near(first.Scale3D.Z,1)
 end
+-- The configured rise height is kept within 100..2000 cm; anything else means 600.
+for _,case in ipairs({{50,100},{5000,2000},{750,750},{'tall',600},{0/0,600}}) do
+    E.config.upgradeEffectHeight=case[1]
+    local prepared={radius=4900};R.prepare(prepared,actor)
+    near(prepared.ribbon.height,case[2])
+    assert(prepared.ribbon.count==104 and prepared.ribbon.nextLayer==0 and prepared.ribbon.radius==4900)
+end
+E.config.upgradeEffectHeight=nil
 local _,quickAlpha=R.envelope(0.06,600)
 near(quickAlpha,1)
 local job={count=4,radius=100,points={{Z=1},{Z=2},false,{Z=4}}}

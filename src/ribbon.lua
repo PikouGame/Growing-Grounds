@@ -28,13 +28,9 @@ return function(E,A)
                 Z=job.center.Z+rise+(1-zScale)*(job.crest or 0)},
             Scale3D={X=1,Y=1,Z=zScale}}
     end
-    function R.geometry(job,layer)
+    -- A closed strip over the sampled circle, from top to bottom around each height.
+    function R.band(job,top,bottom,vTop,vBottom)
         local vertices,indices,normals,uv={},{},{},{}
-        local top=layer==0 and 12 or -12
-        local bottom=layer==0 and -12 or -252
-        -- Shared texture coordinates meet exactly: one unbroken gradient tail.
-        local vTop=layer==0 and 0.5/512 or 32/512
-        local vBottom=layer==0 and 32/512 or 511.5/512
         for i=0,job.count do
             local p=job.points[i%job.count+1]
             local angle=2*math.pi*i/job.count
@@ -52,22 +48,28 @@ return function(E,A)
         end
         return vertices,indices,normals,uv
     end
+    function R.geometry(job,layer)
+        -- Shared texture coordinates meet exactly: one unbroken gradient tail.
+        if layer==0 then return R.band(job,12,-12,0.5/512,32/512) end
+        return R.band(job,-12,-252,32/512,511.5/512)
+    end
+    function R.job(actor,radius)
+        local v=actor.AreaRange:K2_GetComponentLocation()
+        return {radius=radius,count=math.min(160,math.ceil(math.max(64,2*math.pi*radius/300)/8)*8),
+            center={X=v.X,Y=v.Y,Z=v.Z},points={},nextPoint=0,materials={},hits=0}
+    end
     function R.prepare(s,actor)
         if E.config.upgradeRibbon==false then return end
-        local v=actor.AreaRange:K2_GetComponentLocation()
         local height=tonumber(E.config.upgradeEffectHeight) or 600
         if height~=height then height=600 end
-        s.ribbon={radius=s.radius,count=math.min(160,math.ceil(math.max(64,2*math.pi*s.radius/300)/8)*8),
-            center={X=v.X,Y=v.Y,Z=v.Z},points={},nextPoint=0,nextLayer=0,
-            height=math.max(100,math.min(2000,height)),materials={},hits=0}
+        s.ribbon=R.job(actor,s.radius)
+        s.ribbon.nextLayer,s.ribbon.height=0,math.max(100,math.min(2000,height))
         -- Meet the currently visible boundary, then bounce it to the new radius.
         if E.config.upgradeWave~=false then
             s.ribbon.wave=Wave.new(s.ribbon,s.animation and s.animation.from or s.radius)
         end
     end
-    function R.cleanup(s)
-        local job=s.ribbon
-        if not job then return end
+    function R.release(job)
         local c=A.resolve(job.component)
         if c then
             E.guard('ribbon cleanup',function()
@@ -80,9 +82,13 @@ return function(E,A)
         if job.texture then A.forget(job.texture) end
         if job.wave and job.wave.texture then A.forget(job.wave.texture) end
         for _,p in ipairs(job.materials) do A.forget(p) end
+    end
+    function R.cleanup(s)
+        if not s.ribbon then return end
+        R.release(s.ribbon)
         s.ribbon=nil
     end
-    local function create(job,actor)
+    function R.component(job,actor)
         local class=assert(A.resolve('/Script/ProceduralMeshComponent.ProceduralMeshComponent'),
             'Procedural mesh runtime unavailable')
         local c=actor:AddComponentByClass(class,false,{
@@ -99,7 +105,7 @@ return function(E,A)
             Scale3D={X=1,Y=1,Z=1}},false,{},true)
         return c
     end
-    local function material(job,actor,c,layer,ground)
+    function R.glow(job,actor,c,layer,ground)
         local parent=A.resolve(materialPath)
         if not parent then LoadAsset(materialPath);parent=A.resolve(materialPath) end
         assert(parent,'Native glow material unavailable')
@@ -146,28 +152,32 @@ return function(E,A)
         local hit=out.OutHit or out
         if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+12 end
     end
+    -- Terrain heights under the job's circle, in bounded batches. Also returns
+    -- the trace library it validated, for any further sampling in this batch.
+    function R.heights(job,actor,budget,deadline)
+        -- Validate this stable library once per batch, not for every sample.
+        local lib=A.resolve('/Script/Engine.Default__KismetSystemLibrary')
+        local used=0
+        while job.nextPoint<job.count and used<budget and os.clock()<deadline do
+            local i=job.nextPoint
+            job.nextPoint,used=i+1,used+1
+            local angle=2*math.pi*i/job.count
+            local z=terrain(lib,job,actor,job.radius*math.cos(angle),job.radius*math.sin(angle))
+            if z then
+                job.points[i+1]={Z=z}
+                job.hits=job.hits+1
+                job.crest=math.max(job.crest or z,z)
+            else job.points[i+1]=false end
+        end
+        return used,lib
+    end
     function R.sample(s,actor,budget,deadline)
         local job=s.ribbon
         if not job then return 0 end
         deadline=deadline or os.clock()+R.sampleBudget
         if budget<1 or os.clock()>=deadline then return 0 end
-        -- Validate this stable library once per batch, not for every sample.
-        local lib=A.resolve('/Script/Engine.Default__KismetSystemLibrary')
-        local used=0
-        if job.nextPoint<job.count then
-            while job.nextPoint<job.count and used<budget and os.clock()<deadline do
-                local i=job.nextPoint
-                job.nextPoint,used=i+1,used+1
-                local angle=2*math.pi*i/job.count
-                local z=terrain(lib,job,actor,job.radius*math.cos(angle),job.radius*math.sin(angle))
-                if z then
-                    job.points[i+1]={Z=z}
-                    job.hits=job.hits+1
-                    job.crest=math.max(job.crest or z,z)
-                else job.points[i+1]=false end
-            end
-            if job.nextPoint<job.count then return used end
-        end
+        local used,lib=R.heights(job,actor,budget,deadline)
+        if job.nextPoint<job.count then return used end
         if job.wave and not job.wave.ready then
             used=used+Wave.sample(job.wave,job,function(x,y) return terrain(lib,job,actor,x,y) end,budget-used,deadline)
         end
@@ -183,12 +193,12 @@ return function(E,A)
         if not job.sampled then return R.sample(s,actor,budget,deadline) end
         if job.nextLayer<R.layers then
             if budget<1 or os.clock()>=deadline then return 0 end
-            local c=A.resolve(job.component) or create(job,actor)
+            local c=A.resolve(job.component) or R.component(job,actor)
             local layer=job.nextLayer
             local vertices,indices,normals,uv=R.geometry(job,layer)
             -- Stable eight-argument reflected API; no collision cooking.
             c:CreateMeshSection(layer,vertices,indices,normals,uv,{},{},false)
-            material(job,actor,c,layer,false)
+            R.glow(job,actor,c,layer,false)
             if job.wave then c:SetMeshSectionVisible(layer,false) end
             job.nextLayer=layer+1
             return budget -- at most one mesh section created per update
@@ -202,7 +212,7 @@ return function(E,A)
                 local vertices,indices,normals,uv=Wave.geometry(w)
                 assert(#indices>0,'No continuous terrain available for Palbox wave')
                 c:CreateMeshSection(2,vertices,indices,normals,uv,{},{},false)
-                material(job,actor,c,2,true)
+                R.glow(job,actor,c,2,true)
                 w.mesh=true
                 if s.upgradeScreens then E.log('effect setup ready; waiting for Base Upgrade to close') end
                 return budget
