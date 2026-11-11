@@ -12,6 +12,11 @@ Chests grow with your base: **18 bonus slots** by default, arriving steadily
 from your first upgrade to the final base level. Guild Chests receive the bonus
 once for their shared inventory.
 
+Your regular Palbox gains **one extra page per base upgrade**, starting with no
+bonus at level 1. The default cap is **32 extra pages**, reached at level 33;
+levels 34 and 35 keep that bonus. Each player receives the bonus of their guild,
+regardless of its number of bases. The Global Palbox is separate.
+
 ## A little celebration for every upgrade
 
 A blue wave travels from the Palbox across the terrain. When it reaches the
@@ -34,7 +39,9 @@ you close the screen.
 
 - **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.
 - **Bonus chest slots:** 18 by default, spread evenly over all base levels; adjustable from 0 to 42 in steps of six. Guild Chests share one bonus.
-- Local worlds have two Growing Grounds sliders at the bottom of custom World
+- **Bonus Palbox pages:** cap 0 to 64; default 32. A higher cap still grants only
+  one page per upgrade: level 35 can earn at most 34 extra pages.
+- Local worlds have three Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
   bases to reach the cap: 140 m between centres with the default 35 m base and
@@ -73,9 +80,13 @@ PalSchema. Steam Workshop deployment of this mod remains unverified.
 
 ## What changes in the beta
 
-Not released yet. One setting fewer, a bonus that lasts to the last level,
-and the game's own languages.
+Not released yet. Three bonuses, an upgrade preview and the game's own languages.
+The Palbox bonus is a development candidate; native transfer/save/reload validation
+is still pending.
 
+- **Palbox pages grow with each base upgrade:** +1 page per upgrade, with a
+  configurable bonus cap of 0–64 (32 by default). Reducing the cap keeps occupied
+  extra pages until they are emptied.
 - **Chest bonus caps use multiples of six:** 18 by default, up to 42. Existing
   caps round to the nearest step (20 becomes 18; 40 becomes 42). Slots still
   arrive gradually, one at a time. Occupied overflow slots remain until emptied.
@@ -113,6 +124,8 @@ occupied slots kept across a restart, and the upgrade celebration.
 
 This is an alpha. These still need broader in-game verification:
 
+- Palbox expansion, replication, occupied-page protection and save/reload;
+- other Palbox capacity mods installed alongside;
 - saving World Settings and starting a new world;
 - placement rejection near another base;
 - Pal work and resource access throughout the expanded area;
@@ -128,7 +141,7 @@ start late after closing the Palbox; the gameplay radius is already updated.
 On a client, while the server's preview is missing or out of date, Base Upgrade keeps
 its last complete Growing Grounds values, or shows no Growing Grounds row on a first open.
 At the maximum base level only the next value is hidden. With `resetToVanilla=true`
-both Growing Grounds rows are hidden.
+all Growing Grounds rows are hidden.
 
 The server owns gameplay radius. Animation changes the visible boundary only.
 Existing bases are not moved or deleted. Overlapping original base circles do
@@ -136,7 +149,8 @@ not receive extra growth; other nearby bases may reach a lower cap.
 
 ## Configuration
 
-Gameplay options: `maxRangeBonusPercent`, `maxChestBonusSlots`, `resetToVanilla`.
+Gameplay options: `maxRangeBonusPercent`, `maxChestBonusSlots`,
+`maxPalboxBonusPages`, `resetToVanilla`.
 Visual options: `upgradeAnimation`, `upgradeWave`, `upgradeRibbon`,
 `upgradeEffectHeight` (centimetres), `nextBoundaryMarker`.
 

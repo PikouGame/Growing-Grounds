@@ -34,6 +34,7 @@ env.preview=dofile(root .. 'src/preview.lua')(env)
 local UI = dofile(root .. 'src/ui.lua')(env, Runtime)
 local WorldSettings = dofile(root .. 'src/world_settings.lua')(env)
 local Storage = dofile(root .. 'src/storage.lua')(env)
+local Palbox = dofile(root .. 'src/palbox.lua')(env)
 local pending = false
 local function refresh()
     if pending then return end
@@ -41,6 +42,7 @@ local function refresh()
     ExecuteInGameThreadWithDelay(0,function()
         guard('runtime refresh', Runtime.refresh)
         guard('storage refresh', Storage.refresh)
+        guard('Palbox refresh', Palbox.refresh)
         guard('UI refresh', UI.refresh)
         guard('World Settings refresh', WorldSettings.refresh)
         pending = false
@@ -56,7 +58,7 @@ guard('client level hook', function()
     RegisterHook('/Script/Pal.PalBaseCampModel:OnRep_Level_InGuildProperty', function() end, refresh)
 end)
 env.objects.install(function(name)
-    if name=='PalBaseCampModel' then ExecuteInGameThreadWithDelay(500,refresh)
+    if name=='PalBaseCampModel' or name=='PalPlayerState' then ExecuteInGameThreadWithDelay(500,refresh)
     elseif name=='BP_BuildObject_PalBoxV2_C' or name=='WBP_IngameMenu_Mission_C' then
         ExecuteInGameThreadWithDelay(100,refresh)
     elseif name=='PalMapObjectItemChestModel' or name=='PalGroupGuild' then

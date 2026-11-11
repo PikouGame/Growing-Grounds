@@ -8,10 +8,13 @@ local Texts = {}
 Texts.cultures = {"en", "ja", "de", "es", "es-MX", "fr", "id", "it", "ko", "pl", "pt-BR", "ru", "th",
     "tr", "vi", "zh-Hans", "zh-Hant"}
 
-Texts.keys = {"rangeRow", "chestRow", "rangeCapTitle", "rangeCapTip", "chestCapTitle", "chestCapTip", "off"}
+Texts.keys = {"rangeRow", "chestRow", "rangeCapTitle", "rangeCapTip", "chestCapTitle", "chestCapTip", "palboxRow", "palboxCapTitle", "palboxCapTip", "off"}
 
 local data = {
     ["en"] = {
+        palboxRow = "Bonus Palbox Pages",
+        palboxCapTitle = "Growing Grounds: Maximum bonus Palbox pages",
+        palboxCapTip = "One extra Palbox page per base upgrade, starting at 0 at level 1. Cap: 0–64; default: 32. Does not affect the Global Palbox. Occupied extra pages remain until emptied.",
         rangeRow = "Base Range Bonus",
         chestRow = "Bonus Chest Slots",
         rangeCapTitle = "Growing Grounds: Maximum range bonus",
@@ -21,6 +24,9 @@ local data = {
         off = "Off",
     },
     ["ja"] = {
+        palboxRow = "パルボックスの追加ページ",
+        palboxCapTitle = "Growing Grounds: パルボックスの追加ページ上限",
+        palboxCapTip = "拠点レベルが1上がるごとにパルボックスが1ページ増えます。レベル1では追加0ページ。上限: 0～64、初期値: 32。グローバルパルボックスには影響しません。使用中の追加ページは空になるまで残ります。",
         rangeRow = "拠点の範囲ボーナス",
         chestRow = "チェストの追加スロット",
         rangeCapTitle = "Growing Grounds: 範囲ボーナスの上限",
@@ -30,6 +36,9 @@ local data = {
         off = "オフ",
     },
     ["de"] = {
+        palboxRow = "Zusätzliche Palbox-Seiten",
+        palboxCapTitle = "Growing Grounds: Maximale zusätzliche Palbox-Seiten",
+        palboxCapTip = "Eine zusätzliche Palbox-Seite pro Lageraufstieg, beginnend mit 0 auf Level 1. Grenze: 0–64; Standard: 32. Die globale Palbox bleibt unverändert. Belegte Zusatzseiten bleiben, bis sie geleert werden.",
         rangeRow = "Lagerradius-Bonus",
         chestRow = "Zusätzliche Truhenslots",
         rangeCapTitle = "Growing Grounds: Maximaler Radiusbonus",
@@ -39,6 +48,9 @@ local data = {
         off = "Aus",
     },
     ["es"] = {
+        palboxRow = "Páginas extra de la Caja Pal",
+        palboxCapTitle = "Growing Grounds: Máximo de páginas extra de la Caja Pal",
+        palboxCapTip = "Una página extra de la Caja Pal por nivel de base, empezando con 0 en el nivel 1. Límite: 0–64; predeterminado: 32. No afecta a la Caja Pal global. Las páginas extra ocupadas se conservan hasta que se vacíen.",
         rangeRow = "Bonificación de alcance de la base",
         chestRow = "Espacios extra de cofre",
         rangeCapTitle = "Growing Grounds: Bonificación máxima de alcance",
@@ -48,6 +60,9 @@ local data = {
         off = "Desactivado",
     },
     ["es-MX"] = {
+        palboxRow = "Páginas extra de la Caja Pal",
+        palboxCapTitle = "Growing Grounds: Máximo de páginas extra de la Caja Pal",
+        palboxCapTip = "Una página extra de la Caja Pal por nivel de base, empezando con 0 en el nivel 1. Límite: 0–64; predeterminado: 32. No afecta a la Caja Pal global. Las páginas extra ocupadas se conservan hasta que se vacíen.",
         rangeRow = "Bonificación de rango de la base",
         chestRow = "Ranuras extra de cofre",
         rangeCapTitle = "Growing Grounds: Bonificación máxima de rango",
@@ -57,6 +72,9 @@ local data = {
         off = "Desactivado",
     },
     ["fr"] = {
+        palboxRow = "Pages de Palbox bonus",
+        palboxCapTitle = "Growing Grounds : nombre max de pages de Palbox bonus",
+        palboxCapTip = "Une page de Palbox supplémentaire par montée de niveau de base, à partir de 0 au niveau 1. Plafond : 0–64 ; par défaut : 32. Ne modifie pas la Palbox globale. Les pages bonus occupées restent jusqu’à ce qu’elles soient vidées.",
         rangeRow = "Bonus de rayon de la base",
         chestRow = "Emplacements de coffre bonus",
         rangeCapTitle = "Growing Grounds : bonus de rayon maximal",
@@ -66,6 +84,9 @@ local data = {
         off = "Désactivé",
     },
     ["id"] = {
+        palboxRow = "Halaman Palbox Tambahan",
+        palboxCapTitle = "Growing Grounds: Maksimum halaman Palbox tambahan",
+        palboxCapTip = "Satu halaman Palbox tambahan setiap kenaikan level markas, mulai dari 0 pada level 1. Batas: 0–64; bawaan: 32. Tidak memengaruhi Palbox Global. Halaman tambahan yang terisi tetap ada sampai dikosongkan.",
         rangeRow = "Bonus Jangkauan Markas",
         chestRow = "Slot Peti Bonus",
         rangeCapTitle = "Growing Grounds: Bonus jangkauan maksimum",
@@ -75,6 +96,9 @@ local data = {
         off = "Mati",
     },
     ["it"] = {
+        palboxRow = "Pagine Palbox aggiuntive",
+        palboxCapTitle = "Growing Grounds: Pagine Palbox aggiuntive massime",
+        palboxCapTip = "Una pagina Palbox aggiuntiva per ogni livello della base, a partire da 0 al livello 1. Limite: 0–64; predefinito: 32. Non modifica il Palbox globale. Le pagine aggiuntive occupate restano finché non vengono svuotate.",
         rangeRow = "Bonus raggio della base",
         chestRow = "Slot bonus dei forzieri",
         rangeCapTitle = "Growing Grounds: Bonus massimo di raggio",
@@ -84,6 +108,9 @@ local data = {
         off = "Spento",
     },
     ["ko"] = {
+        palboxRow = "팰 상자 추가 페이지",
+        palboxCapTitle = "Growing Grounds: 팰 상자 추가 페이지 상한",
+        palboxCapTip = "거점 레벨이 오를 때마다 팰 상자에 1페이지가 추가됩니다. 레벨 1에서는 추가 페이지가 0입니다. 상한: 0–64, 기본값: 32. 글로벌 팰 상자에는 영향을 주지 않습니다. 사용 중인 추가 페이지는 비울 때까지 유지됩니다.",
         rangeRow = "거점 범위 보너스",
         chestRow = "추가 상자 슬롯",
         rangeCapTitle = "Growing Grounds: 최대 범위 보너스",
@@ -93,6 +120,9 @@ local data = {
         off = "끄기",
     },
     ["pl"] = {
+        palboxRow = "Dodatkowe strony Palboxa",
+        palboxCapTitle = "Growing Grounds: Limit dodatkowych stron Palboxa",
+        palboxCapTip = "Jedna dodatkowa strona Palboxa za każdy awans bazy, od 0 na poziomie 1. Limit: 0–64; domyślnie: 32. Nie zmienia globalnego Palboxa. Zajęte dodatkowe strony pozostają do czasu opróżnienia.",
         rangeRow = "Premia do zasięgu bazy",
         chestRow = "Dodatkowe miejsca w skrzyniach",
         rangeCapTitle = "Growing Grounds: Maksymalna premia do zasięgu",
@@ -102,6 +132,9 @@ local data = {
         off = "Wyłączone",
     },
     ["pt-BR"] = {
+        palboxRow = "Páginas extras da Caixa Pal",
+        palboxCapTitle = "Growing Grounds: Máximo de páginas extras da Caixa Pal",
+        palboxCapTip = "Uma página extra da Caixa Pal por nível da base, começando com 0 no nível 1. Limite: 0–64; padrão: 32. Não afeta a Caixa Pal Global. Páginas extras ocupadas permanecem até serem esvaziadas.",
         rangeRow = "Bônus de alcance da base",
         chestRow = "Slots extras de baú",
         rangeCapTitle = "Growing Grounds: Bônus máximo de alcance",
@@ -111,6 +144,9 @@ local data = {
         off = "Desligado",
     },
     ["ru"] = {
+        palboxRow = "Доп. страницы Пал-контейнера",
+        palboxCapTitle = "Growing Grounds: Лимит доп. страниц Пал-контейнера",
+        palboxCapTip = "Одна дополнительная страница Пал-контейнера за каждый новый уровень базы, начиная с 0 на уровне 1. Лимит: 0–64; по умолчанию: 32. Глобальный Пал-контейнер не меняется. Занятые дополнительные страницы остаются до освобождения.",
         rangeRow = "Бонус к радиусу базы",
         chestRow = "Бонусные ячейки сундуков",
         rangeCapTitle = "Growing Grounds: Макс. бонус к радиусу",
@@ -120,6 +156,9 @@ local data = {
         off = "Выкл.",
     },
     ["th"] = {
+        palboxRow = "หน้า Palbox เพิ่มเติม",
+        palboxCapTitle = "Growing Grounds: จำนวนหน้า Palbox เพิ่มเติมสูงสุด",
+        palboxCapTip = "เพิ่ม Palbox หนึ่งหน้าทุกครั้งที่ฐานเลื่อนระดับ โดยเริ่มจาก 0 ที่ระดับ 1 ขีดจำกัด: 0–64; ค่าเริ่มต้น: 32 ไม่ส่งผลต่อ Global Palbox หน้าเพิ่มเติมที่มี Pal อยู่จะคงไว้จนกว่าจะว่าง",
         rangeRow = "โบนัสรัศมีฐาน",
         chestRow = "ช่องหีบเพิ่มเติม",
         rangeCapTitle = "Growing Grounds: โบนัสรัศมีสูงสุด",
@@ -129,6 +168,9 @@ local data = {
         off = "ปิด",
     },
     ["tr"] = {
+        palboxRow = "Ek Palbox Sayfaları",
+        palboxCapTitle = "Growing Grounds: En fazla ek Palbox sayfası",
+        palboxCapTip = "Üs her seviye atladığında bir ek Palbox sayfası verilir; 1. seviyede 0 ile başlar. Sınır: 0–64; varsayılan: 32. Küresel Palbox etkilenmez. Dolu ek sayfalar boşaltılana kadar kalır.",
         rangeRow = "Üs Menzili Bonusu",
         chestRow = "Bonus Sandık Yuvaları",
         rangeCapTitle = "Growing Grounds: Maksimum Menzil Bonusu",
@@ -138,6 +180,9 @@ local data = {
         off = "Kapalı",
     },
     ["vi"] = {
+        palboxRow = "Trang Palbox bổ sung",
+        palboxCapTitle = "Growing Grounds: Giới hạn trang Palbox bổ sung",
+        palboxCapTip = "Thêm một trang Palbox mỗi lần căn cứ lên cấp, bắt đầu từ 0 ở cấp 1. Giới hạn: 0–64; mặc định: 32. Không ảnh hưởng đến Palbox toàn cầu. Các trang bổ sung có Pal được giữ lại cho đến khi trống.",
         rangeRow = "Phạm vi căn cứ cộng thêm",
         chestRow = "Ô rương cộng thêm",
         rangeCapTitle = "Growing Grounds: Phạm vi cộng thêm tối đa",
@@ -147,6 +192,9 @@ local data = {
         off = "Tắt",
     },
     ["zh-Hans"] = {
+        palboxRow = "帕鲁终端额外页数",
+        palboxCapTitle = "Growing Grounds：帕鲁终端额外页数上限",
+        palboxCapTip = "据点每升一级，帕鲁终端增加1页；据点1级时额外页数为0。上限：0–64，默认：32。不影响全局帕鲁终端。已占用的额外页面会保留，直到清空。",
         rangeRow = "据点范围加成",
         chestRow = "额外箱子栏位",
         rangeCapTitle = "Growing Grounds：范围加成上限",
@@ -156,6 +204,9 @@ local data = {
         off = "关闭",
     },
     ["zh-Hant"] = {
+        palboxRow = "帕魯終端額外頁數",
+        palboxCapTitle = "Growing Grounds：帕魯終端額外頁數上限",
+        palboxCapTip = "據點每升一級，帕魯終端增加1頁；據點1級時額外頁數為0。上限：0–64，預設：32。不影響全域帕魯終端。已佔用的額外頁面會保留，直到清空。",
         rangeRow = "據點範圍加成",
         chestRow = "額外箱子欄位",
         rangeCapTitle = "Growing Grounds：範圍加成上限",

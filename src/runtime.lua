@@ -47,7 +47,8 @@ return function(E)
     function R.bonuses(model)
         local policy=R.policy(model)
         return {rangeEnabled=not E.config.resetToVanilla and policy.maxRangeBonusPercent>0,
-            chestCap=E.config.resetToVanilla and 0 or policy.maxChestBonusSlots}
+            chestCap=E.config.resetToVanilla and 0 or policy.maxChestBonusSlots,
+            palboxCap=E.config.resetToVanilla and 0 or policy.maxPalboxBonusPages}
     end
     function R.updatePlacement(context)
         local settings = utility():GetGameSetting(context)
@@ -142,6 +143,10 @@ return function(E)
         local function chest(at)
             return cap and cap>0 and E.range.storageAtCap(at,cap,maximum) or nil
         end
+        local pages=bonuses and bonuses.palboxCap
+        local function palbox(at)
+            return pages and pages>0 and E.range.palboxAtCap(at,pages) or nil
+        end
         return {
             level=level, maximum=maximum, radius=radius, baseline=baseline,
             currentPercent=radius / baseline * 100,
@@ -150,6 +155,8 @@ return function(E)
             rangeEnabled=bonuses and bonuses.rangeEnabled,
             chestCurrent=chest(level),
             chestNext=chest(math.min(level+1,maximum)),
+            palboxCurrent=palbox(level),
+            palboxNext=palbox(math.min(level+1,maximum)),
             atMaximum=level >= maximum, authority=authority,
         }
     end

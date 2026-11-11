@@ -11,6 +11,7 @@ return function(E)
         PalMasterDataTableAccess_BaseCampLevelData='/Script/Pal.PalMasterDataTableAccess_BaseCampLevelData',
         PalMapObjectItemChestModel='/Script/Pal.PalMapObjectItemChestModel',
         PalGroupGuild='/Script/Pal.PalGroupGuild',
+        PalPlayerState='/Script/Pal.PalPlayerState',
     }
     local sets,paths={},{}
     local function current(record)

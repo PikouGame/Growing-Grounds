@@ -52,7 +52,8 @@ return function(root, Range, defaults, filesystem, log, clock)
             elseif section then
                 local name, value = line:match('^(%w+)%s*=%s*([%d%.%-]+)%s*$')
                 if name=='growthPercentPerLevel' or name=='maxRangeBonusPercent'
-                    or name=='maxRangePercent' or name=='maxChestBonusSlots' then
+                    or name=='maxRangePercent' or name=='maxChestBonusSlots'
+                    or name=='maxPalboxBonusPages' then
                     worlds[section][name] = tonumber(value)
                 end
             end
@@ -86,8 +87,8 @@ return function(root, Range, defaults, filesystem, log, clock)
         table.sort(ids)
         for _,k in ipairs(ids) do
             local value = normalize(nextWorlds[k])
-            lines[#lines+1] = string.format('[%s]\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\n',
-                k, value.maxRangeBonusPercent, value.maxChestBonusSlots)
+            lines[#lines+1] = string.format('[%s]\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\nmaxPalboxBonusPages=%d\n',
+                k, value.maxRangeBonusPercent, value.maxChestBonusSlots, value.maxPalboxBonusPages)
         end
         local temp, backup = path..'.tmp', path..'.bak'
         local file = assert(fs.open(temp, 'w'))

@@ -4,7 +4,7 @@
 local Range = {}
 
 -- The one source of the setting maxima: clamps, sliders and the preview decoder derive from it.
-Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=42}
+Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=42, maxPalboxBonusPages=64}
 Range.chestSlotStep = 6
 
 local function finite(value)
@@ -35,8 +35,11 @@ function Range.settings(settings)
     local limits = Range.limits
     slots = math.max(0, math.min(limits.maxChestBonusSlots, slots))
     slots = math.floor(slots / Range.chestSlotStep + 0.5) * Range.chestSlotStep
+    local pages = settings.maxPalboxBonusPages
+    if not finite(pages) then pages = 32 end
+    pages = math.floor(math.max(0, math.min(limits.maxPalboxBonusPages, pages)) + 0.5)
     return {maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
-        maxChestBonusSlots=slots}
+        maxChestBonusSlots=slots, maxPalboxBonusPages=pages}
 end
 
 -- A cap spread evenly over the game's base levels: level 1 gives 0, the last
@@ -67,6 +70,19 @@ end
 
 function Range.storageBonus(level, settings, maxLevel)
     return Range.storageAtCap(level, Range.settings(settings).maxChestBonusSlots, maxLevel)
+end
+
+-- One whole Palbox page per upgrade, starting with none at level 1. This
+-- bonus is deliberately independent of the size of the game's level table.
+function Range.palboxAtCap(level, cap)
+    validLevel(level)
+    assert(finite(cap) and cap >= 0 and cap % 1 == 0 and cap <= Range.limits.maxPalboxBonusPages,
+        'invalid Palbox bonus cap')
+    return math.min(level - 1, cap)
+end
+
+function Range.palboxBonus(level, settings)
+    return Range.palboxAtCap(level, Range.settings(settings).maxPalboxBonusPages)
 end
 
 function Range.radius(originalRadius, level, settings, maxLevel)

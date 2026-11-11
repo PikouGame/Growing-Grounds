@@ -521,3 +521,27 @@ for _,message in ipairs(logged) do
 end
 assert(english==2,'the log names the two rows in English whatever the language')
 print('PASS: reward row titles follow the game language at once, stay steady, survive a rebuild; the log stays English')
+
+-- The third bonus is a full page count with the same fixed numeric columns.
+snapshot.palboxCurrent=31;snapshot.palboxNext=32;snapshot.atMaximum=false
+UI.refresh()
+local palbox=rowTitled(Texts.get(language).palboxRow)
+assert(palbox and palbox.Text_Num_Pre.value=='31' and palbox.Text_Num_Aft.value=='32')
+assert(rewardSection.Slot.position.Y+rewardSection.Slot.size.Y==300,'fifth row keeps the separator fixed')
+for _,culture in ipairs({'en','fr','de','ja'}) do
+    language=culture;UI.refresh()
+    assert(palbox.Text_Efefct.value==Texts.get(culture).palboxRow)
+    for _,width in ipairs({520,588,632}) do
+        for _,dpi in ipairs({2/3,1,4/3}) do
+            assertRewardLayout({nativePal,nativeBase,born,bornChest,palbox},width,dpi)
+        end
+    end
+end
+snapshot.palboxCurrent=32;snapshot.palboxNext=32;UI.refresh()
+assert(palbox.Text_Num_Pre.value=='32' and palbox.Text_Num_Aft.value=='32' and palbox.Image_Arrow.visibility==4)
+reconstruct(palbox);assert(palbox.Text_Num_Aft.value=='32')
+snapshot.palboxCurrent=nil;snapshot.palboxNext=nil;UI.refresh();assert(palbox.visibility==1)
+reconstruct(palbox)
+snapshot.palboxCurrent=0;snapshot.palboxNext=1;UI.refresh()
+assert(palbox.visibility==4 and palbox.Text_Num_Pre.value=='0' and palbox.Text_Num_Aft.value=='1')
+print('PASS: fifth reward row layout, Palbox plateau, localization, disable/enable and reconstruction')

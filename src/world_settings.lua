@@ -10,6 +10,7 @@ return function(E)
         -- title and tip are keys of the texts, read in the game's language at each paint.
         {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent, step=1},
         {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots, step=E.range.chestSlotStep},
+        {key='maxPalboxBonusPages', title='palboxCapTitle', tip='palboxCapTip', min=0, max=E.range.limits.maxPalboxBonusPages, step=1},
     }
     local function object(path) return E.objects.find(path) end
     local function stringValue(value)
@@ -71,7 +72,7 @@ return function(E)
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
-        E.log('World Settings: range bonus cap and chest bonus cap rows ready')
+        E.log('World Settings: range, chest and Palbox bonus cap rows ready')
     end
     function W.change(row, value)
         local entry = owned[row:GetFullName()]

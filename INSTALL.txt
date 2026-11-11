@@ -39,11 +39,16 @@ Configuration
   The World Settings slider offers 0..+300%; +300% means four times the radius.
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
   +100. Do not add the new key beside the old one unless you intend to override it.
-  Set either cap to 0 to disable its bonus and hide its reward row.
+  Set any cap to 0 to disable its bonus and hide its reward row.
 - maxChestBonusSlots=18: bonus chest slots at the last base level, spread evenly
   over all levels (with 18: 1 at level 2, 5 at level 10, 18 at level 35).
   Bonus limit 0..42 in steps of 6; other values round to the nearest step. Guild Chests share one bonus for the whole guild.
   Lower limits retain occupied overflow slots until they are emptied.
+- maxPalboxBonusPages=32: extra regular Palbox pages, one per base upgrade.
+  Level 1 gives 0; levels 33, 34 and 35 give +32 with the default cap.
+  Limit 0..64, whole pages. At level 35 even cap 64 grants only +34.
+  Each player follows their guild level once; extra bases do not multiply it.
+  Global Palbox storage is unchanged. Occupied extra pages are retained.
 - resetToVanilla=false: see removal instructions before changing this.
 - upgradeAnimation=true: enables the automatic upgrade celebration.
 - upgradeRibbon=true: enables glow effects; false disables both wave and rise.
@@ -52,7 +57,7 @@ Configuration
 - nextBoundaryMarker=true: while Base Upgrade is open, a soft glow on the ground
   shows where the boundary will be after the upgrade.
 
-Local/co-op hosts can change the range bonus cap and the chest bonus cap at the bottom of custom World
+Local/co-op hosts can change the range, chest and Palbox bonus caps at the bottom of custom World
 Settings. Values save per world after native confirmation, in world-settings.ini.
 Dedicated servers use config.lua defaults unless that host has a per-world
 sidecar override. Server settings always control gameplay and the next-value UI.
@@ -97,13 +102,19 @@ size; stacks sitting above it are first moved into free native slots, in the sam
 order. A chest holding more stacks than its native size keeps the slots in use:
 UE4SS.log names it ("ItemChest_02 keeps 30 slots instead of 24 until the slots above
 are emptied") and it shrinks once you empty them. Occupied slots are never removed.
-When UE4SS.log says "reset complete: N chests at native size", save, then remove
-BaseRangeGrowth on both sides. "reset waiting" means a chest still has to be
+The "reset complete: N chests at native size" message covers chests only.
+Before removing GG, each player must also join with reset enabled and move
+all Pals out of bonus Palbox pages into the original pages, then close the
+Palbox. Offline players are not checked by an online player’s reset.
+Keep GG installed until every player has cleared those pages and their original
+page count has returned. Save, then remove BaseRangeGrowth on both sides. "reset waiting" means a chest still has to be
 emptied; the last reset line is the current state.
 Buildings in the added area may lose coverage. An exact rollback requires the
 pre-install world backup, which also rolls back progress since that backup.
 
 Compatibility and verification
+Palbox expansion is a development candidate. Native replication, transfer,
+save/reload and removal are NOT VERIFIED yet; test it on a world copy.
 Inspected Palworld v1.0.5.102999; client Steam build 25246127, server 25247047;
 UE4SS Palworld fork 2281fa31. Windows executables were tested through Proton/Wine.
 Native Windows OS execution and Workshop deployment are not verified.

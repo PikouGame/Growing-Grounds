@@ -80,8 +80,8 @@ local Texts=dofile(root..'src/texts.lua')
 local language='en'
 E.texts=function() return Texts.get(language) end
 local W=dofile(root..'src/world_settings.lua')(E)
-W.setup(menu,a,false);assert(#panel.children==2,'World Settings shows two rows')
-assert(logs[#logs]=='World Settings: range bonus cap and chest bonus cap rows ready',tostring(logs[#logs]))
+W.setup(menu,a,false);assert(#panel.children==3,'World Settings shows three rows')
+assert(logs[#logs]=='World Settings: range, chest and Palbox bonus cap rows ready',tostring(logs[#logs]))
 assert(panel.children[1].Text_OptionTitle.text=='Growing Grounds: Maximum range bonus')
 assert(panel.children[1].tip=='The range bonus arrives steadily over all base levels; the last level gives it all. 0 disables it. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.')
 assert(panel.children[2].Text_OptionTitle.text=='Growing Grounds: Maximum bonus chest slots')
@@ -92,7 +92,7 @@ assert(store.get(a).maxChestBonusSlots==18,'chest slider changes only its draft'
 assert(menu.IsEditedSettingFlag and menu.IsEditedInCustomSetting)
 assert(store.get(a).maxRangeBonusPercent==100,'drag is draft only')
 W.saved(outer,false);assert(store.get(a).maxRangeBonusPercent==100,'native save failure must not commit')
-W.setup(menu,a,false);assert(#panel.children==2 and panel.children[1].value==100,'cancel/reopen discards draft without duplicates')
+W.setup(menu,a,false);assert(#panel.children==3 and panel.children[1].value==100,'cancel/reopen discards draft without duplicates')
 assert(panel.children[2].value==18,'cancel discards chest draft')
 assert(panel.children[1].min==0 and panel.children[1].max==300)
 assert(panel.children[1].OverrideSliderStepValue==1 and panel.children[2].OverrideSliderStepValue==6)
@@ -130,7 +130,7 @@ assert(custom.get(a).maxRangeBonusPercent==150 and custom.get(a).maxChestBonusSl
 print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..42 in steps of six')
 
 -- A world file written by an older version has three keys per section. It is read as the
--- two settings, and written back with two. Only a growth of 0 (range off) still means something.
+-- three settings, and written back with three. Only a growth of 0 (range off) still means something.
 local function lines(text) local n=0 for _ in text:gmatch('[^\n]+') do n=n+1 end return n end
 local saved=files['world-settings.ini']
 files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=5\nmaxRangeBonusPercent=80\nmaxChestBonusSlots=12\n'
@@ -143,10 +143,10 @@ assert(old.get(nil).maxRangeBonusPercent==100,'worlds without a section follow t
 local third=string.rep('C',32)
 old.save(third,{maxRangeBonusPercent=40,maxChestBonusSlots=5})
 local text=files['world-settings.ini']
-assert(not text:find('growthPercentPerLevel',1,true),'the file is rewritten with two keys per section')
+assert(not text:find('growthPercentPerLevel',1,true),'the file is rewritten with three keys per section')
 assert(text:find('['..b..']\nmaxRangeBonusPercent=0\nmaxChestBonusSlots=24\n',1,true),'the world that was off is written off')
 assert(text:find('['..a..']\nmaxRangeBonusPercent=80\nmaxChestBonusSlots=12\n',1,true))
-assert(lines(text)==1+3*3,'one comment line and three lines per section, got '..lines(text))
+assert(lines(text)==1+3*4,'one comment line and four lines per section, got '..lines(text))
 old=factory('',Range,{maxRangeBonusPercent=250,maxChestBonusSlots=20},fs)
 assert(old.get(b).maxRangeBonusPercent==0,'a world that was off stays off after the rewrite, whatever the default')
 assert(old.get(a).maxRangeBonusPercent==80 and old.get(third).maxRangeBonusPercent==40)
@@ -173,7 +173,7 @@ for growth,expected in pairs({[4]=100,[5]=100,[0]=0}) do
     assert(factory('',Range,config,fs).get(b).maxRangeBonusPercent==expected)
 end
 files['world-settings.ini']=saved
-print('PASS: old three-key world files and old config.lua growth keys are read, growth 0 stays off, files are rewritten with two keys')
+print('PASS: old three-key world files and old config.lua growth keys are read, growth 0 stays off, files are rewritten with three keys')
 
 W.setup(menu,a,false)
 W.change(panel.children[1],0);W.change(panel.children[2],0)
@@ -199,7 +199,7 @@ print('PASS: native post-notification rewrites, keyboard/mouse repaint, unowned 
 -- The slider maxima are the shared limits, not copies of them.
 -- The cleanup test above closed the menu; reopen it, which builds a fresh row group.
 menu.alive=true;W.setup(menu,a,false)
-local rows={panel.children[#panel.children-1],panel.children[#panel.children]}
+local rows={panel.children[#panel.children-2],panel.children[#panel.children-1],panel.children[#panel.children]}
 assert(rows[1].max==Range.limits.maxRangeBonusPercent and rows[2].max==Range.limits.maxChestBonusSlots,'slider maxima equal Range.limits')
 -- One source: with the chest limit raised in a fresh copy of the modules, settings and slider follow.
 local raised=dofile(root..'src/range.lua')
@@ -286,7 +286,7 @@ do
     language='fr'
     W.setup(menu,a,false)
     -- Earlier blocks rebuilt the rows; the live pair is the last one in this mock's panel.
-    local range,chest=panel.children[#panel.children-1],panel.children[#panel.children]
+    local range,chest=panel.children[#panel.children-2],panel.children[#panel.children-1]
     local function shown(row) return row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text end
     assert(range.Text_OptionTitle.text==french.rangeCapTitle and range.tip==french.rangeCapTip)
     assert(chest.Text_OptionTitle.text==french.chestCapTitle and chest.tip==french.chestCapTip)
@@ -302,6 +302,21 @@ do
     language='en'
     W.setup(menu,a,false)
     assert(range.Text_OptionTitle.text=='Growing Grounds: Maximum range bonus' and chest.tip==Texts.get('en').chestCapTip)
-    assert(logs[#logs]=='World Settings: range bonus cap and chest bonus cap rows ready','the log stays in English')
+    assert(logs[#logs]=='World Settings: range, chest and Palbox bonus cap rows ready','the log stays in English')
 end
 print('PASS: World Settings rows, tooltips and Off follow the game language')
+
+-- The independent Palbox cap is an integer count of bonus pages.
+W.setup(menu,a,false)
+local pages=panel.children[#panel.children]
+assert(pages.min==0 and pages.max==64 and pages.OverrideSliderStepValue==1)
+assert(pages.Text_OptionTitle.text==Texts.get(language).palboxCapTitle)
+local savedPages=E.settings.get(a).maxPalboxBonusPages
+W.change(pages,64);assert(E.settings.get(a).maxPalboxBonusPages==savedPages)
+W.setup(menu,a,false);assert(pages.value==savedPages,'cancel discards the Palbox draft')
+W.change(pages,64);W.saved(outer,true)
+assert(factory('',Range,defaults,fs).get(a).maxPalboxBonusPages==64,'cap persists per world')
+W.change(pages,0);W.saved(outer,true)
+assert(E.settings.get(a).maxPalboxBonusPages==0 and pages.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value.text==Texts.get(language).off)
+assert(E.settings.get(b).maxPalboxBonusPages==32,'another world retains its default')
+print('PASS: Palbox slider 0..64 step 1, independent draft, cancel, persistence and Off')

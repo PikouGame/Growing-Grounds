@@ -7,6 +7,9 @@ return function(E)
     local P = {}
     local marker, records, reported = {}, {}, {}
     local MAGIC, LEGACY, MAX_LEVEL = 400000, 232000, 1000
+    -- Fixed wire radix: 7 bits hold chest cap + range flag; Palbox cap follows.
+    -- The largest encoded position stays below 2^24 (exact float integers).
+    local PALBOX_MAGIC, FLAGS_RADIX = 1000000, 128
     local componentPath='/Script/Engine.SceneComponent'
     local function find(path) return E.objects.find(path) end
     local function finite(n) return type(n)=='number' and n==n and math.abs(n)<math.huge end
@@ -20,8 +23,16 @@ return function(E)
         if not finite(x) or not finite(y) or not finite(z) then return end
         local limits=E.range.limits
         local payload=z-MAGIC
-        local level,rangeEnabled,chestCap
-        if payload>=1 then
+        local level,rangeEnabled,chestCap,palboxCap
+        if z>=PALBOX_MAGIC then
+            payload=z-PALBOX_MAGIC
+            local packed=math.floor(payload/(MAX_LEVEL+1))
+            palboxCap=math.floor(packed/FLAGS_RADIX)
+            local flags=packed%FLAGS_RADIX
+            if palboxCap>limits.maxPalboxBonusPages or flags>limits.maxChestBonusSlots*2+1 then return end
+            level=payload-packed*(MAX_LEVEL+1)
+            rangeEnabled,chestCap=flags%2==1,math.floor(flags/2)
+        elseif payload>=1 then
             local flags=math.floor(payload/(MAX_LEVEL+1))
             if flags<0 or flags>limits.maxChestBonusSlots*2+1 then return end
             level=payload-flags*(MAX_LEVEL+1)
@@ -34,7 +45,7 @@ return function(E)
         local maxPercent=(100+limits.maxRangeBonusPercent)*100+1
         if x<9999 or x>maxPercent or (y~=-100 and (y<9999 or y>maxPercent)) then return end
         return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil,
-            rangeEnabled=rangeEnabled,chestCap=chestCap}
+            rangeEnabled=rangeEnabled,chestCap=chestCap,palboxCap=palboxCap}
     end
     local function ownerBase(component)
         local owner=component:GetOwner()
@@ -66,7 +77,7 @@ return function(E)
         local value=state(model)
         if not value then return end
         return table.concat({value.level,value.current,tostring(value.nextPercent),
-            tostring(value.rangeEnabled),tostring(value.chestCap)},':')
+            tostring(value.rangeEnabled),tostring(value.chestCap),tostring(value.palboxCap)},':')
     end
     function P.read(model,baseline,level,radius)
         -- Policy remains server-authored during split replication. The UI must
@@ -115,6 +126,10 @@ return function(E)
         local location={X=model:GetRange()/baseline*10000,
             Y=nextPercent and nextPercent*100 or -100,
             Z=MAGIC+model:GetLevel()+(MAX_LEVEL+1)*(bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0))}
+        if bonuses.palboxCap~=nil then
+            location.Z=PALBOX_MAGIC+model:GetLevel()+(MAX_LEVEL+1)*
+                (bonuses.palboxCap*FLAGS_RADIX+bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0))
+        end
         assert(decode(location),'Invalid server preview')
         local state=marker[id]
         local component=state and state.component

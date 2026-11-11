@@ -27,16 +27,16 @@ near(Range.settings({maxRangeBonusPercent=999}).maxRangeBonusPercent,300)
 near(Range.settings({maxRangeBonusPercent=-1}).maxRangeBonusPercent,0)
 near(Range.settings({maxRangeBonusPercent=0/0}).maxRangeBonusPercent,100)
 near(Range.settings({maxRangeBonusPercent=math.huge}).maxRangeBonusPercent,100)
--- The settings are exactly the two caps; the removed growth setting is gone.
+-- The settings are exactly the three caps; the removed growth setting is gone.
 do
     local keys={}
     for k in pairs(Range.settings({growthPercentPerLevel=4,maxRangePercent=150,other=1})) do keys[#keys+1]=k end
     table.sort(keys)
-    assert(table.concat(keys,',')=='maxChestBonusSlots,maxRangeBonusPercent',table.concat(keys,','))
+    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBonusPages,maxRangeBonusPercent',table.concat(keys,','))
     keys={}
     for k in pairs(Range.limits) do keys[#keys+1]=k end
     table.sort(keys)
-    assert(table.concat(keys,',')=='maxChestBonusSlots,maxRangeBonusPercent',table.concat(keys,','))
+    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBonusPages,maxRangeBonusPercent',table.concat(keys,','))
 end
 -- Any cap, any table: nearest whole percent, the whole cap on the last level and after,
 -- never above it, never down. A level table of 35, 40, 2 and a missing one.
@@ -624,3 +624,24 @@ near(54+Range.storageBonus(35),72)
 near(Range.storageAtCap(35,20,35),20);near(Range.storageAtCap(35,40,35),40)
 for _,cap in ipairs({-1,1.5,43,math.huge,0/0,'18'}) do assert(not pcall(Range.storageAtCap,35,cap,35)) end
 print('PASS: default18, six-slot caps through42, migration rounding, 72-slot Guild Chest and authoritative legacy previews')
+
+-- Palbox pages: +1 per upgrade, never spread to fit the level table.
+assert(Range.settings().maxPalboxBonusPages==32)
+assert(dofile(root..'config.lua').maxPalboxBonusPages==32)
+assert(Range.limits.maxPalboxBonusPages==64)
+for level,expected in pairs({[1]=0,[2]=1,[10]=9,[32]=31,[33]=32,[34]=32,[35]=32,[66]=32}) do
+    assert(Range.palboxBonus(level)==expected)
+end
+for cap=0,64 do
+    for level=1,100 do
+        local expected=level<=cap+1 and level-1 or cap
+        assert(Range.palboxBonus(level,{maxPalboxBonusPages=cap})==expected)
+    end
+end
+assert(Range.palboxBonus(35,{maxPalboxBonusPages=64})==34)
+for _,pair in ipairs({{-1,0},{100,64},{32.49,32},{32.5,33},{0/0,32},{math.huge,32},{'64',32},{false,32}}) do
+    assert(Range.settings({maxPalboxBonusPages=pair[1]}).maxPalboxBonusPages==pair[2])
+end
+for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.palboxBonus,bad)) end
+for _,bad in ipairs({-1,65,1.5,math.huge,0/0,'32'}) do assert(not pcall(Range.palboxAtCap,2,bad)) end
+print('PASS: Palbox page caps 0..64, default 32, +1 per upgrade, plateau at levels 33..35')

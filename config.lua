@@ -3,7 +3,7 @@ return {
     -- Maximum radius BONUS, reached at the last base level and spread evenly over
     -- the levels before it: +100% doubles the radius (35m -> 70m).
     -- World Settings: 0..+300%. +300% means 4x radius, not area.
-    -- Set either cap to 0 to disable that bonus. Occupied extra chest slots are preserved.
+    -- Set any cap to 0 to disable that bonus. Occupied extra storage is preserved.
     -- Old maxRangePercent totals remain supported without changing their effect.
     -- An old growthPercentPerLevel line is ignored, except 0, which still switches range off.
     maxRangeBonusPercent = 100,
@@ -11,8 +11,14 @@ return {
     -- evenly over the levels: with 18, +1 at level 2, 5 at level 10, 18 at level 35.
     -- Other values round to the nearest step (20 -> 18; 40 -> 42).
     maxChestBonusSlots = 18,
+    -- Extra regular Palbox pages, not individual Pal slots or Global Palbox
+    -- storage. One page per base upgrade: level 1 = 0; levels 33..35 = +32.
+    -- Cap 0..64, default 32. A higher cap still grants only one per upgrade.
+    maxPalboxBonusPages = 32,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
-    -- wait for "reset complete" in UE4SS.log, save, then remove the mod.
+    -- wait for the chest reset in UE4SS.log; every player must also empty their
+    -- bonus Palbox pages and recover the native page count. See INSTALL.txt.
+    -- Save, then remove the mod.
     resetToVanilla = false,
     -- Presentation only. Master switch for the whole celebration: Palbox wave,
     -- brief boundary bounce and rising glow. false turns all of it off.

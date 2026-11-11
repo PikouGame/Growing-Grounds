@@ -11,6 +11,7 @@ return function(E, Runtime)
     local specs = {
         {key='range', label='Base Range Bonus', text='rangeRow', icon='base-range.png'},
         {key='chest', label='Bonus Chest Slots', text='chestRow', icon='chest-bonus.png'},
+        {key='palbox', label='Bonus Palbox Pages', text='palboxRow', icon='palbox-bonus.png'},
     }
     local function gain(value) return string.format('%.0f', value - 100) end
     local mint = {SpecifiedColor={R=0.27,G=0.78,B=0.60,A=1},ColorUseRule=0}
@@ -162,13 +163,18 @@ return function(E, Runtime)
             local size=stack.Slot:GetSize()
             grid.size={X=size.X,Y=size.Y}
         end
-        -- Keep the established three-row spacing. A fourth reward grows upward
-        -- by its own native row height, leaving the button/separator untouched.
-        local extra=0
-        if grid.visible.range and grid.visible.chest then
-            local row=rows.chest
-            local padding=row.Slot.Padding
-            extra=row:GetDesiredSize().Y+padding.Top+padding.Bottom
+        -- Keep the established three-row spacing. Each additional reward grows
+        -- upward by its native height, leaving the button/separator untouched.
+        local extra,count=0,0
+        for _,spec in ipairs(specs) do
+            if grid.visible[spec.key] then
+                count=count+1
+                if count>1 then
+                    local row=rows[spec.key]
+                    local padding=row.Slot.Padding
+                    extra=extra+row:GetDesiredSize().Y+padding.Top+padding.Bottom
+                end
+            end
         end
         local y=grid.position.Y-extra
         if stack.Slot:GetPosition().Y~=y then stack.Slot:SetPosition({X=grid.position.X,Y=y}) end
@@ -206,12 +212,13 @@ return function(E, Runtime)
     local function paint(row, entry)
         local state=entry.state
         if entry.kind=='range' then paintRange(row,state,entry.title);return end
-        row:SetEffectInfo(state.chestCurrent,state.chestNext or state.chestCurrent,state.atMaximum,state.canLevelup)
+        local current,nextValue=state[entry.kind..'Current'],state[entry.kind..'Next']
+        row:SetEffectInfo(current,nextValue or current,state.atMaximum,state.canLevelup)
         row.Image_Icon:SetBrushFromTexture(row.Texture,false)
         row.Text_Efefct:SetText(text(entry.title))
-        row.Text_Num_Pre:SetText(text(tostring(state.chestCurrent)))
-        row.Text_Num_Aft:SetText(text(state.chestNext and tostring(state.chestNext) or ''))
-        local showNext=not state.atMaximum and state.chestNext~=nil
+        row.Text_Num_Pre:SetText(text(tostring(current)))
+        row.Text_Num_Aft:SetText(text(nextValue and tostring(nextValue) or ''))
+        local showNext=not state.atMaximum and nextValue~=nil
         row.Image_Arrow:SetVisibility(showNext and SelfHitTestInvisible or Hidden)
         row.SizeBox_Aft:SetVisibility(showNext and SelfHitTestInvisible or Hidden)
         lastWritten[row:GetFullName()]=nil
@@ -226,7 +233,7 @@ return function(E, Runtime)
                 local row = context:get()
                 if not E.valid(row) then return end
                 local state = owned[row:GetFullName()]
-                if state and (state.kind=='range' or state.state.chestCurrent~=nil) then paint(row, state) end
+                if state and (state.kind=='range' or state.state[state.kind..'Current']~=nil) then paint(row, state) end
             end)
         end)
         constructHookInstalled = true
@@ -258,7 +265,7 @@ return function(E, Runtime)
         state.canLevelup=screen.CanLevelup
         local rows,signatures={},{}
         local needsLayout=false
-        local enabled={range=state.rangeEnabled~=false,chest=state.chestCurrent~=nil}
+        local enabled={range=state.rangeEnabled~=false,chest=state.chestCurrent~=nil,palbox=state.palboxCurrent~=nil}
         for _,spec in ipairs(specs) do
             local row
             for index=0,parent:GetChildrenCount()-1 do
@@ -299,7 +306,7 @@ return function(E, Runtime)
                     local signature=spec.key=='range'
                         and table.concat({state.currentPercent,tostring(state.nextPercent),state.radius,state.baseline,
                             tostring(state.atMaximum),tostring(state.canLevelup)},':')
-                        or table.concat({state.chestCurrent,tostring(state.chestNext),tostring(state.atMaximum),tostring(state.canLevelup)},':')
+                        or table.concat({state[spec.key..'Current'],tostring(state[spec.key..'Next']),tostring(state.atMaximum),tostring(state.canLevelup)},':')
                     signatures[name]=signature
                     if lastWritten[name]~=signature or row.Text_Efefct:GetText():ToString()~=texts[spec.text] then
                         paint(row,owned[name]);needsLayout=true

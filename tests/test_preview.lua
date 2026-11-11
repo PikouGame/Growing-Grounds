@@ -187,3 +187,32 @@ assert(wideRead(45000,-100,91),'raised chest cap and range bonus are accepted by
 assert(wideRead(45000,-100,93)==nil and wideRead(45002,-100,91)==nil,'and the raised bounds still refuse one above')
 assert(probe(45000,-100,91)==nil,'the unraised decoder still refuses them')
 print('PASS: preview bounds follow Range.limits at each maximum and one above')
+
+-- Version 3 carries a separate Palbox page cap, preserving older formats.
+server=false;boxes={remote};cc.GetClass=function() return class end
+for pages=0,64 do
+    for _,chest in ipairs({0,18,42}) do
+        for _,enabled in ipairs({false,true}) do
+            cc.RelativeLocation={X=14000,Y=14500,Z=1000000+9+1001*(pages*128+chest*2+(enabled and 1 or 0))}
+            client.refresh()
+            local _,value=client.read(base,3500,9,4900)
+            assert(value and value.palboxCap==pages and value.chestCap==chest and value.rangeEnabled==enabled)
+            assert(cc.RelativeLocation.Z<2^24,'wire integer must stay exact in single precision')
+        end
+    end
+end
+for _,z in ipairs({1000000,1000000+9.5,1000000+9+1001*(65*128),1000000+9+1001*86}) do
+    cc.RelativeLocation.Z=z;client.refresh()
+    assert(client.read(base,3500,9,4900)==nil,'invalid new payload accepted: '..z)
+end
+cc.RelativeLocation={X=14000,Y=14500,Z=400000+9+1001*41};client.refresh()
+local _,oldPolicy=client.read(base,3500,9,4900)
+assert(oldPolicy and oldPolicy.palboxCap==nil,'an older server never grants the local default Palbox bonus')
+server=true;local newHost=box('newPublisher');boxes={newHost}
+E.runtime.bonuses=function() return {rangeEnabled=true,chestCap=18,palboxCap=32} end
+local pp=make(E);pp.refresh();pp.publish(newHost,base,145);pp.finish()
+cc.RelativeLocation=newHost.components[1].RelativeLocation
+server=false;boxes={remote};client.refresh()
+local _,policy=client.read(base,3500,9,4900)
+assert(policy and policy.palboxCap==32 and policy.chestCap==18)
+print('PASS: Palbox wire cap0..64, legacy absence, malformed payload rejection and publisher/client round-trip')

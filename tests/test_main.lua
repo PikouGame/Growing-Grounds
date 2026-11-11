@@ -2,7 +2,7 @@ local root=assert(arg[1],'pass root with trailing slash')
 local realDofile=dofile
 local function run()
     local loops,hooks,timers={},{},{}
-    local counters={runtime=0,ui=0,storage=0}
+    local counters={runtime=0,ui=0,storage=0,palbox=0}
     local config={resetToVanilla=false}
     local noop=function() end
     local function count(key) return function() counters[key]=counters[key]+1 end end
@@ -23,6 +23,7 @@ local function run()
             if name=='ui' then return {refresh=count('ui')} end
             if name=='preview' then return {} end
             if name=='world_settings' then return {refresh=noop,installHooks=noop} end
+            if name=='palbox' then return {refresh=count('palbox')} end
             if name=='storage' then return {refresh=count('storage'),changed=noop} end
             if name=='changes' then return {install=noop} end
             error('unexpected dependency '..path)
@@ -46,7 +47,7 @@ local function run()
     table.remove(timers[0],1)()
     hooks['/Script/Pal.PalBaseCampModel:OnRep_Level_InGuildProperty']()
     table.remove(timers[0],1)()
-    assert(counters.runtime==2 and counters.ui==2 and counters.storage==2,'an upgrade event refreshes runtime, ui and storage once each')
+    assert(counters.runtime==2 and counters.ui==2 and counters.storage==2 and counters.palbox==2,'an upgrade event refreshes runtime, ui and storage once each')
     dofile=realDofile
 end
 run()
