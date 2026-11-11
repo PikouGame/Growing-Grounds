@@ -14,4 +14,5 @@ wordmark and the Nexus header backdrop as published on 2026-11-10.
   Chest (24 + 6 slots) cropped to the chest panel and reduced, not retouched; the bonus row is outlined.
 
 The wordmark is drawn as vector polygons: no image generator made any lettering in these files.
-The earlier hero, wordmark and chest images in this folder belong to the pages before 0.1.7.
+The hero, raster wordmark and chest images of the pages before 0.1.7 left this folder with that release; the
+pinned addresses of those pages still serve them from the repository's history.
