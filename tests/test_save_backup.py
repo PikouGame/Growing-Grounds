@@ -121,7 +121,8 @@ class BackupTests(unittest.TestCase):
                 self.create(keep=1)
         self.assertEqual(list(self.dest.glob('*.zip')), [existing])
         self.assertFalse(list(self.dest.glob('*.partial')))
-        self.assertFalse((self.dest/'.gg-backup.lock').exists())
+        with backup.locked(self.dest):
+            pass  # A failed write must release the OS lock.
 
     def test_write_failure_preserves_previous_backup(self):
         existing = self.create(keep=1)
@@ -140,10 +141,8 @@ class BackupTests(unittest.TestCase):
 
     def test_lock_and_symbolic_links_refused(self):
         self.dest.mkdir()
-        (self.dest/'.gg-backup.lock').write_text('other operation')
-        with self.assertRaises(FileExistsError):
+        with backup.locked(self.dest), self.assertRaises(OSError):
             self.create()
-        (self.dest/'.gg-backup.lock').unlink()
         try:
             (self.world/'linked.sav').symlink_to(self.world/'Level.sav')
         except OSError:

@@ -106,13 +106,20 @@ def inventory(world, mod):
 @contextmanager
 def locked(folder):
     lock = folder/'.gg-backup.lock'
-    fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    try:
-        os.write(fd, str(os.getpid()).encode())
-        os.close(fd)
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+    with os.fdopen(fd, 'r+b') as stream:
+        if os.name == 'nt':
+            import msvcrt
+            if not os.fstat(stream.fileno()).st_size:
+                stream.write(b'\0'); stream.flush()
+            stream.seek(0)
+            msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # The OS releases the lock even after a killed worker; do not unlink
+        # this inode and risk another process locking a different file.
         yield
-    finally:
-        lock.unlink()
 
 
 def verify(archive):
