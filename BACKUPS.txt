@@ -39,7 +39,7 @@ PK requires automatic operation, with no backup storm after quick relaunches.
 The policy reads successful archive manifests across launches: a 30-minute
 cooldown, unchanged-save detection, three recent copies and one per previous
 day for seven days. One copy can serve both retention categories. The protected
-baseline is separate. A single archive directory shares a 2 GiB budget across
+baseline is separate. A single archive directory shares a 1 GiB budget across
 worlds and reserves 1 GiB of free disk space. These are configurable defaults.
 When space is tight, verified older history can be pruned, preserving every
 baseline and the latest verified backup of each world. If those copies plus

@@ -7,7 +7,7 @@ import zipfile
 import save_backup as archive
 
 DEFAULTS = {'interval_seconds': 1800, 'recent': 3, 'daily': 7,
-            'max_bytes': 2 * 1024**3, 'reserve_bytes': 1024**3}
+            'max_bytes': 1024**3, 'reserve_bytes': 1024**3}
 
 
 def scan(destination):
