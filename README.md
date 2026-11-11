@@ -81,8 +81,8 @@ PalSchema. Steam Workshop deployment of this mod remains unverified.
 ## What changes in the beta
 
 Not released yet. Three bonuses, an upgrade preview and the game's own languages.
-The Palbox bonus is a development candidate; native transfer/save/reload validation
-is still pending.
+The Palbox bonus has been checked in dedicated-server and solo tests through
+Proton/Wine. Native Windows validation of this beta is still pending.
 
 - **Palbox boxes grow with each base upgrade:** +1 box per upgrade, with a
   configurable bonus cap of 0–64 (32 by default). Reducing the cap keeps occupied
@@ -120,18 +120,25 @@ dedicated server with one client. Checked in game across the alpha versions: rad
 from server to client, the Base Upgrade rows, chest growth and shrinking with
 occupied slots kept across a restart, and the upgrade celebration.
 
+For the beta, the dedicated-server test checked Palbox growth, client slot
+replication, occupied boxes retained after lowering the cap, and empty-box
+shrinking and regrowth. An older solo world expanded to 50 boxes at base level
+19. Two Pals placed in box 50 remained in their slots after saving, restoring a
+verified archive and restarting the game. The English Base Upgrade panel's
+five rows were also checked in game.
+
 ### Known limits
 
 This is an alpha. These still need broader in-game verification:
 
-- Palbox expansion, replication, occupied-box protection and save/reload;
+- larger guilds with multiple simultaneous clients;
 - other Palbox capacity mods installed alongside;
 - saving World Settings and starting a new world;
 - placement rejection near another base;
 - Pal work and resource access throughout the expanded area;
 - the full reset and removal lifecycle;
 - other range mods installed alongside;
-- native Windows, long sessions and other hardware.
+- native Windows for this beta, long sessions and other hardware.
 
 The mod's texts follow the game's language, in the 17 languages Palworld
 ships. They were written with the game's own vocabulary but not reviewed by
