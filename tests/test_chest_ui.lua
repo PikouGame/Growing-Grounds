@@ -1,6 +1,6 @@
 local root=assert(arg[1])
 local make=dofile(root..'src/chest_ui.lua')
-local created,writes,logs,errors=0,0,{},{}
+local created,writes,logs,errors,capacityReads,visibilityWrites=0,0,{},{},0,0
 local failAttach=false
 local function copy(v)
     if type(v)~='table' then return v end
@@ -33,7 +33,7 @@ local function widget(name,class)
     w.AddChildToOverlay=w.AddChild;w.AddChildToVerticalBox=w.AddChild
     function w:SetFont(font) self.Font=copy(font) end
     function w:SetText(value) self.text=value;writes=writes+1 end
-    function w:SetVisibility(value) self.visibility=value end
+    function w:SetVisibility(value) self.visibility=value;visibilityWrites=visibilityWrites+1 end
     for _,field in ipairs({'Stretch','StretchDirection','ColorAndOpacity','ShadowColorAndOpacity','ShadowOffset'}) do
         w['Set'..field]=function(self,value) self[field]=copy(value) end
     end
@@ -51,8 +51,17 @@ local function chest(name,native,total)
     local screen=widget(name,'screen');screen.active=true
     function screen:IsActivated() return self.active end
     local view=widget(name..'.View','view');screen.WBP_IngameMenu_Chest=view
-    view.WidgetTree={};view.TargetContainer=container(1,total);view['Display Slot Num Default']=native
+    view.WidgetTree={};view.TargetContainer=container(1,total);view['Display Slot Num Default']=-1
     screen.TargetContainerId=view.TargetContainer:GetId()
+    local component=widget(name..'.Parameter','native');component.SlotNum=native
+    local actor=widget(name..'.Actor','actor')
+    function actor:K2_GetComponentsByClass()
+        capacityReads=capacityReads+1;return {{get=function() return component end}}
+    end
+    local model=widget(name..'.Model','model')
+    function model:GetActor() return actor end
+    local param=widget(name..'.Param','param');param.MapObjectConcreteModel=model
+    function screen:GetParam() return param end
     local overlay=widget(name..'.Overlay','/Script/UMG.Overlay')
     local grid=widget(name..'.Grid','grid');grid.isGrid=true
     overlay:AddChild(grid):SetPadding({Left=0,Top=-5,Right=0,Bottom=-20})
@@ -66,9 +75,16 @@ end
 local screens,tracked,scans={},nil,0
 local culture='en'
 local texts=dofile(root..'src/texts.lua')
+local guildSettings=widget('GameSettings','settings');guildSettings.GuildChestSlotNum=54
+local nativeClass=widget('ChestParameters','class')
+local utility={GetGameSetting=function() return guildSettings end}
 local E={valid=function(o) return o and o:IsValid() end,texts=function() return texts.get(culture) end,
     log=function(s) logs[#logs+1]=s end,guard=function(_,fn) local ok,err=pcall(fn);if not ok then errors[#errors+1]=err end;return ok end,
-    objects={find=function(s) return s end,all=function(name) assert(name=='WBP_ItemChest_C');scans=scans+1;return screens end,
+    objects={find=function(s)
+        if s=='/Script/Pal.PalMapObjectItemChestParameterComponent' then return nativeClass end
+        if s=='/Script/Pal.Default__PalUtility' then return utility end
+        return s
+    end,all=function(name) assert(name=='WBP_ItemChest_C');scans=scans+1;return screens end,
         tracked=function(name) assert(name=='WBP_ItemChest_C');return tracked end}}
 local C=make(E)
 C.check();assert(scans==0,'frequent observer cannot start discovery')
@@ -82,19 +98,26 @@ assert(stack.Slot.Padding.Top==-5 and stack.Slot.Padding.Bottom==-20 and grid.Sl
     'native overlay bounds preserved; grid fills remaining height')
 for _=1,100 do C.check() end
 assert(created==3 and writes==1 and scans==1,'stable open chest never repaints, rebuilds or globally scans')
+assert(capacityReads==1,'native actor parameters are read once per opened container')
 view.TargetContainer.total=39;C.check()
 assert(label.text=='24 + 15 slots','retained overflow uses actual slots, not a policy estimate')
 culture='fr';C.check();assert(label.text=='24 + 15 emplacements')
 screen.active=false;C.check();assert(fit.visibility==1)
+local hiddenWrites=visibilityWrites
+for _=1,100 do C.check() end
+assert(visibilityWrites==hiddenWrites,'closed chest makes no further visibility writes')
 screen.active=true;C.check();assert(fit.visibility==4 and created==3,'reopen reuses widgets')
 -- New target with a still-old container must not show stale counts.
 screen.TargetContainerId={ID={A=2,B=0,C=0,D=0}};C.check();assert(fit.visibility==1)
-view.TargetContainer=container(2,64);view['Display Slot Num Default']=54;C.check()
+view.TargetContainer=container(2,64);view.TargetContainer.bIsGuildChestContainer=true;C.check()
 assert(label.text=='54 + 10 emplacements' and fit.visibility==4,'Guild Chest uses its native size once')
-for _,value in ipairs({0,-1,1.5,math.huge,'54'}) do
-    view['Display Slot Num Default']=value;C.check();assert(fit.visibility==1)
+for i,value in ipairs({0,-1,1.5,math.huge,'54'}) do
+    guildSettings.GuildChestSlotNum=value
+    view.TargetContainer=container(10+i,64);view.TargetContainer.bIsGuildChestContainer=true
+    screen.TargetContainerId=view.TargetContainer:GetId()
+    C.check();assert(fit.visibility==1)
 end
-view['Display Slot Num Default']=54;view.TargetContainer.total=54;C.check();assert(fit.visibility==1,'no extra slots hides the annotation')
+guildSettings.GuildChestSlotNum=54;view.TargetContainer.total=54;C.check();assert(fit.visibility==1,'no extra slots hides the annotation')
 view.TargetContainer.total=53;C.check();assert(fit.visibility==1,'incoherent shrink is not a negative bonus')
 view.TargetContainer.total=64;C.check()
 local beforeDestroyed=writes
@@ -105,4 +128,7 @@ assert(#errors==1 and fgrid:GetParent()==fparent and fgrid.Slot.Padding.Top==-5,
     'attachment failure restores the original grid and slot')
 failAttach=false;C.refresh();assert(fgrid:GetParent().class=='/Script/UMG.VerticalBox','later attempt can recover')
 assert(view.TargetContainer.total==64,'presentation never changes capacity')
+local refined=chest('Refined',40,50)
+local native,bonus=C.values(refined)
+assert(native==40 and bonus==10,'native Refined Metal Chest regression: UI default -1, parameter40, actual50')
 print('PASS: native/extra counts, Guild Chest, late replication, overflow, reusable fitted layout, no idle writes/scans, cleanup and rollback')
