@@ -2,9 +2,10 @@
 
 Give your base room to grow—and enjoy the moment it does.
 
-Growing Grounds adds **4% of the original base radius per level**, starting at
-level 2, with a default bonus cap of **+100%** (double the original radius). The Base Upgrade screen shows your
-current and next bonus with metres beside each value: **36% 47.6m → 40% 49m**.
+Growing Grounds makes your base's radius grow with its level: **+100%** by
+default (double the original radius), arriving steadily from level 2 to the
+last base level. The Base Upgrade screen shows your current and next bonus with
+metres beside each value: **26% 44.1m → 29% 45.2m**.
 The numbers follow Palworld's own reward-row layout.
 
 Chests grow with your base: **20 bonus slots** by default, arriving steadily
@@ -23,19 +24,25 @@ is ready. There is no fixed countdown, no terrain reuse between animations, and
 no speculative scanning while you play. The outward wave lasts 2.4 seconds;
 the rising effect lifts 6 metres by default and gradually softens the terrain relief.
 
+## See the next boundary before you upgrade
+
+While Base Upgrade is open, a soft glow on the ground shows where the boundary
+will be after the upgrade: the same radius the range row prints. It fades when
+you close the screen.
+
 ## Your world's settings
 
-- **Growth per level:** 0–20% of the original radius; default 4%.
-- **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius.
+- **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.
 - **Bonus chest slots:** 20 by default, spread evenly over all base levels; adjustable from 0 to 40. Guild Chests share one bonus.
-- Local worlds have three Growing Grounds sliders at the bottom of custom World
+- Local worlds have two Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
   bases to reach the cap: 140 m between centres with the default 35 m base and
   +100% bonus cap. Stronger native restrictions remain in place.
 
-For a standard 35 m base, level 11 is 49 m (+40%). With default growth, level 26
-reaches the 70 m cap. Growth is additive, not compounded.
+For a standard 35 m base with the default cap, level 11 is 45.2 m (+29%),
+level 26 is 60.9 m (+74%) and the last level, 35, reaches 70 m. Each level's
+bonus is a whole percent of the original radius.
 
 ## Install or update
 
@@ -57,44 +64,34 @@ for this version's settings and server-supplied next-range preview.
 with the previous cap preserved. New configurations use `maxRangeBonusPercent=100`.
 Existing worlds keep their effective limit; saving World Settings converts the
 old key automatically. Choose a higher cap explicitly if you want more room.
+An old `growthPercentPerLevel` line is ignored, except `0`, which still
+switches the range bonus off.
 
 See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
-## What changed in 0.1.7-alpha
+## What changes in the beta
 
-A gentler pace, so later base levels still have something to give.
+Not released yet. One setting fewer, a bonus that lasts to the last level,
+and the game's own languages.
 
-- Range grows **4% per level** by default (was 5%). The +100% cap now arrives
-  at level 26 instead of level 21.
-- Bonus chest slots are **spread over all base levels** instead of +1 per
-  upgrade: with the default 20, that is 1 at level 2, 5 at level 10, 11 at
-  level 20 and all 20 at level 35. Base Upgrade shows the current and next
-  number even when an upgrade adds none.
-- With some range caps (for example +57%), bases stopped growing once one
-  base reached its cap. Fixed.
-- A chest whose enlargement failed is tried again at the next base level or
-  cap change, not only after a restart.
-- A world-settings file that cannot be read is now reported once in the log
-  and read again a few seconds later. Saving World Settings then waits for a
-  restart, so the file is never overwritten with defaults.
-- The bonus chest slider rounds to the nearest slot (18.9999 is saved as 19).
-- Clients do less background work: they no longer plan base radii they never
-  apply.
-- Removing the mod is tidier. With `resetToVanilla=true`, stacks sitting in
-  bonus slots are first moved into free native slots, the log names any chest
-  that still holds more stacks than its native size, and "reset complete"
-  tells you when the mod can be removed. Deleting the mod without a reset
-  still loses nothing: chests simply stay at their enlarged size.
-- **Existing worlds keep their own growth value.** Saved World Settings and a
-  kept `config.lua` are never rewritten; the new default only reaches worlds
-  that never saved one. To adopt it, set growth to 4: a level-11, 35 m base
-  then goes from 52.5 m to 49 m, so check buildings near the edge and keep a
-  backup.
-- **Existing chests follow the new pace right away:** a level-11 base goes
-  from 10 bonus slots to 6. Extra slots that hold items stay until you empty
-  them; nothing is deleted or moved.
+- **The range bonus is spread over all base levels**, like the chest slots.
+  The maximum you choose (+100% by default) is reached at the last base level,
+  35, and every level before it brings its share. The "growth per level"
+  setting is gone: one slider sets the whole curve.
+- **Existing bases follow the new curve right away, and most get smaller.**
+  With the default cap and a 35 m base, level 11 goes from 49 m to 45.2 m
+  (from 52.5 m if your world kept the older 5% growth); from level 2 to 34 the
+  bonus is lower than before, and only the last level gives the full +100%.
+  Check buildings near the edge and keep a backup before updating. A maximum
+  of +136% gives the previous 4% per level exactly; levels above 26 then keep
+  growing (82.6 m at level 35) and new Palboxes reserve more room.
+- **The next boundary shows on the ground** while Base Upgrade is open, at the
+  radius the range row prints. `nextBoundaryMarker=false` turns it off.
+- **The mod speaks the game's language**: rows, World Settings and tooltips in
+  the 17 languages Palworld ships.
+- A world that had switched range off with growth 0 stays off.
 
 ## Earlier versions
 
@@ -120,7 +117,9 @@ This is an alpha. These still need broader in-game verification:
 - other range mods installed alongside;
 - native Windows, long sessions and other hardware.
 
-The added reward and settings labels are English only. The celebration can
+The mod's texts follow the game's language, in the 17 languages Palworld
+ships. They were written with the game's own vocabulary but not reviewed by
+native speakers: corrections are welcome. The celebration can
 start late after closing the Palbox; the gameplay radius is already updated.
 
 On a client, while the server's preview is missing or out of date, Base Upgrade keeps
@@ -134,9 +133,9 @@ not receive extra growth; other nearby bases may reach a lower cap.
 
 ## Configuration
 
-Gameplay options: `growthPercentPerLevel`, `maxRangeBonusPercent`, `maxChestBonusSlots`, `resetToVanilla`.
+Gameplay options: `maxRangeBonusPercent`, `maxChestBonusSlots`, `resetToVanilla`.
 Visual options: `upgradeAnimation`, `upgradeWave`, `upgradeRibbon`,
-`upgradeEffectHeight` (centimetres).
+`upgradeEffectHeight` (centimetres), `nextBoundaryMarker`.
 
 There are no mod keyboard shortcuts or hot reload. An old `debug=true` setting
 is ignored. Animations start automatically after a qualifying base upgrade.
@@ -164,6 +163,8 @@ lua tests/test_preview.lua ./
 lua tests/test_ui.lua ./
 lua tests/test_wave.lua ./
 lua tests/test_motion.lua ./
+lua tests/test_marker.lua ./
+lua tests/test_texts.lua ./
 python3 tools/release.py
 ```
 

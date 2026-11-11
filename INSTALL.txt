@@ -18,17 +18,21 @@ limits. Buildings outside the resulting boundary may lose coverage. Keep a backu
 0.1.3 does not change those gameplay rules. It removes development keyboard
 shortcuts entirely; an old debug=true option is ignored. No test hotkey is needed.
 
-Updating from 0.1.6 or older: the default growth is now 4% per level (was 5%).
-Saved World Settings and a preserved config.lua keep their own value. Adopting
-4% shrinks grown bases a little (level 11: 52.5m -> 49m with a 35m base);
-buildings beyond the new boundary may lose coverage. Keep a backup.
-Bonus chest slots are now spread over all base levels, so existing chests follow
-the new, slower schedule at once (level 11: 10 bonus slots become 6). Extra
-slots that hold items stay until emptied; nothing is deleted or moved.
+Updating from 0.1.7 or older: the range bonus is now spread over all base
+levels and the growth-per-level setting is gone. Existing bases follow the new
+curve at once and most get smaller: with the default cap and a 35m base, level
+11 goes from 49m to 45.2m (from 52.5m if the world kept 5% growth). Buildings
+beyond the new boundary may lose coverage. Keep a backup. A maximum of +136%
+gives the former 4% per level exactly; levels above 26 then keep growing.
+An old growthPercentPerLevel line is ignored, except 0, which still switches
+the range bonus off.
+Updating from 0.1.6 or older: bonus chest slots are spread over all base levels,
+so existing chests follow that schedule at once (level 11: 10 bonus slots become
+6). Extra slots that hold items stay until emptied; nothing is deleted or moved.
 
 Configuration
-- growthPercentPerLevel=4: adds 0..20% of the ORIGINAL radius after level 1.
-- maxRangeBonusPercent=100: radius BONUS. +100% doubles the original radius.
+- maxRangeBonusPercent=100: radius BONUS at the last base level, spread evenly
+  over all levels before it. +100% doubles the original radius.
   The World Settings slider offers 0..+300%; +300% means four times the radius.
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
   +100. Do not add the new key beside the old one unless you intend to override it.
@@ -42,15 +46,18 @@ Configuration
 - upgradeRibbon=true: enables glow effects; false disables both wave and rise.
 - upgradeWave=true: enables the Palbox-to-boundary ground wave.
 - upgradeEffectHeight=600: rise height in centimetres (clamped to 100..2000).
+- nextBoundaryMarker=true: while Base Upgrade is open, a soft glow on the ground
+  shows where the boundary will be after the upgrade.
 
-Local/co-op hosts can change growth, range bonus cap and chest bonus cap at the bottom of custom World
+Local/co-op hosts can change the range bonus cap and the chest bonus cap at the bottom of custom World
 Settings. Values save per world after native confirmation, in world-settings.ini.
 Dedicated servers use config.lua defaults unless that host has a per-world
 sidecar override. Server settings always control gameplay and the next-value UI.
 
-With the standard 35m radius: level 8 = 44.8m, level 11 = 49m, level 26 = 70m.
-Growth is additive. The UI shows the bonus above 100%, with metres rounded to a
-tenth. Level 10 displays 36% 47.6m -> 40% 49m. At maximum game level, the next
+With the standard 35m radius and the default cap: level 8 = 42.4m, level 11 =
+45.2m, level 26 = 60.9m, level 35 = 70m. Each level's bonus is a whole percent
+of the original radius. The UI shows the bonus above 100%, with metres rounded to a
+tenth. Level 10 displays 26% 44.1m -> 29% 45.2m. At maximum game level, the next
 value is hidden. On a client, while the server's preview
 is missing or out of date, Base Upgrade keeps its last complete Growing Grounds values,
 or shows no Growing Grounds row on a first open.
