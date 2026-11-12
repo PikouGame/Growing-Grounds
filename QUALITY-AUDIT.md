@@ -125,6 +125,16 @@ Les deux ZIP réels sont **identiques octet par octet avant/après refactorisati
 Les règles client/serveur Workshop sont conservées ; son installation reste non vérifiée.
 Les archives restent des candidats privés nommés avec la version existante.
 
+### P2 — sous-dossiers inconnus exclus du budget d'archives
+
+`tools/backup_policy.py` comptait uniquement les fichiers immédiatement sous le
+répertoire d'archives. Un sous-dossier contenant déjà le budget entier permettait
+encore une nouvelle archive. Reproduit avec un budget réduit dans
+`.local/quality-audit/nested-budget-before.log` (`created` au lieu de `storage-limit`).
+Le décompte inclut maintenant toute l'arborescence, fichiers inconnus et partiels
+compris, avec points d'annulation. Il ne suit pas les liens, y compris les cycles,
+et ne supprime rien d'inconnu. Tests Python réussis après correction.
+
 ## Non vérifié
 
 Validation native en jeu, persistance réelle des Pals, Windows physique,

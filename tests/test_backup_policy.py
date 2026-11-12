@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import zipfile
 
 TOOLS = Path(__file__).parents[1]/'tools'
@@ -123,6 +124,39 @@ class PolicyTests(unittest.TestCase):
         self.assertTrue(all(p.exists() for p in rolling[:100]))
         self.assertFalse(rolling[100].exists())
         self.assertEqual(result['removed'], [rolling[100].name])
+
+    def test_unknown_nested_files_also_count_toward_directory_budget(self):
+        nested = self.dest/'unrecognized/history'
+        nested.mkdir(parents=True)
+        unknown = nested/'personal.partial'
+        original = b'x'*100000
+        unknown.write_bytes(original)
+        result = self.once(policy={'max_bytes': 100000})
+        self.assertEqual(result['status'], 'storage-limit')
+        self.assertFalse(result['archive_created'])
+        self.assertEqual(unknown.read_bytes(), original)
+        self.assertFalse(list(self.dest.glob('gg-*.zip')))
+
+    def test_budget_walk_does_not_follow_directory_links(self):
+        self.dest.mkdir()
+        (self.root/'outside').mkdir()
+        (self.root/'outside/large.bin').write_bytes(b'x'*100000)
+        try:
+            (self.dest/'external').symlink_to(self.root/'outside', target_is_directory=True)
+            (self.dest/'cycle').symlink_to(self.dest, target_is_directory=True)
+        except OSError:
+            self.skipTest('Host does not allow symlinks')
+        (self.dest/'known.partial').write_bytes(b'partial')
+        self.assertGreaterEqual(policy.directory_bytes(self.dest), len(b'partial'))
+        self.assertLess(policy.directory_bytes(self.dest), 100000)
+
+    def test_budget_walk_does_not_follow_windows_reparse_points(self):
+        entry = SimpleNamespace(path='outside', is_dir=lambda **_: True,
+                                stat=lambda **_: SimpleNamespace(st_size=17, st_file_attributes=0x400))
+        with patch.object(policy.os, 'scandir') as scan:
+            scan.return_value.__enter__.return_value = [entry]
+            self.assertEqual(policy.directory_bytes(self.dest), 17)
+            scan.assert_called_once_with(self.dest)
 
 
 if __name__ == '__main__':

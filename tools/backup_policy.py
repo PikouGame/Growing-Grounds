@@ -1,6 +1,7 @@
 """Persistent bounded retention shared by the Windows and Linux companions."""
 from datetime import datetime, timezone
 from pathlib import Path
+import os
 import shutil
 import zipfile
 
@@ -66,6 +67,21 @@ def source_files(world, mod):
     return result
 
 
+def directory_bytes(destination):
+    """Count unknown files and partials too, without following directory links."""
+    total = 0
+    with os.scandir(destination) as entries:
+        for entry in entries:
+            checkpoint()
+            info = entry.stat(follow_symlinks=False)
+            # Windows junctions are reparse points, not ordinary symlinks.
+            if not getattr(info, 'st_file_attributes', 0) & 0x400 and entry.is_dir(follow_symlinks=False):
+                total += directory_bytes(entry.path)
+            else:
+                total += info.st_size
+    return total
+
+
 def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
                    policy=None, now=None):
     """Evaluate one eligible, consistent checkpoint. No timer or game hook here.
@@ -106,7 +122,7 @@ def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
             return {'status': 'unchanged', 'archive_created': False}
         # Conservative upper bound for DEFLATE overhead, ZIP headers and manifest.
         estimate = sum(v['size'] for v in current.values()) * 101 // 100 + len(current)*4096 + 65536
-        used = sum(p.stat().st_size for p in destination.iterdir() if p.is_file())
+        used = directory_bytes(destination)
         free = shutil.disk_usage(destination).free
         safe = protected(records)
         eligible = sorted((r for r in records if r['path'] not in safe), key=lambda r: r['time'])
