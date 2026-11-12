@@ -4,7 +4,7 @@
 local Range = {}
 
 -- The one source of the setting maxima: clamps, sliders and the preview decoder derive from it.
-Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=42, maxPalboxBoxes=96}
+Range.limits = {growthPercentPerLevel=20,maxRangeBonusPercent=300, maxChestBonusSlots=42, maxPalboxBoxes=96}
 Range.chestSlotStep = 6
 
 local function finite(value)
@@ -17,11 +17,8 @@ local function validLevel(level)
         "base level must be a positive integer")
 end
 
--- Public settings use bonuses: +100% doubles the original radius.
--- Legacy totals retain the old 100..200 clamp before conversion, so updating
--- cannot enlarge a world whose old config exceeded the former hard ceiling.
--- A legacy growth per level of 0 was the other way to switch range off: it
--- still does. Any other legacy growth value is ignored.
+-- Independent growth per upgrade and maximum radius bonus. Legacy total caps
+-- retain the old clamp; growth 0 disables range without erasing the chosen cap.
 function Range.settings(settings)
     settings = settings or {}
     local cap = settings.maxRangeBonusPercent
@@ -29,7 +26,9 @@ function Range.settings(settings)
         cap = math.max(100, math.min(200, settings.maxRangePercent)) - 100
     end
     if not finite(cap) then cap = 100 end
-    if settings.growthPercentPerLevel == 0 then cap = 0 end
+    local growth = settings.growthPercentPerLevel
+    if not finite(growth) then growth = 4 end
+    growth = math.max(0,math.min(Range.limits.growthPercentPerLevel,growth))
     local slots = settings.maxChestBonusSlots
     if not finite(slots) then slots = 18 end
     local limits = Range.limits
@@ -45,7 +44,7 @@ function Range.settings(settings)
     local start = settings.startingPalboxBoxes
     if not finite(start) then start = 32 end
     start = math.floor(math.max(1, math.min(maximum, start)) + 0.5)
-    return {maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
+    return {growthPercentPerLevel=growth, maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
         maxChestBonusSlots=slots, startingPalboxBoxes=start, maxPalboxBoxes=maximum}
 end
 
@@ -64,7 +63,10 @@ local function spread(cap, level, maxLevel)
 end
 
 function Range.percent(level, settings, maxLevel)
-    return 100 + spread(Range.settings(settings).maxRangeBonusPercent, level, maxLevel)
+    validLevel(level)
+    local policy=Range.settings(settings)
+    local bonus=math.min(policy.maxRangeBonusPercent,policy.growthPercentPerLevel*(level-1))
+    return 100 + math.min(policy.maxRangeBonusPercent,math.floor(bonus+0.5))
 end
 
 -- A replicated cap is already server-authored. Do not round a legacy server's

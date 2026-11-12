@@ -8,6 +8,7 @@ return function(E)
     local screens, owned, sliders, hooks = {}, {}, {}, {}
     local fields = {
         -- title and tip are keys of the texts, read in the game's language at each paint.
+        {key='growthPercentPerLevel', title='rangeGrowthTitle', tip='rangeGrowthTip', min=0, max=E.range.limits.growthPercentPerLevel, step=1},
         {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent, step=1},
         {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots, step=E.range.chestSlotStep},
         {key='startingPalboxBoxes', title='palboxStartTitle', tip='palboxStartTip', min=1, max=E.range.limits.maxPalboxBoxes, step=1},
@@ -22,7 +23,7 @@ return function(E)
         row.Text_OptionTitle:SetText(FText(texts[spec.title]))
         row:SetToolTipText(FText(texts[spec.tip]))
         if value~=nil then
-            local display=value==0 and texts.off or (spec.key=='maxRangeBonusPercent' and string.format('+%g%%',value) or tostring(value))
+            local display=value==0 and texts.off or ((spec.key=='maxRangeBonusPercent' or spec.key=='growthPercentPerLevel') and string.format('+%g%%',value) or tostring(value))
             row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value:SetText(FText(display))
         end
     end
@@ -32,6 +33,49 @@ return function(E)
             local child = panel:GetChildAt(i)
             if E.valid(child) and child:GetFullName()==path then return child end
         end
+    end
+    local function positionGroup(menu,state,panel)
+        if state.positioned then return end
+        local anchor=E.valid(menu.WorldSettings_MaxBuildingLimitNum) and menu.WorldSettings_MaxBuildingLimitNum
+            or menu.WorldSettings_BaseCampWorkerNum
+        local anchorName=anchor:GetFullName()
+        local own,group,tail={},{},{}
+        for _,spec in ipairs(fields) do
+            local name=state.rows[spec.key]
+            own[name]=true;group[#group+1]=assert(findChild(panel,name),'Missing mod setting row')
+        end
+        local anchorIndex
+        for i=0,panel:GetChildrenCount()-1 do
+            if panel:GetChildAt(i):GetFullName()==anchorName then anchorIndex=i;break end
+        end
+        if not anchorIndex then return end
+        -- Keep the game's caution text attached to its own setting.
+        while anchorIndex+1<panel:GetChildrenCount() and
+                panel:GetChildAt(anchorIndex+1):GetFullName():find('Overlay_Caution_',1,true) do
+            anchorIndex=anchorIndex+1
+        end
+        local already=true
+        for i,row in ipairs(group) do
+            local child=panel:GetChildAt(anchorIndex+i)
+            if not E.valid(child) or child:GetFullName()~=row:GetFullName() then already=false;break end
+        end
+        if already then state.positioned=true;return end
+        for i=anchorIndex+1,panel:GetChildrenCount()-1 do
+            local child=panel:GetChildAt(i)
+            if not own[child:GetFullName()] then
+                local slot=child.Slot;local pad=slot.Padding
+                tail[#tail+1]={child=child,padding={Left=pad.Left,Top=pad.Top,Right=pad.Right,Bottom=pad.Bottom},
+                    horizontal=slot.HorizontalAlignment,vertical=slot.VerticalAlignment}
+            end
+        end
+        for _,row in ipairs(group) do row:RemoveFromParent() end
+        for _,entry in ipairs(tail) do entry.child:RemoveFromParent() end
+        for _,row in ipairs(group) do panel:AddChild(row):SetPadding({Left=8,Top=4,Right=5,Bottom=0}) end
+        for _,entry in ipairs(tail) do
+            local slot=panel:AddChild(entry.child)
+            slot:SetPadding(entry.padding);slot:SetHorizontalAlignment(entry.horizontal);slot:SetVerticalAlignment(entry.vertical)
+        end
+        state.positioned=true
     end
     function W.attach(menu, state)
         local panel, example = menu.ScrollBox_DifficultySetting, menu.WorldSettings_BaseCampWorkerNum
@@ -59,6 +103,7 @@ return function(E)
             row:SetupIntValue(state.draft[spec.key],spec.min,spec.max)
             paint(row,spec,state.draft[spec.key])
         end
+        positionGroup(menu,state,panel)
         state.initializing = false
     end
     function W.setup(menu, world, isNew)
@@ -73,7 +118,7 @@ return function(E)
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
-        E.log('World Settings: range, chest and Palbox start/total rows ready')
+        E.log('World Settings: range growth/cap, chest and Palbox start/total rows ready')
     end
     function W.change(row, value)
         local entry = owned[row:GetFullName()]

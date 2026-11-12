@@ -2,11 +2,10 @@
 
 Give your base room to grow—and enjoy the moment it does.
 
-Growing Grounds makes your base's radius grow with its level: **+100%** by
-default (double the original radius), arriving steadily from level 2 to the
-last base level. The Base Upgrade screen shows your current and next bonus with
-metres beside each value: **26% 44.1m → 29% 45.2m**.
-The numbers follow Palworld's own reward-row layout.
+Growing Grounds makes your base's radius grow with its level. Choose both the
+**gain per upgrade** and the **maximum bonus**, independently. Defaults:
+**+4% per upgrade, capped at +100%** (double radius). The Base Upgrade screen
+shows whole-percent rewards with metres: **36% 47.6m → 40% 49m**.
 
 Chests grow with your base: **18 bonus slots** by default, arriving steadily
 from your first upgrade to the final base level. Guild Chests receive the bonus
@@ -18,7 +17,8 @@ steadily across all base levels. You can instead choose **1 → 16**, or set bot
 values equal for a fixed capacity. Each player follows their guild level once;
 extra bases do not multiply storage. The Global Palbox is separate.
 
-This starting/total-cap feature is an **unreleased development change**. The
+The restored independent range controls and starting/total-cap Palbox feature
+are **unreleased development changes**. The
 published 0.2.0-beta still uses the earlier extra-box cap. New native-game
 validation is pending; automated checks do not establish live save compatibility.
 
@@ -49,15 +49,16 @@ Palworld backups stay enabled. See BACKUPS.txt for retention, status and restore
 
 ## Your world's settings
 
-- **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.
+- **Range bonus per upgrade:** 0 to 20%; default 4%. 0 disables range growth without erasing the maximum.
+- **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius. This is a ceiling; a low gain may not reach it by level 35.
 - **Bonus chest slots:** 18 by default, spread evenly over all base levels; adjustable from 0 to 42 in steps of six. Guild Chests share one bonus.
 - **Starting Palbox boxes:** 1–96; default 32. This is the total at base level 1.
 - **Maximum total Palbox boxes:** 1–96; default 64, including the starting boxes.
   Raising the start above the maximum raises the maximum; lowering the maximum
   below the start lowers the start. Existing occupied, locked or open boxes remain
   until cleared/closed, even if they exceed the chosen capacity.
-- Local worlds have four Growing Grounds sliders at the bottom of custom World
-  Settings. Dedicated-server owners configure the same values in `config.lua`.
+- Local worlds have five Growing Grounds sliders beside the native base/building
+  controls in custom World Settings. Dedicated-server owners configure the same values in `config.lua`.
 - Old `maxPalboxBonusPages` settings migrate to a starting count of 32 and a total
   cap of 32 + the old bonus. The new spread replaces the old +1-per-upgrade rule.
   Explicit `maxPalboxBoxes` takes precedence. Update both server and clients.
@@ -65,8 +66,8 @@ Palworld backups stay enabled. See BACKUPS.txt for retention, status and restore
   bases to reach the cap: 140 m between centres with the default 35 m base and
   +100% bonus cap. Stronger native restrictions remain in place.
 
-For a standard 35 m base with the default cap, level 11 is 45.2 m (+29%),
-level 26 is 60.9 m (+74%) and the last level, 35, reaches 70 m. Each level's
+For a standard 35 m base with the defaults, level 11 is 49 m (+40%) and
+level 26 reaches the cap of 70 m (+100%), retained through level 35. Each level's
 bonus is a whole percent of the original radius.
 
 ## Install or update
@@ -179,7 +180,7 @@ not receive extra growth; other nearby bases may reach a lower cap.
 
 ## Configuration
 
-Gameplay options: `maxRangeBonusPercent`, `maxChestBonusSlots`,
+Gameplay options: `growthPercentPerLevel`, `maxRangeBonusPercent`, `maxChestBonusSlots`,
 `startingPalboxBoxes`, `maxPalboxBoxes`, `resetToVanilla`.
 Visual options: `upgradeAnimation`, `upgradeWave`, `upgradeRibbon`,
 `upgradeEffectHeight` (centimetres).

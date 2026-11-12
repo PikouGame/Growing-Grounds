@@ -1,7 +1,8 @@
-Unreleased — configurable total Palbox capacity
+Unreleased — independent range controls and total Palbox capacity
 
 - Choose the starting number of Palbox boxes (minimum 1) and the TOTAL cap. Defaults: 32 → 64. Whole boxes are spread across all base levels, like chest slots.
-- Four World Settings controls; the Palbox reward row now shows total boxes. Occupied, locked and open boxes are retained when reducing capacity. Global Palbox unchanged.
+- Restore independent radius gain per upgrade (default4%,0..20) and maximum bonus (default100%,0..300). No imposed34/35-point cap steps. Either zero disables range growth while preserving the other choice.
+- Five World Settings controls beside native base/building settings; the Palbox reward row now shows total boxes. Occupied, locked and open boxes are retained when reducing capacity. Global Palbox unchanged.
 - Older bonus caps migrate to 32 + the old cap. Install the matching version on server and clients. Native validation of this change is pending.
 
 Share how it plays, ask questions or report issues at https://github.com/PikouGame/Growing-Grounds/issues so we can investigate.

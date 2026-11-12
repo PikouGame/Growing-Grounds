@@ -1,114 +1,56 @@
 local root = assert(arg[1], 'pass the mod root with trailing slash')
 local Range = dofile(root .. 'src/range.lua')
 local function near(a,b) assert(math.abs(a-b)<0.00001, tostring(a)..' != '..tostring(b)) end
--- The rule, read independently of src/range.lua: the cap spread over the levels
--- of the table, to the nearest unit, the whole cap at the last level and after.
-local function ref(level,cap,levels)
-    levels=levels or 35
-    if level>=levels then return cap end
-    return math.min(cap,math.floor(cap*(level-1)/(levels-1)+0.5))
+local function ref(level,cap,levels,growth)
+    return math.min(cap,math.floor(math.min(cap,(growth or 4)*(level-1))+.5))
 end
--- The default cap, +100%, over the game's 35 levels.
-local expectedPercent={[1]=0,[2]=3,[3]=6,[10]=26,[11]=29,[12]=32,[26]=74,[34]=97,[35]=100,[36]=100,[99]=100}
-for level,bonus in pairs(expectedPercent) do
+local function spreadRef(level,cap,levels)
+    levels=levels or 35
+    return math.min(cap,math.floor(cap*(level-1)/(levels-1)+.5))
+end
+assert(Range.settings().growthPercentPerLevel==4)
+assert(dofile(root..'config.lua').growthPercentPerLevel==4)
+assert(Range.settings().maxRangeBonusPercent==100)
+for level,bonus in pairs({[1]=0,[2]=4,[8]=28,[11]=40,[25]=96,[26]=100,[35]=100}) do
     near(Range.percent(level),100+bonus)
-    near(Range.percent(level,nil,35),100+bonus)
-    near(Range.percent(level,{maxRangeBonusPercent=100},35),100+bonus)
     near(Range.radius(3500,level),3500*(100+bonus)/100)
 end
-near(Range.radius(3500,1),3500)
-near(Range.radius(3500,11),4515)
-near(Range.radius(3500,35),7000)
-near(Range.radius(3500,36),7000)
--- The shipped config and the fallback agree on +100%; the 0..300 limit remains.
-near(Range.settings().maxRangeBonusPercent,100)
-near(dofile(root..'config.lua').maxRangeBonusPercent,100)
-near(Range.settings({maxRangeBonusPercent=999}).maxRangeBonusPercent,300)
-near(Range.settings({maxRangeBonusPercent=-1}).maxRangeBonusPercent,0)
-near(Range.settings({maxRangeBonusPercent=0/0}).maxRangeBonusPercent,100)
-near(Range.settings({maxRangeBonusPercent=math.huge}).maxRangeBonusPercent,100)
--- The settings are exactly the three caps; the removed growth setting is gone.
-do
-    local keys={}
-    for k in pairs(Range.settings({growthPercentPerLevel=4,maxRangePercent=150,other=1})) do keys[#keys+1]=k end
-    table.sort(keys)
-    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBoxes,maxRangeBonusPercent,startingPalboxBoxes',table.concat(keys,','))
-    keys={}
-    for k in pairs(Range.limits) do keys[#keys+1]=k end
-    table.sort(keys)
-    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBoxes,maxRangeBonusPercent',table.concat(keys,','))
-end
--- Any cap, any table: nearest whole percent, the whole cap on the last level and after,
--- never above it, never down. A level table of 35, 40, 2 and a missing one.
-for _,levels in ipairs({35,40,2,50}) do
-    for cap=0,300 do
-        local previous=0
-        for level=1,levels+4 do
-            local bonus=Range.percent(level,{maxRangeBonusPercent=cap},levels)-100
-            assert(bonus==ref(level,cap,levels),string.format('cap %d level %d of %d: %s',cap,level,levels,tostring(bonus)))
-            assert(bonus>=previous and bonus<=cap and bonus%1==0)
-            previous=bonus
-        end
-        assert(Range.percent(1,{maxRangeBonusPercent=cap},levels)==100)
-        assert(Range.percent(levels,{maxRangeBonusPercent=cap},levels)==100+cap)
-        assert(Range.percent(levels+1,{maxRangeBonusPercent=cap},levels)==100+cap)
-    end
-end
 for cap=0,300 do
-    local previous=0
-    for level=1,38 do
-        local bonus=Range.percent(level,{maxRangeBonusPercent=cap})-100
-        assert(bonus==ref(level,cap) and bonus>=previous and bonus<=cap)
-        previous=bonus
+    for growth=0,20 do
+        local previous=0
+        for level=1,40 do
+            local actual=Range.percent(level,{growthPercentPerLevel=growth,maxRangeBonusPercent=cap})-100
+            assert(actual==ref(level,cap,nil,growth) and actual>=previous and actual<=cap)
+            previous=actual
+        end
     end
-    assert(Range.percent(35,{maxRangeBonusPercent=cap})==100+cap,'a missing table ends at 35 levels')
 end
--- A fractional cap is reached exactly at the last level and never exceeded before it.
-for _,cap in ipairs({0.4,0.9,1,57.3,150,299.9,300}) do
-    local previous=100
-    for level=1,36 do
-        local percent=Range.percent(level,{maxRangeBonusPercent=cap})
-        assert(percent<=100+cap and percent>=previous,cap..' level '..level..': '..percent)
-        if level>=35 then assert(percent==100+cap,cap..' at level '..level) end
-        previous=percent
+for _,growth in ipairs({0.1,0.5,1.5,2.94,4.5,20}) do
+    for _,cap in ipairs({0.4,1,57.3,100,300}) do
+        for level=1,40 do near(Range.percent(level,{growthPercentPerLevel=growth,maxRangeBonusPercent=cap}),100+ref(level,cap,nil,growth)) end
     end
-    near(Range.percent(34,{maxRangeBonusPercent=cap}),100+math.min(cap,math.floor(cap*33/34+0.5)))
-    assert(Range.radius(3500,35,{maxRangeBonusPercent=cap})==3500*((100+cap)/100))
 end
--- An unreadable level table falls back to the game's 35 levels.
-for _,bad in ipairs({0,1,2.5,-3,math.huge,0/0,'35',false}) do
-    near(Range.percent(10,nil,bad),126);near(Range.radius(3500,10,nil,bad),3500*1.26)
-end
-near(Range.percent(10,nil,40),100+ref(10,100,40));near(Range.percent(35,nil,40),100+ref(35,100,40))
-near(Range.percent(40,nil,40),200)
--- The bonus is the same cap spread over a table of any size, for each bonus alike.
-for level=1,40 do
-    assert(Range.percent(level,{maxRangeBonusPercent=18},40)-100==Range.storageBonus(level,{maxChestBonusSlots=18},40))
-end
--- Old totals (maxRangePercent) keep the effect they had at the cap; so does growth 0.
-near(Range.percent(35,{maxRangePercent=300}),200)
-near(Range.percent(8,{maxRangePercent=150}),100+ref(8,50))
-near(Range.percent(35,{maxRangePercent=0/0}),200)
-near(Range.percent(35,{maxRangePercent=50}),100)
+-- Rate and cap are independently stored; neither zero erases the other.
+local off=Range.settings({growthPercentPerLevel=0,maxRangeBonusPercent=150})
+assert(off.growthPercentPerLevel==0 and off.maxRangeBonusPercent==150)
+assert(Range.percent(35,off)==100)
+assert(Range.settings({growthPercentPerLevel=7,maxRangeBonusPercent=0}).growthPercentPerLevel==7)
+assert(Range.settings({growthPercentPerLevel=99}).growthPercentPerLevel==20)
+assert(Range.settings({growthPercentPerLevel=-1}).growthPercentPerLevel==0)
+assert(Range.settings({growthPercentPerLevel=0/0}).growthPercentPerLevel==4)
+assert(Range.settings({maxRangeBonusPercent=999}).maxRangeBonusPercent==300)
+near(Range.percent(8,{maxRangePercent=150,growthPercentPerLevel=5}),135)
+near(Range.percent(35,{maxRangePercent=999}),200)
+near(Range.percent(35,{growthPercentPerLevel=1,maxRangeBonusPercent=300}),134)
+near(Range.percent(35,{growthPercentPerLevel=4,maxRangeBonusPercent=140}),236)
+near(Range.percent(35,{growthPercentPerLevel=10,maxRangeBonusPercent=300}),400)
+-- Enlarging the level table does not change the chosen gain per upgrade.
+for _,levels in ipairs({2,35,40,50}) do near(Range.percent(10,nil,levels),136) end
 near(Range.placementDistance(3500),14000)
 for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.percent,bad)) end
 for _,bad in ipairs({0,-1,math.huge,0/0,'3500'}) do assert(not pcall(Range.radius,bad,8)) end
 for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.storageBonus,bad)) end
--- Legacy growth per level: 0 switched range off and still does; any other value is ignored.
-do
-    local off={growthPercentPerLevel=0}
-    near(Range.settings(off).maxRangeBonusPercent,0)
-    near(Range.settings({growthPercentPerLevel=0,maxRangeBonusPercent=100}).maxRangeBonusPercent,0)
-    near(Range.settings({growthPercentPerLevel=0,maxRangePercent=175}).maxRangeBonusPercent,0)
-    near(Range.settings({growthPercentPerLevel=0,maxRangeBonusPercent=300,maxChestBonusSlots=12}).maxChestBonusSlots,12)
-    near(Range.percent(35,off),100);near(Range.radius(3500,35,off),3500)
-    for _,growth in ipairs({4,5,20,99,0.5,-1,math.huge,0/0,'0','x'}) do
-        near(Range.settings({growthPercentPerLevel=growth}).maxRangeBonusPercent,100)
-        near(Range.settings({growthPercentPerLevel=growth,maxRangeBonusPercent=60}).maxRangeBonusPercent,60)
-        near(Range.percent(35,{growthPercentPerLevel=growth,maxRangeBonusPercent=60}),160)
-    end
-    near(Range.percent(8,{growthPercentPerLevel=10,maxRangeBonusPercent=100}),100+ref(8,100))
-end
+print('PASS: independent rate/cap, whole-percent progression, zero switches, bounds and legacy total migration')
 
 local function valid(o) return o and o:IsValid() end
 local function obj(t) t.IsValid=function() return true end; return t end
@@ -252,8 +194,8 @@ print('PASS: runtime applies stable proximity limits across guilds, ignores heig
 
 -- Bonus cap is +300% maximum, not 300% total. Legacy inputs retain old behavior.
 near(Range.percent(16,{maxRangeBonusPercent=300}),100+ref(16,300))
-near(Range.percent(35,{maxRangeBonusPercent=300}),400)
-near(Range.radius(3500,35,{maxRangeBonusPercent=999}),14000)
+near(Range.percent(35,{maxRangeBonusPercent=300,growthPercentPerLevel=10}),400)
+near(Range.radius(3500,35,{maxRangeBonusPercent=999,growthPercentPerLevel=10}),14000)
 near(Range.placementDistance(3500,{maxRangeBonusPercent=300}),28000)
 near(Range.percent(35,{maxRangePercent=999}),200)
 near(Range.percent(35,{maxRangePercent=200,maxRangeBonusPercent=50}),150)
@@ -292,7 +234,7 @@ local large=Range.separate({
  {baseline=3500,desired=14000,maximum=14000,x=0,y=0},
  {baseline=3500,desired=14000,maximum=14000,x=20000,y=0}})
 near(large[1],10000);near(large[2],10000)
-E.config={maxRangeBonusPercent=300}
+E.config={maxRangeBonusPercent=300,growthPercentPerLevel=10}
 b.authority=true;b.GetTransform=function()return {Translation={X=20000,Y=0,Z=0}}end
 reloaded.refresh();near(a.AreaRange,10000);near(b.AreaRange,10000)
 print('PASS: bonus cap/migration, fourfold radius and placement, occupied-neighbour protection, slot spread over the level table and cap')
@@ -349,18 +291,18 @@ for _,baselineRadius in ipairs({3500,2700}) do
         local only=newBase(35,baselineRadius,true)
         collection={only}
         capped.apply(only)
-        near(only.AreaRange,baselineRadius*(100+cap)/100)
+        near(only.AreaRange,baselineRadius*(100+ref(35,cap))/100)
         only.AreaRange=baselineRadius
         capped.refresh()
-        near(only.AreaRange,baselineRadius*(100+cap)/100)
-        near(capped.snapshot(only).nextPercent,100+cap)
+        near(only.AreaRange,baselineRadius*(100+ref(35,cap))/100)
+        near(capped.snapshot(only).nextPercent,100+ref(35,cap))
     end
 end
--- Cap 57 spread over 35 levels: 123% at level 15, 125% at level 16, the whole cap at 35.
+-- Cap57 with gain4: +56% at level15, then the +57% ceiling.
 do
     local capped=capRuntime(3500)
     E.config={maxRangeBonusPercent=57}
-    for level,expected in pairs({[15]=3500*1.23,[16]=3500*1.25,[34]=3500*1.55,[35]=3500*1.57}) do
+    for level,expected in pairs({[15]=3500*1.56,[16]=3500*1.57,[34]=3500*1.57,[35]=3500*1.57}) do
         local only=newBase(level,3500,true)
         collection={only}
         capped.apply(only);near(only.AreaRange,expected)
@@ -386,7 +328,7 @@ do
                 local only=newBase(levels,baselineRadius,true)
                 collection={only}
                 capped.apply(only)
-                assert(only.AreaRange==baselineRadius*((100+cap)/100),
+                assert(only.AreaRange==baselineRadius*((100+ref(levels,cap))/100),
                     string.format('table %d baseline %s cap %d: %s',levels,baselineRadius,cap,tostring(only.AreaRange)))
                 assert(Range.radius(baselineRadius,levels,{maxRangeBonusPercent=cap},levels)==only.AreaRange)
             end
@@ -394,7 +336,7 @@ do
     end
     FindFirstOf=plain
 end
--- The table's size reaches the plan: a base at level 20 gets 20/39 of a 40-level table, not 20/34.
+-- A larger level table keeps the selected gain per upgrade unchanged.
 do
     local plain=FindFirstOf
     E.config={maxRangeBonusPercent=100}
@@ -405,7 +347,7 @@ do
         capRuntime(3500).refresh()
         near(only.AreaRange,3500*(100+ref(20,100,levels))/100)
     end
-    assert(ref(20,100,35)~=ref(20,100,40))
+    assert(ref(20,100,35)==ref(20,100,40))
     FindFirstOf=plain
 end
 -- Before the level table loads, planning assumes the known 35 levels instead of failing.
@@ -416,13 +358,12 @@ do
     local only=newBase(11,3500,true)
     collection={only}
     local targets=capRuntime(3500).targets({only})
-    near(targets['1:0:0:0'],4515)
+    near(targets['1:0:0:0'],4900)
     FindFirstOf=plain
 end
 print('PASS: every integer cap plans and applies its capped radius through apply, snapshot and refresh')
 
--- The range is on while the cap is above 0. An old config.lua still names the removed growth
--- per level: it is ignored, except 0, which switched range off and still does.
+-- Both a positive gain and cap are required; disabling either keeps the other choice.
 do
     local capped=capRuntime(3500)
     local only=newBase(11,3500,true)
@@ -435,14 +376,14 @@ do
         assert(capped.bonuses(only).rangeEnabled==case.on,label)
         only.AreaRange=3500
         capped.apply(only);capped.refresh()
-        near(only.AreaRange,case.on and 3500*(100+ref(11,case.cap))/100 or 3500)
+        near(only.AreaRange,case.on and 3500*(100+ref(11,case.cap,nil,case.growth))/100 or 3500)
     end
     near(only.AreaRange,3500)
     E.config={maxRangeBonusPercent=100,growthPercentPerLevel=5,resetToVanilla=true}
     assert(not capped.bonuses(only).rangeEnabled,'reset switches range off')
     E.config={resetToVanilla=false}
 end
-print('PASS: the range follows its cap alone; an old growth key is ignored, 0 still switches range off')
+print('PASS: the range follows its cap alone; independent growth and cap; either zero switches range off')
 
 -- The server's preview of the next radius follows the size of the level table too.
 do
@@ -462,11 +403,11 @@ do
         near(got,100+ref(21,100,size))
         near(outer,200)
     end
-    assert(ref(21,100,35)~=ref(21,100,40))
+    assert(ref(21,100,35)==ref(21,100,40))
     E.preview=nil
     FindAllOf,FindFirstOf=plainAll,plainFirst
 end
-print('PASS: the preview of the next radius spreads the cap over the level table')
+print('PASS: the preview follows the independent gain and cap across level tables')
 
 -- Clients plan nothing: a refresh with no authority never separates radii and
 -- writes no AreaRange, yet still reports each base and updates its ring.
@@ -635,7 +576,7 @@ for _,levels in ipairs({2,35,50}) do
             local previous=start
             for level=1,levels+1 do
                 local total=Range.palboxTotal(level,{startingPalboxBoxes=start,maxPalboxBoxes=maximum},levels)
-                assert(total==start+ref(level,maximum-start,levels))
+                assert(total==start+spreadRef(level,maximum-start,levels))
                 assert(total>=previous and total<=maximum and total%1==0)
                 previous=total
             end

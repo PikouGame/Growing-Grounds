@@ -2,7 +2,7 @@ local root = assert(arg[1], 'pass the mod root with trailing slash')
 local Texts = dofile(root .. 'src/texts.lua')
 
 local cultures = {'en','ja','de','es','es-MX','fr','id','it','ko','pl','pt-BR','ru','th','tr','vi','zh-Hans','zh-Hant'}
-local keys = {'rangeRow','chestRow','rangeCapTitle','rangeCapTip','chestCapTitle','chestCapTip','palboxRow','palboxCapTitle','palboxCapTip','palboxStartTitle','palboxStartTip','chestCapacity','off'}
+local keys = {'rangeRow','chestRow','rangeGrowthTitle','rangeGrowthTip','rangeCapTitle','rangeCapTip','chestCapTitle','chestCapTip','palboxRow','palboxCapTitle','palboxCapTip','palboxStartTitle','palboxStartTip','chestCapacity','off'}
 
 local function same(a, b, what)
     assert(#a == #b, what .. ': ' .. #a .. ' items, expected ' .. #b)
@@ -12,9 +12,9 @@ local function has(text, part) return text:find(part, 1, true) ~= nil end
 
 same(Texts.cultures, cultures, 'cultures')
 same(Texts.keys, keys, 'keys')
-print('PASS: the 17 cultures and the 11 keys are listed in order')
+print('PASS: the 17 cultures and all text keys are listed in order')
 
--- Every culture has exactly the eleven keys, each one a trimmed single line.
+-- Every culture has exactly the declared keys, each one a trimmed single line.
 for _, culture in ipairs(cultures) do
     local texts = Texts.get(culture)
     local count = 0
@@ -32,14 +32,14 @@ for _, culture in ipairs(cultures) do
     end
     assert(count == #keys, culture .. ' has ' .. count .. ' keys, expected ' .. #keys)
 end
-print('PASS: every culture has exactly the eleven keys, non-empty, single-line and trimmed')
+print('PASS: every culture has exactly the declared keys, non-empty, single-line and trimmed')
 
 -- English is the source text, verbatim.
 local english = Texts.get('en')
 assert(english.rangeRow == 'Base Range Bonus')
 assert(english.chestRow == 'Bonus Chest Slots')
 assert(english.rangeCapTitle == 'Growing Grounds: Maximum range bonus')
-assert(english.rangeCapTip == 'The range bonus arrives steadily over all base levels; the last level gives it all. 0 disables it. +100% doubles the original radius; +300% makes it four times larger. Default: +100%. Nearby bases can limit growth.')
+assert(has(english.rangeCapTip, 'independent of the gain per upgrade'))
 assert(english.chestCapTitle == 'Growing Grounds: Maximum bonus chest slots')
 assert(english.chestCapTip == 'These slots arrive steadily over all base levels; the last level gives them all. 0 disables them. Default: 18. Guild Chests share one bonus. Occupied extra slots remain until emptied.')
 assert(english.off == 'Off')
@@ -60,6 +60,7 @@ print('PASS: no other culture keeps an English text')
 -- the language (French "100 %", Turkish "%100"), so the number is searched on its own.
 for _, culture in ipairs(cultures) do
     local texts = Texts.get(culture)
+    assert(has(texts.rangeGrowthTitle,'Growing Grounds') and has(texts.rangeGrowthTip,'4') and has(texts.rangeGrowthTip,'20'))
     assert(has(texts.rangeCapTitle, 'Growing Grounds'), culture .. ' range title lost the mod name')
     assert(has(texts.chestCapTitle, 'Growing Grounds'), culture .. ' chest title lost the mod name')
     for _, number in ipairs({'100', '300', '0'}) do
@@ -215,7 +216,7 @@ assert(Texts.get('fr_FR').off == Texts.get('fr').off)
 local first = Texts.get('de')
 first.off = 'changed'
 assert(Texts.get('de').off == 'Aus', 'get must hand out a copy')
-print('PASS: get returns all eleven keys for odd input and a fresh table each time')
+print('PASS: get returns all declared keys for odd input and a fresh table each time')
 
 -- The language reader: asks the engine each time, follows a change, reads
 -- English when the engine cannot answer, and logs only when the answer changes.

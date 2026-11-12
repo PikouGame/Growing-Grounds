@@ -34,13 +34,12 @@ so existing chests follow that schedule at once (level 11: 10 bonus slots become
 5 with the default 18-slot cap). Extra slots that hold items stay until emptied; nothing is deleted or moved.
 
 Configuration
-- maxRangeBonusPercent=100: radius BONUS at the last base level, spread evenly
-  over all levels before it. +100% doubles the original radius.
-  The World Settings slider offers 0..+300%; +300% means four times the radius.
-  Existing maxRangePercent totals keep their former effective limit; 200 becomes
-  +100. Do not add the new key beside the old one unless you intend to override it.
-  Set the range or chest cap to 0 to disable that bonus. Set both Palbox counts
-  to 32 for the ordinary fixed capacity, or use resetToVanilla before removal.
+- growthPercentPerLevel=4: independent radius bonus per base upgrade (0..20%).
+  0 disables range growth without erasing the cap. Rewards round to whole percent.
+- maxRangeBonusPercent=100: maximum radius BONUS (0..300%). +100% doubles radius.
+  Growth stops at this cap. A low gain may never reach it at the last base level.
+  0 disables range growth without changing the per-level gain.
+  Legacy maxRangePercent totals retain their previous conversion/clamp.
 - maxChestBonusSlots=18: bonus chest slots at the last base level, spread evenly
   over all levels (with 18: 1 at level 2, 5 at level 10, 18 at level 35).
   Bonus limit 0..42 in steps of 6; other values round to the nearest step. Guild Chests share one bonus for the whole guild.
@@ -61,13 +60,13 @@ Configuration
 - upgradeEffectHeight=600: rise height in centimetres (clamped to 100..2000).
 
 
-Local/co-op hosts can change the range/chest caps and Palbox starting/total counts at the bottom of custom World
-Settings. Values save per world after native confirmation, in world-settings.ini.
+Local/co-op hosts can change the range gain/cap, chest cap and Palbox starting/total
+counts beside native base/building controls in custom World Settings. Values save per world after native confirmation, in world-settings.ini.
 Dedicated servers use config.lua defaults unless that host has a per-world
 sidecar override. Server settings always control gameplay and the next-value UI.
 
-With the standard 35m radius and the default cap: level 8 = 42.4m, level 11 =
-45.2m, level 26 = 60.9m, level 35 = 70m. Each level's bonus is a whole percent
+With the standard 35m radius and the default cap: level 8 = 44.8m, level 11 =
+49m, level 26 = 70m, level 35 = 70m. Each level's bonus is a whole percent
 of the original radius. The UI shows the bonus above 100%, with metres rounded to a
 tenth. Level 10 displays 26% 44.1m -> 29% 45.2m. At maximum game level, the next
 value is hidden. On a client, while the server's preview

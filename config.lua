@@ -3,12 +3,12 @@ return {
     -- Windows is automatic; Proton needs the one-time setup in BACKUPS.txt.
     automaticBackups = true,
     -- Host/server defaults. Local worlds can override these in World Settings.
-    -- Maximum radius BONUS, reached at the last base level and spread evenly over
-    -- the levels before it: +100% doubles the radius (35m -> 70m).
-    -- World Settings: 0..+300%. +300% means 4x radius, not area.
-    -- Set the range or chest cap to 0 to disable that bonus. Occupied extra storage is preserved.
-    -- Old maxRangePercent totals remain supported without changing their effect.
-    -- An old growthPercentPerLevel line is ignored, except 0, which still switches range off.
+    -- Independent radius gain per base upgrade (0..20%; default 4).
+    -- Zero disables range growth without changing the cap below.
+    growthPercentPerLevel = 4,
+    -- Maximum radius BONUS (0..300%; default 100). +100% doubles the radius.
+    -- Growth stops at this cap; a low per-level gain may not reach it at level 35.
+    -- Whole-percent rewards. Legacy maxRangePercent totals remain supported.
     maxRangeBonusPercent = 100,
     -- Bonus chest slots at the last base level (0..42, in steps of 6), spread
     -- evenly over the levels: with 18, +1 at level 2, 5 at level 10, 18 at level 35.

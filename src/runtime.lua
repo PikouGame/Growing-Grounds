@@ -46,7 +46,7 @@ return function(E)
     end
     function R.bonuses(model)
         local policy=R.policy(model)
-        return {totalPolicy=true,rangeEnabled=not E.config.resetToVanilla and policy.maxRangeBonusPercent>0,
+        return {totalPolicy=true,rangeEnabled=not E.config.resetToVanilla and policy.maxRangeBonusPercent>0 and policy.growthPercentPerLevel>0,
             chestCap=E.config.resetToVanilla and 0 or policy.maxChestBonusSlots,
             palboxStart=not E.config.resetToVanilla and policy.startingPalboxBoxes or nil,
             palboxMaximum=not E.config.resetToVanilla and policy.maxPalboxBoxes or nil}
@@ -87,7 +87,7 @@ return function(E)
                 local level = model:GetLevel()
                 if nextGroup and guid(model:GetGroupIdBelongTo()) == nextGroup then level = nextLevel end
                 local position = model:GetTransform().Translation
-                local maximum=E.config.resetToVanilla and baseline or baseline * ((100 + policy.maxRangeBonusPercent) / 100)
+                local maximum=(E.config.resetToVanilla or policy.growthPercentPerLevel==0) and baseline or baseline * ((100 + policy.maxRangeBonusPercent) / 100)
                 entries[#entries+1] = {
                     id=guid(model:GetId()), baseline=baseline, x=position.X, y=position.Y,
                     desired=fullGrowth and maximum or (E.config.resetToVanilla and baseline or E.range.radius(baseline, level, policy, levels)),

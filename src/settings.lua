@@ -91,8 +91,8 @@ return function(root, Range, defaults, filesystem, log, clock)
         table.sort(ids)
         for _,k in ipairs(ids) do
             local value = normalize(nextWorlds[k])
-            lines[#lines+1] = string.format('[%s]\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\nstartingPalboxBoxes=%d\nmaxPalboxBoxes=%d\n',
-                k, value.maxRangeBonusPercent, value.maxChestBonusSlots, value.startingPalboxBoxes, value.maxPalboxBoxes)
+            lines[#lines+1] = string.format('[%s]\ngrowthPercentPerLevel=%.6g\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\nstartingPalboxBoxes=%d\nmaxPalboxBoxes=%d\n',
+                k, value.growthPercentPerLevel, value.maxRangeBonusPercent, value.maxChestBonusSlots, value.startingPalboxBoxes, value.maxPalboxBoxes)
         end
         local temp, backup = path..'.tmp', path..'.bak'
         local file = assert(fs.open(temp, 'w'))
