@@ -85,9 +85,9 @@ See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
-## What changes in the beta
+## What changes in 0.2.0-beta
 
-Not released yet. Three bonuses, an upgrade preview and the game's own languages.
+Three bonuses, native reward rows and the game's own languages.
 The Palbox bonus has been checked in dedicated-server and solo tests through
 Proton/Wine. Native Windows validation of this beta is still pending.
 
@@ -114,6 +114,9 @@ Proton/Wine. Native Windows validation of this beta is still pending.
   growing (82.6 m at level 35) and new Palboxes reserve more room.
 - **The mod speaks the game's language**: rows, World Settings and tooltips in
   the 17 languages Palworld ships.
+- Automatic local backups with a shared 1 GiB archive limit; see the platform-specific setup above.
+- Fixed reward-column alignment at 720p. Removed the experimental dotted and
+  blue next-boundary previews; numeric reward rows and the upgrade celebration remain.
 - A world that had switched range off with growth 0 stays off.
 
 ## Earlier versions
@@ -138,7 +141,7 @@ five rows were also checked in game.
 
 ### Known limits
 
-This is an alpha. These still need broader in-game verification:
+This is a beta. These still need broader in-game verification:
 
 - larger guilds with multiple simultaneous clients;
 - other Palbox capacity mods installed alongside;
@@ -186,6 +189,8 @@ information from logs before sharing them.
 Run the Lua checks from this directory:
 
 ```sh
+lua tests/test_backups.lua ./
+lua tests/test_palbox.lua ./
 lua tests/test_main.lua ./
 lua tests/test_changes.lua ./
 lua tests/test_range.lua ./
@@ -198,6 +203,8 @@ lua tests/test_ui.lua ./
 lua tests/test_wave.lua ./
 lua tests/test_motion.lua ./
 lua tests/test_texts.lua ./
+python3 -m unittest discover -s tests -p 'test*backup*.py' -v
+python3 tools/backup_runtime.py --fetch
 python3 tools/release.py
 ```
 
@@ -218,3 +225,4 @@ respective owners. Follow [Pocketpair's mod guidelines](https://guideline.palwor
 
 All rights reserved. Downloading and using the mod is allowed. Redistribution,
 published modifications and reuse require permission; see [LICENSE.txt](LICENSE.txt).
+The bundled CPython runtime retains its own license in `backup/python/LICENSE.txt`.

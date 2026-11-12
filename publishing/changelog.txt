@@ -1,3 +1,26 @@
+Growing Grounds 0.2.0-beta — more room for your Pals
+
+- Your regular Palbox gains one extra box per base upgrade. Default cap: 32 extra boxes; configurable from 0 to 64. Level 1 gives none, level 33 reaches the default cap. At level 35, a higher cap can grant at most 34 extra boxes. Global Palbox storage is unchanged.
+- Chest bonuses still arrive gradually across all base levels. The default cap is now 18; choose 0, 6, 12, 18, 24, 30, 36 or 42. Existing caps round to the nearest step (20 becomes 18; 40 becomes 42). Guild Chests share one bonus.
+- Chests show their native capacity plus their extra slots above the grid. Lowering either storage cap keeps occupied extra slots/boxes until they are emptied.
+- Range growth now spreads your chosen maximum across all base levels, reaching +100% (double radius) at level 35 by default. The cap remains adjustable from 0 to +300%. Each level uses a whole-percent bonus; the growth-per-level setting is removed.
+- Native reward rows, World Settings and tooltips follow the game's 17 languages. Fixed reward-column alignment at 720p.
+- Removed the experimental dotted and blue next-boundary previews. The current/next numeric rewards and blue upgrade celebration remain.
+- Automatic local save archives with a hard 1 GiB shared archive-directory budget. Clean exits trigger a two-minute quiet period; quick relaunches, unchanged saves and a 30-minute cooldown avoid redundant archives. Baselines and the latest good backups are protected, with recent/daily retention and verified restore copies.
+- Windows includes its own private backup companion/runtime. Proton/Linux requires the one-time launcher setup in BACKUPS.txt. No save archiving runs during a managed game session. Windows creates its FIRST baseline AFTER the first clean exit; this does not replace a backup before installing. Servers need a clean stop for a new GG checkpoint.
+
+Before updating
+Save and close the game/server, keep an independent world backup, then update the host/server and all clients with the complete archive. Preserve config.lua and world-settings.ini; add new defaults as needed. Keep tools/, backup/ and backup-version.txt with the mod.
+
+Existing bases follow the new range curve immediately and most become smaller. At level 11 with the default cap and a 35 m base, 49 m becomes 45.2 m (52.5 m for the older 5% curve). Check buildings near the boundary. A +136% maximum recreates 4% per upgrade through level 35, but also changes the maximum radius and new-base spacing. Old growth=0 remains off.
+
+Validation
+Tested on an isolated dedicated server and an older solo world through Proton/Wine: Palbox expansion, occupied-box retention, saving/reloading Pals in extra boxes, verified backup restoration, the five-row upgrade panel and native-plus-bonus chest labels. Backup lifecycle, quick-relaunch cancellation and restoration were checked on Linux and with Win32 fixtures under Wine. Physical Windows/Steam validation of this beta is still pending. No FPS benchmark is claimed. Native Guild Chest UI and Workshop installation remain unverified.
+
+We'd love to hear how it works in your world! Leave a comment, share your experience or report a bug so we can investigate and improve it:
+https://www.nexusmods.com/palworld/mods/6047?tab=posts
+https://github.com/PikouGame/Growing-Grounds/issues
+
 Growing Grounds 0.1.7-alpha — a gentler pace
 
 - Range now grows 4% of the original radius per level by default (was 5%). The +100% cap arrives at level 26 instead of level 21.

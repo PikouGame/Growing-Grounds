@@ -1,4 +1,4 @@
--- BaseRangeGrowth 0.1.7-alpha: prompt change detection and a Palbox-to-boundary wave.
+-- BaseRangeGrowth 0.2.0-beta: prompt change detection and a Palbox-to-boundary wave.
 local script = debug.getinfo(1, 'S').source:gsub('^@', '')
 local root = assert(script:match('^(.*[/\\])Scripts[/\\]main%.lua$'), 'Cannot resolve mod folder')
 assert(type(ExecuteInGameThreadWithDelay)=='function' and type(LoopInGameThreadWithDelay)=='function',
@@ -83,4 +83,4 @@ guard('World Settings hooks',WorldSettings.installHooks)
 -- Lua state with these callbacks and can corrupt its registry during execution.
 LoopInGameThreadWithDelay(5000,refresh)
 ExecuteInGameThreadWithDelay(1000,refresh)
-log('v0.1.7-alpha loaded; tracked base changes every 250ms; Palbox wave; range bonus cap up to +300%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))
+log('v0.2.0-beta loaded; tracked base changes every 250ms; Palbox wave; range bonus cap up to +300%; server owns gameplay; reset=' .. tostring(Config.resetToVanilla))

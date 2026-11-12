@@ -1,37 +1,52 @@
-[center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/6ed76ab67d8c7407147f255d7e8a18ad8f26e4a3/assets/showcase/growing-grounds-banner.png[/img][/center]
-
 [size=6][color=#5cd5de][b]Give your base room to grow[/b][/color][/size]
 
-[size=5]Gain [b]4% of your original base radius per level[/b], starting at level 2, up to [b]double the radius[/b] by default. Celebrate each expansion with a blue wave from the Palbox, a gentle bounce, and a rising glow.[/size]
-
-[center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/6ed76ab67d8c7407147f255d7e8a18ad8f26e4a3/assets/showcase/growing-grounds-range.png[/img][/center]
+[size=5]Grow your base from its first upgrade to its last: [b]+100% radius[/b] by level 35 with the default settings. The Base Upgrade screen shows your current and next range, chest slots and Palbox boxes. Celebrate each expansion with a blue wave from the Palbox, a gentle bounce and a rising glow.[/size]
 
 [center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/999a446fffa9b154cb22e040a253101908e7cd89/assets/showcase/growing-grounds-upgrade-web.gif[/img][/center]
 
-[size=5][i]Gameplay excerpt at original speed; initial wait trimmed.[/i][/size]
+[size=5][i]Celebration captured in an earlier version, at original speed; initial wait trimmed.[/i][/size]
 
 [size=6][color=#5cd5de][b]More room for your supplies[/b][/color][/size]
 
-[size=5]Chests grow with your base: [b]20 bonus slots[/b] by default, arriving steadily from your first upgrade to the final base level. Guild Chests benefit too, with the bonus applied once to their shared inventory.[/size]
+[size=5]Chests gain [b]18 bonus slots[/b] by default, spread gradually across all base levels. Guild Chests receive the bonus once for their shared inventory. Open a chest to see its original capacity plus its extra slots above the grid.[/size]
 
-[center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/6ed76ab67d8c7407147f255d7e8a18ad8f26e4a3/assets/showcase/growing-grounds-chests.png[/img][/center]
+[center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.0-beta/assets/showcase/growing-grounds-beta-chest.png[/img][/center]
+
+[size=6][color=#5cd5de][b]More boxes for your Pals[/b][/color][/size]
+
+[size=5]Your regular Palbox gains [b]one extra box per base upgrade[/b], starting at level 2. The default cap is [b]32 extra boxes[/b], reached at level 33. The bonus follows your guild level once; extra bases do not multiply it. [b]Global Palbox storage is unchanged.[/b][/size]
+
+[center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.0-beta/assets/showcase/growing-grounds-beta-palbox.png[/img][/center]
 
 [size=6][color=#5cd5de][b]Make it your own[/b][/color][/size]
 
-[size=5]Adjust growth and both caps in [b]World Settings[/b], or in the server config: range growth from [b]0 to 20% per level[/b], a range bonus cap up to [b]+300%[/b], and a chest bonus cap up to [b]40 extra slots[/b].[/size]
+[size=5]Three caps in [b]World Settings[/b], or in the dedicated-server config:
+• [b]Range:[/b] 0 to +300%; default +100%, spread across all base levels and rounded to whole percentages.
+• [b]Chest slots:[/b] 0 to 42 in steps of six; default 18. Slots still arrive gradually, one at a time.
+• [b]Palbox boxes:[/b] 0 to 64 extra; default 32. One box per upgrade means level 35 can earn at most 34 extra boxes even with a higher cap.[/size]
 
-[center][img]https://raw.githubusercontent.com/PikouGame/Growing-Grounds/6ed76ab67d8c7407147f255d7e8a18ad8f26e4a3/assets/showcase/growing-grounds-settings.png[/img][/center]
+[size=5]Set any cap to [b]0 (Off)[/b] to disable that bonus. Nearby bases can limit range growth. Lowering a storage cap keeps occupied extra slots or boxes until you empty them.[/size]
 
-[size=5]Set either cap to [b]0 (Off)[/b] to disable that bonus. Nearby bases can limit expansion. Lowering the chest cap keeps occupied extra slots until you empty them.[/size]
+[size=6][color=#5cd5de][b]Automatic local backups[/b][/color][/size]
+
+[size=5]GG keeps verified world archives within a shared [b]1 GiB archive limit[/b], preserving a baseline and recent history. It waits two minutes after a clean exit, skips quick relaunches and unchanged saves, and avoids archiving during managed play. Native Palworld backups are unchanged.[/size]
+
+[size=5][b]Windows:[/b] the companion is included and starts automatically. Its first backup is created [b]after your first clean exit[/b], so keep a separate backup before installing. [b]Proton/Linux:[/b] enable it once using the [url=https://github.com/PikouGame/Growing-Grounds/blob/main/BACKUPS.txt]backup setup guide[/url]. A server needs a clean stop for a new GG backup.[/size]
+
+[size=6][color=#5cd5de][b]Updating from 0.1.7 or earlier[/b][/color][/size]
+
+[size=5][b]The new range curve can shrink existing bases.[/b] With the default cap, a level-11 base goes from 49 m to 45.2 m. Check buildings near the edge and back up before updating. Old chest caps round to the nearest multiple of six: 20 becomes 18, 40 becomes 42. Keep your config.lua and world-settings.ini.[/size]
 
 [size=6][color=#5cd5de][b]Getting started[/b][/color][/size]
 
-[size=5]Install on the [b]host/server and clients[/b] with a compatible [b]Palworld UE4SS loader[/b]. Back up your world before installing, and keep your settings when updating.[/size]
+[size=5]Install the complete mod on the [b]host/server and clients[/b], using your existing compatible [b]Palworld UE4SS loader[/b]. Update both sides together. Tested with Palworld 1.0.5.102999 and the UE4SS Palworld fork g2281fa31.[/size]
 
-[size=5][url=https://github.com/PikouGame/Growing-Grounds/blob/main/INSTALL.txt]Installation guide[/url] · [url=https://github.com/PikouGame/Growing-Grounds#testing-and-current-limits]Compatibility and known issues[/url][/size]
+[size=5][b]0.2.0-beta:[/b] solo and dedicated-server tests passed through Proton/Wine. Testing this beta on a physical Windows/Steam installation is still pending.[/size]
+
+[size=5][url=https://github.com/PikouGame/Growing-Grounds/blob/main/INSTALL.txt]Installation guide[/url] · [url=https://github.com/PikouGame/Growing-Grounds/blob/main/BACKUPS.txt]Backup setup and restore[/url] · [url=https://github.com/PikouGame/Growing-Grounds#testing-and-current-limits]Compatibility and known issues[/url][/size]
 
 [size=6][color=#5cd5de][b]Share your experience[/b][/color][/size]
 
 [size=5]We’d love to see what you build! Share your base, leave a comment, or [url=https://github.com/PikouGame/Growing-Grounds/issues]report a bug[/url] so we can keep improving Growing Grounds together.[/size]
 
-[size=5][i]Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game. Free to use; all rights reserved. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.[/i][/size]
+[size=5][i]Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game. Free to use; all rights reserved for GG. Reuploads, published modifications and reuse require permission. The bundled CPython runtime retains its own license. Unofficial Palworld mod.[/i][/size]

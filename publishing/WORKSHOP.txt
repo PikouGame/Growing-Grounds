@@ -1,9 +1,9 @@
 Growing Grounds — Steam Workshop preparation
 
 Package content is built by: python3 tools/release.py
-The upload content directory is build/workshop-0.1.3-alpha/.
+The upload content directory is build/workshop-0.2.0-beta/.
 Its Info.json is at the root, not under a BaseRangeGrowth wrapper.
-Manual installations must use the separate Growing-Grounds-0.1.3-alpha.zip.
+Manual installations must use the separate Growing-Grounds-0.2.0-beta.zip.
 
 Official uploader:
 https://github.com/pocketpairjp/PalworldModUploader/releases
@@ -18,7 +18,7 @@ Outstanding Steam checks
 3. Test the local package through Palworld's official mod manager, including
    the dedicated-server rule. Do not run alongside a second manual copy.
 4. Upload the content, use description.txt and changelog.txt, and add the actual
-   level-8 screenshot. Mark the release as alpha in its description.
+   level-8 screenshot. Mark the release as beta in its description.
 
 No Steam item has been created yet. Workshop deployment is unverified.
 The uploader is a Windows WPF application; its documentation exposes no CLI.

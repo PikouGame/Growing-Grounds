@@ -1,4 +1,4 @@
-"""Create deterministic, allowlisted alpha archives for manual and Workshop use."""
+"""Create deterministic, allowlisted release archives for manual and Workshop use."""
 from pathlib import Path
 import hashlib
 import json
@@ -8,7 +8,7 @@ import zipfile
 import backup_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.1.7-alpha'
+VERSION = '0.2.0-beta'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
     'src/backups.lua', 'backup-version.txt',
