@@ -27,12 +27,6 @@ Three caps in **World Settings**, or in the dedicated-server config:
 
 Set any cap to **0 (Off)** to disable that bonus. Nearby bases can limit range growth. Lowering a storage cap keeps occupied extra slots or boxes until you empty them.
 
-## Automatic local backups
-
-GG keeps verified world archives within a shared **1 GiB archive limit**, preserving a baseline and recent history. It waits two minutes after a clean exit, skips quick relaunches and unchanged saves, and avoids archiving during managed play. Native Palworld backups are unchanged.
-
-**Windows:** the companion is included and starts automatically. Its first backup is created **after your first clean exit**, so keep a separate backup before installing. **Proton/Linux:** enable it once using the [backup setup guide](https://github.com/PikouGame/Growing-Grounds/blob/main/BACKUPS.txt). A server needs a clean stop for a new GG backup.
-
 ## Updating from 0.1.7 or earlier
 
 **The new range curve can shrink existing bases.** With the default cap, a level-11 base goes from 49 m to 45.2 m. Check buildings near the edge and back up before updating. Old chest caps round to the nearest multiple of six: 20 becomes 18, 40 becomes 42. Keep your config.lua and world-settings.ini.
@@ -43,10 +37,10 @@ Install the complete mod on the **host/server and clients**, using your existing
 
 **0.2.0-beta:** solo and dedicated-server tests passed through Proton/Wine. Testing this beta on a physical Windows/Steam installation is still pending.
 
-[Installation guide](https://github.com/PikouGame/Growing-Grounds/blob/main/INSTALL.txt) · [Backup setup and restore](https://github.com/PikouGame/Growing-Grounds/blob/main/BACKUPS.txt) · [Compatibility and known issues](https://github.com/PikouGame/Growing-Grounds#testing-and-current-limits)
+[Installation guide](https://github.com/PikouGame/Growing-Grounds/blob/main/INSTALL.txt) · [Compatibility and known issues](https://github.com/PikouGame/Growing-Grounds#testing-and-current-limits)
 
 ## Share your experience
 
 We’d love to see what you build! Share your base, leave a comment, or [report a bug](https://github.com/PikouGame/Growing-Grounds/issues) so we can keep improving Growing Grounds together.
 
-*Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game. Free to use; all rights reserved for GG. Reuploads, published modifications and reuse require permission. The bundled CPython runtime retains its own license. Unofficial Palworld mod.*
+*Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game. Free to use; all rights reserved for GG. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.*

@@ -10,7 +10,3 @@ or the hosting platforms' terms.
 
 Palworld and its game assets belong to their respective owners. No ownership
 of third-party game content is claimed.
-
-The privately bundled CPython runtime is third-party software, distributed
-under its own license in backup/python/LICENSE.txt. The restrictions above
-apply to Growing Grounds, not to rights granted by that runtime license.

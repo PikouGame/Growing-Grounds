@@ -34,18 +34,13 @@ is ready. There is no fixed countdown, no terrain reuse between animations, and
 no speculative scanning while you play. The outward wave lasts 2.4 seconds;
 the rising effect lifts 6 metres by default and gradually softens the terrain relief.
 
-## Automatic save backups
+## Save files
 
-GG includes local save archives with a shared **1 GiB budget**. After a clean
-exit it waits two minutes, skips quick relaunches and unchanged saves, and
-keeps a protected baseline plus recent/daily history. It verifies every archive
-before publishing it. Archives contain the full world, players and GG settings.
-
-Windows uses the included companion automatically. Proton/Linux needs the
-one-time launcher setup in [BACKUPS.txt](BACKUPS.txt). Windows creates its first
-baseline after the first clean exit; keep a separate backup before installing.
-Long-running servers get a new GG checkpoint only after a clean stop. Native
-Palworld backups stay enabled. See BACKUPS.txt for retention, status and restore.
+Automatic GG backups are archived and removed from this development build,
+including the companion and bundled Python runtime. Palworld's own backups
+are unchanged. Existing GG archives remain available; this update does not
+remove them. See [INSTALL.txt](INSTALL.txt) when replacing a build that used
+the old companion or Proton launcher.
 
 ## Your world's settings
 
@@ -129,7 +124,8 @@ Proton/Wine. Native Windows validation of this beta is still pending.
   growing (82.6 m at level 35) and new Palboxes reserve more room.
 - **The mod speaks the game's language**: rows, World Settings and tooltips in
   the 17 languages Palworld ships.
-- Automatic local backups with a shared 1 GiB archive limit; see the platform-specific setup above.
+- That published build included automatic local backups with a shared 1 GiB limit.
+  The system is archived and removed from the current development build.
 - Fixed reward-column alignment at 720p. Removed the experimental dotted and
   blue next-boundary previews; numeric reward rows and the upgrade celebration remain.
 - A world that had switched range off with growth 0 stays off.
@@ -204,7 +200,6 @@ information from logs before sharing them.
 Run the Lua checks from this directory:
 
 ```sh
-lua tests/test_backups.lua ./
 lua tests/test_palbox.lua ./
 lua tests/test_main.lua ./
 lua tests/test_changes.lua ./
@@ -218,8 +213,6 @@ lua tests/test_ui.lua ./
 lua tests/test_wave.lua ./
 lua tests/test_motion.lua ./
 lua tests/test_texts.lua ./
-python3 -m unittest discover -s tests -p 'test*backup*.py' -v
-python3 tools/backup_runtime.py --fetch
 python3 tools/release.py
 ```
 
@@ -240,4 +233,3 @@ respective owners. Follow [Pocketpair's mod guidelines](https://guideline.palwor
 
 All rights reserved. Downloading and using the mod is allowed. Redistribution,
 published modifications and reuse require permission; see [LICENSE.txt](LICENSE.txt).
-The bundled CPython runtime retains its own license in `backup/python/LICENSE.txt`.

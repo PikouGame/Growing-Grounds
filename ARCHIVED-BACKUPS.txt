@@ -1,0 +1,35 @@
+Growing Grounds automatic backups — archived 2026-11-12
+
+Status
+PK requested archiving this feature after Nexus quarantined the 0.2.0-beta
+ZIP. The screenshot does not identify the trigger. Removing the companion is
+a product decision, not proof that Python caused the quarantine or that a
+replacement archive will pass moderation.
+
+Recovery references (local Git)
+- codex/archive-automatic-backups at 0d2a249 preserves the exact complete source
+  before removal, including BACKUPS.txt, src/backups.lua, backup-version.txt,
+  tools/backup*.py, tools/save_backup.py and their tests.
+- codex/archive-automatic-backups-audited at 6cc4ed5 preserves the completed
+  audit, including its backup refactors and tests before this removal.
+- Published tag v0.2.0-beta remains unchanged. Historical release notes describe
+  that original build; they are not current installation instructions.
+
+No automatic companion, Python runtime, backup scripts or nested runtime ZIPs
+are included in the current mod package. No executable has been disguised or
+renamed. The backup-only source is retained in Git, not in the active tree.
+
+Existing archives
+Nothing in this removal deletes or rewrites save files, archive directories
+or existing GG ZIP backups. Their restore tool and guide remain available
+from the archived branch. Restore only with the game/server stopped, into a
+separate destination first, following that archived guide.
+
+Update path
+See INSTALL.txt: let the previous companion finish; remove the GG-specific
+Proton/server launcher wrapper; preserve config.lua and world-settings.ini;
+replace the old mod folder rather than merge it. Keep existing archives.
+
+Current isolated development sessions may still use the old managed launcher
+until their next coordinated migration. Archiving the source does not alter
+an already-running game or server.

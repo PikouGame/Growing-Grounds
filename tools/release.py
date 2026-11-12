@@ -1,21 +1,15 @@
 """Create deterministic, allowlisted release archives for manual and Workshop use."""
 from pathlib import Path
-import ast
 import hashlib
 import json
 import re
 import shutil
 import zipfile
-import backup_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = '0.2.0-beta'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
-    'src/backups.lua', 'backup-version.txt',
-    'tools/save_backup.py', 'tools/backup_policy.py', 'tools/backup_control.py',
-    'tools/backup_win32.py', 'tools/backup_windows.py',
-    'tools/backup_session.py', 'tools/backup_setup.py',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',
     'src/settings.lua', 'src/world_settings.lua',
     'src/storage.lua', 'src/palbox.lua', 'src/chest_ui.lua',
@@ -29,7 +23,7 @@ RUNTIME = [
     'assets/contour-gradient.svg', 'assets/contour-gradient.png',
     'assets/ground-wave.svg', 'assets/ground-wave.png',
 ]
-DOCS = ['INSTALL.txt', 'LICENSE.txt', 'README.md', 'BACKUPS.txt']
+DOCS = ['INSTALL.txt', 'LICENSE.txt', 'README.md']
 BUILD = ROOT / 'build'
 
 
@@ -60,7 +54,6 @@ def archive(build, name, entries):
 def validate_sources(root):
     require(len(set(RUNTIME+DOCS)) == len(RUNTIME+DOCS), 'Duplicate allowlist entry')
     require(VERSION in (root/'Scripts/main.lua').read_text(), 'Bootstrap version mismatch')
-    require((root/'backup-version.txt').read_text().strip() == VERSION, 'Backup version mismatch')
     loaded = set()
     for name in RUNTIME:
         if name.endswith('.lua'):
@@ -69,14 +62,6 @@ def validate_sources(root):
             loaded.update(re.findall(r"'((?:src|assets)/[\w-]+\.(?:lua|png))'", source))
             # Reward icons are assembled from assets/ and each row specification.
             loaded.update('assets/'+icon for icon in re.findall(r"icon='([\w-]+\.png)'", source))
-        elif name.endswith('.py'):
-            for node in ast.walk(ast.parse((root/name).read_text())):
-                modules = ([a.name for a in node.names] if isinstance(node, ast.Import)
-                           else [node.module] if isinstance(node, ast.ImportFrom) else [])
-                for module in modules:
-                    local = 'tools/'+(module or '').replace('.', '/')+'.py'
-                    if (root/local).is_file():
-                        loaded.add(local)
     missing = sorted(loaded-set(RUNTIME))
     require(not missing, f'Loaded at runtime but not in the archive: {missing}')
 
@@ -84,8 +69,7 @@ def validate_sources(root):
 def workshop_info():
     # Both rules are required: the dedicated server uses IsServer=true rules.
     # Verify the loader dependency before upload; Workshop installation is untested.
-    targets = ['./Scripts', './src', './assets', './tools', './backup',
-               './config.lua', './enabled.txt', './backup-version.txt']
+    targets = ['./Scripts', './src', './assets', './config.lua', './enabled.txt']
     return {
         'ModName': 'Growing Grounds', 'PackageName': 'BaseRangeGrowth',
         'Thumbnail': 'thumbnail.png', 'Version': VERSION, 'DebugMode': False,
@@ -102,8 +86,6 @@ def workshop_info():
 def build_release(root=ROOT, build=BUILD):
     validate_sources(root)
     files = {name: (root/name).read_bytes() for name in RUNTIME+DOCS}
-    files.update(backup_runtime.entries())
-    files['backup/runtime-provenance.json'] = (json.dumps(backup_runtime.provenance(), indent=2)+'\n').encode()
     build.mkdir(parents=True, exist_ok=True)
     manual = {'BaseRangeGrowth/'+name: data for name, data in files.items()}
     receipts = [archive(build, f'Growing-Grounds-{VERSION}.zip', manual)]
@@ -128,7 +110,6 @@ def build_release(root=ROOT, build=BUILD):
         'workshop_deployment_verified': False,
         'runtime_sha256': {name: hashlib.sha256(data).hexdigest()
                            for name, data in files.items() if name not in DOCS},
-        'backup_runtime': backup_runtime.provenance(),
     }
     (build/'release-manifest.json').write_text(json.dumps(receipt, indent=2)+'\n')
     return receipt

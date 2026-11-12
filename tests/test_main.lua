@@ -3,12 +3,18 @@ local realDofile=dofile
 local function run()
     local loops,hooks,timers={},{},{}
     local counters={runtime=0,ui=0,storage=0,palbox=0}
-    local config={resetToVanilla=false}
+    -- A preserved old config must not bring back the archived companion.
+    local config={resetToVanilla=false,automaticBackups=true}
+    local requested={}
+    local processes=0
+    local realExecute=os.execute
+    os.execute=function() processes=processes+1;error('No companion may start') end
     local noop=function() end
     local function count(key) return function() counters[key]=counters[key]+1 end end
     local objects={install=noop,all=function() return {} end}
     dofile=function(path)
         local name=assert(path:match('([^/]+)%.lua$'))
+        requested[name]=true
         if name=='config' then return config end
         if name=='range' or name=='motion' or name=='texts' then return {} end
         return function(env)
@@ -16,7 +22,6 @@ local function run()
             if name=='language' then return noop end
             if name=='settings' then return {key=noop,get=noop} end
             if name=='boundary' then return {} end
-            if name=='backups' then return {install=noop} end
             if name=='runtime' then return {refresh=count('runtime')} end
             if name=='ui' or name=='world_settings' then
                 assert(env.texts==noop,'the rows are built after the language reader exists')
@@ -41,6 +46,7 @@ local function run()
     RegisterHook=function(path,_,post) hooks[path]=post end
     NotifyOnNewObject=noop
     assert(loadfile(root..'Scripts/main.lua'))()
+    assert(not requested.backups and processes==0,'legacy config must not load or start the archived backup companion')
     assert(loops[5000],'public reconciliation must still run')
     assert(#timers[1000]==1,'initial world discovery is still scheduled')
     loops[5000]()
@@ -51,6 +57,7 @@ local function run()
     table.remove(timers[0],1)()
     assert(counters.runtime==2 and counters.ui==2 and counters.storage==2 and counters.palbox==2,'an upgrade event refreshes runtime, ui and storage once each')
     dofile=realDofile
+    os.execute=realExecute
 end
 run()
 for _,api in ipairs({'ExecuteInGameThreadWithDelay','LoopInGameThreadWithDelay'}) do

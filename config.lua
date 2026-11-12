@@ -1,7 +1,4 @@
 return {
-    -- Automatic archives after a clean exit; 120s quiet period, shared 1 GiB cap.
-    -- Windows is automatic; Proton needs the one-time setup in BACKUPS.txt.
-    automaticBackups = true,
     -- Host/server defaults. Local worlds can override these in World Settings.
     -- Independent radius gain per base upgrade (0..20%; default 4).
     -- Zero disables range growth without changing the cap below.

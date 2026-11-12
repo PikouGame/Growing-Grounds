@@ -1,5 +1,7 @@
 Unreleased — independent range controls and total Palbox capacity
 
+- Archive the GG automatic-backup system. Remove its bootstrap, config option, companion, Python runtime and backup-only tools/tests from the active mod and packages. Existing archives and native Palworld backups are preserved. When updating, remove the old GG launch wrapper and replace the mod folder as described in INSTALL.txt.
+
 - Choose the starting number of Palbox boxes (minimum 1) and the TOTAL cap. Defaults: 32 → 64. Whole boxes are spread across all base levels, like chest slots.
 - Restore independent radius gain per upgrade (default4%,0..20) and maximum bonus (default100%,0..300). No imposed34/35-point cap steps. Either zero disables range growth while preserving the other choice.
 - Five World Settings controls beside native base/building settings; the Palbox reward row now shows total boxes. Occupied, locked and open boxes are retained when reducing capacity. Global Palbox unchanged.

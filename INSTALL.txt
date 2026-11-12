@@ -140,9 +140,17 @@ We'd love your comments, experiences and bug reports so we can investigate and
 improve the mod: https://github.com/PikouGame/Growing-Grounds/issues
 Please remove personal information before sharing logs.
 
-Automatic backups
-Install the full package, including tools/, backup/ and backup-version.txt.
-Windows arms the companion automatically; no separate Python install is needed.
-Proton/Linux needs the one-time launcher setup in BACKUPS.txt. The archive
-budget is1 GiB shared across worlds; processing waits until a clean game exit.
-The first Windows baseline is after exit, so keep a pre-install backup yourself.
+Replacing a build with GG automatic backups
+The backup companion is archived and no longer included. The mod does not
+create new GG archives. Palworld's native backups remain unchanged.
+
+Close the game/server and let any pending old archive finish. If Proton/Linux
+used the GG gg-launch wrapper, remove ONLY that wrapper from Steam launch
+options or the server launch command; preserve other launch options.
+Keep config.lua and world-settings.ini / .bak, then replace the old
+BaseRangeGrowth folder with the new one instead of merging folders. Restore
+your saved settings. The old automaticBackups key is ignored and may be removed.
+Do not copy back tools/, backup/, backup-version.txt or src/backups.lua.
+Keep existing GrowingGroundsBackups archives and any custom archive directory.
+The archived source and restore-tool reference are in ARCHIVED-BACKUPS.txt
+in the source repository.
