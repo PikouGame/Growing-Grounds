@@ -42,7 +42,7 @@ class WindowsTests(unittest.TestCase):
             self.assertIsNotNone(GAME.fullmatch(name))
         self.assertIsNone(GAME.fullmatch('Palworld-helper.exe'))
         game = self.root/'server/Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe'
-        save, archives, state = session.paths(game, self.mod)
+        save, archives, state = session.paths(game)
         self.assertEqual(save, self.root/'server/Pal/Saved/SaveGames')
 
     def setUp(self):

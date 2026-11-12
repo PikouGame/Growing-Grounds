@@ -86,6 +86,24 @@ Trois preuves d'échec conservées : `settings-before.log`,
 `.local/quality-audit/`. Suite de réglages réussie sous Lua 5.5/5.4 ; les tests
 préservent identités, valeurs non enregistrées et ordre des contrôles natifs.
 
+### Nettoyage sans changement de contrat joueur
+
+- `Range.percent/radius` ne lisent plus le maximum de niveaux depuis le retour
+  du gain indépendant. Retrait des paramètres formels et de leurs transmissions,
+  ainsi que de la requête désormais inutile à `R.levels` dans le calcul des rayons.
+  Les anciens arguments supplémentaires Lua restent acceptés ; les tests de
+  tables 2/35/40/50 niveaux vérifient cette indépendance. Les coffres/Palbox
+  continuent d'utiliser la table native pour leur répartition.
+- `backup_windows.paths` : suppression du paramètre `mod` jamais lu ; les deux
+  appels du dépôt ont été vérifiés et adaptés. Aucune interface CLI modifiée.
+- `restore_copy` : suppression du `except BaseException: raise` sans effet.
+  Le `finally` nettoie toujours le staging et une restauration interrompue reste
+  marquée `RESTORE-INCOMPLETE.txt`. Un test protège ce résultat et les octets de
+  l'archive initiale.
+- Commentaires/messages des tests de migration corrigés : ils prétendaient
+  encore que le gain était ignoré, alors que leurs assertions vérifiaient sa
+  conservation. Aucune clé ancienne ni version réseau supprimée.
+
 ## Non vérifié
 
 Validation native en jeu, persistance réelle des Pals, Windows physique,

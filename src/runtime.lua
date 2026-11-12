@@ -78,8 +78,6 @@ return function(E)
     end
     function R.targets(models, nextGroup, nextLevel, fullGrowth)
         local entries, byId = {}, {}
-        -- nil until the level table loads: Range assumes 35 levels, the next refresh reconciles.
-        local levels = R.levels()
         for _, model in ipairs(models) do
             if E.valid(model) and model:IsAvailable() and not model.bTemporary then
                 local baseline = R.baseline(model)
@@ -90,7 +88,7 @@ return function(E)
                 local maximum=(E.config.resetToVanilla or policy.growthPercentPerLevel==0) and baseline or baseline * ((100 + policy.maxRangeBonusPercent) / 100)
                 entries[#entries+1] = {
                     id=guid(model:GetId()), baseline=baseline, x=position.X, y=position.Y,
-                    desired=fullGrowth and maximum or (E.config.resetToVanilla and baseline or E.range.radius(baseline, level, policy, levels)),
+                    desired=fullGrowth and maximum or (E.config.resetToVanilla and baseline or E.range.radius(baseline, level, policy)),
                     maximum=maximum,
                 }
             end
@@ -272,7 +270,7 @@ return function(E)
                             and not E.config.resetToVanilla then
                         local id=guid(model:GetId())
                         local baseline=R.baseline(model)
-                        local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model),R.maxLevel())
+                        local future=E.range.radius(baseline,math.min(model:GetLevel()+1,R.maxLevel()),R.policy(model))
                         previewValues[id]=math.min(limits[id],future)/baseline*100
                         maximumValues[id]=limits[id]/baseline*100
                     end

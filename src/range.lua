@@ -62,7 +62,7 @@ local function spread(cap, level, maxLevel)
     return math.min(cap, math.floor((2 * cap * done + upgrades) / (2 * upgrades)))
 end
 
-function Range.percent(level, settings, maxLevel)
+function Range.percent(level, settings)
     validLevel(level)
     local policy=Range.settings(settings)
     local bonus=math.min(policy.maxRangeBonusPercent,policy.growthPercentPerLevel*(level-1))
@@ -88,10 +88,10 @@ function Range.palboxTotal(level, settings, maxLevel)
     return policy.startingPalboxBoxes + spread(policy.maxPalboxBoxes-policy.startingPalboxBoxes, level, maxLevel)
 end
 
-function Range.radius(originalRadius, level, settings, maxLevel)
+function Range.radius(originalRadius, level, settings)
     assert(finite(originalRadius) and originalRadius > 0,
         "original radius must be finite and positive")
-    local result = originalRadius * (Range.percent(level, settings, maxLevel) / 100)
+    local result = originalRadius * (Range.percent(level, settings) / 100)
     assert(finite(result), "calculated radius overflow")
     return result
 end

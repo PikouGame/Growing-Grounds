@@ -152,6 +152,23 @@ class BackupTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'regular files'):
             self.create()
 
+    def test_interrupted_restore_keeps_a_marked_copy_and_preserves_archive(self):
+        archive = self.create()
+        original = archive.read_bytes()
+        destination = self.root/'interrupted'
+        rename = backup.os.rename
+        def interrupted(source, target):
+            if Path(target).name == 'settings':
+                raise OSError('restore interrupted')
+            return rename(source, target)
+        with patch.object(backup.os, 'rename', interrupted):
+            with self.assertRaisesRegex(OSError, 'restore interrupted'):
+                backup.restore_copy(archive, destination)
+        self.assertTrue((destination/'RESTORE-INCOMPLETE.txt').is_file())
+        self.assertEqual((destination/'world/Level.sav').read_bytes(), (self.world/'Level.sav').read_bytes())
+        self.assertEqual(archive.read_bytes(), original)
+        self.assertFalse(list(self.root.glob('.gg-restore-*')))
+
 
 if __name__ == '__main__':
     unittest.main()

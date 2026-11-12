@@ -38,7 +38,7 @@ assert(factory('',Range,defaults,fs).get(a).maxRangeBonusPercent==80,'interrupte
 files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=20\nmaxRangePercent=500\nos.execute("bad")\n'
 store=factory('',Range,defaults,fs)
 assert(store.get(a).maxRangeBonusPercent==100,'legacy oversize sidecar retains the former hard cap')
-assert(store.get(a).growthPercentPerLevel==20,'the removed growth setting is not a setting')
+assert(store.get(a).growthPercentPerLevel==20,'legacy growth remains an independent setting')
 print('PASS: per-world isolation, data-only parsing, traversal rejection, cap, persistence and failed-write recovery')
 
 local objects,hookCallbacks={},{}
@@ -129,15 +129,15 @@ custom=factory('',Range,defaults,fs)
 assert(custom.get(a).maxRangeBonusPercent==150 and custom.get(a).maxChestBonusSlots==0)
 print('PASS: legacy total migration, default inheritance, canonical precedence, +50..+300 display, chest cap0..42 in steps of six')
 
--- A world file written by an older version has four keys per section. It is read as the
--- three settings, and written back with three. Only a growth of 0 (range off) still means something.
+-- Older world sections preserve their explicit growth and cap independently.
+-- Saving adds the current Palbox defaults without erasing either range choice.
 local function lines(text) local n=0 for _ in text:gmatch('[^\n]+') do n=n+1 end return n end
 local saved=files['world-settings.ini']
 files['world-settings.ini']='['..a..']\ngrowthPercentPerLevel=5\nmaxRangeBonusPercent=80\nmaxChestBonusSlots=12\n'
     ..'['..b..']\ngrowthPercentPerLevel=0\nmaxRangeBonusPercent=100\nmaxChestBonusSlots=25\n'
 local old=factory('',Range,defaults,fs)
 local read=old.get(a)
-assert(read.maxRangeBonusPercent==80 and read.maxChestBonusSlots==12 and read.growthPercentPerLevel==5,'old section: growth ignored')
+assert(read.maxRangeBonusPercent==80 and read.maxChestBonusSlots==12 and read.growthPercentPerLevel==5,'old section: growth preserved')
 assert(old.get(b).growthPercentPerLevel==0 and old.get(b).maxChestBonusSlots==24,'old section with growth 0: range stays off, chests stay')
 assert(old.get(nil).maxRangeBonusPercent==100,'worlds without a section follow the defaults')
 local third=string.rep('C',32)
@@ -173,7 +173,7 @@ for growth,expected in pairs({[4]=100,[5]=100,[0]=100}) do
     assert(factory('',Range,config,fs).get(b).maxRangeBonusPercent==expected)
 end
 files['world-settings.ini']=saved
-print('PASS: old three-key world files and old config.lua growth keys are read, growth 0 stays off, files are rewritten with three keys')
+print('PASS: legacy world/config growth is preserved, growth 0 stays off, sections persist all five current settings')
 
 W.setup(menu,a,false)
 W.change(panel.children[2],0);W.change(panel.children[3],0)

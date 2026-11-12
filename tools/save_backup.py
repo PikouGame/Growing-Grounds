@@ -291,12 +291,10 @@ def restore_copy(archive, destination):
         destination.mkdir()
         marker = destination/'RESTORE-INCOMPLETE.txt'
         marker.write_text('Restore did not finish. Do not use this copy.\n')
-        try:
-            for name in ('world', 'settings', 'manifest.json'):
-                os.rename(staging/name, destination/name)
-        except BaseException:
-            # Leave the marked partial restore for diagnosis; never remove a user's folder.
-            raise
+        # On failure leave the marked partial restore for diagnosis; never
+        # remove a user's destination folder. Only staging is cleaned below.
+        for name in ('world', 'settings', 'manifest.json'):
+            os.rename(staging/name, destination/name)
         marker.unlink()
         sync_directory(destination)
         sync_directory(destination.parent)

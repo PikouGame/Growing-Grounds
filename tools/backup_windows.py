@@ -68,7 +68,7 @@ def worlds(save_root):
     return result
 
 
-def paths(game, mod):
+def paths(game):
     if game.name.lower().startswith('palserver-'):
         saved = game.parents[2]/'Saved'
     else:
@@ -82,7 +82,7 @@ def arm(mod):
     if not (mod/'config.lua').is_file():
         raise ValueError('Missing GG configuration')
     pid, game = win.game_parent(mod)
-    save_root, destination, state = paths(game, mod)
+    save_root, destination, state = paths(game)
     state.mkdir(parents=True, exist_ok=True)
     h = win.open_process(pid)
     try:
