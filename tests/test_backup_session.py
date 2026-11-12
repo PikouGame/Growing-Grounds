@@ -61,7 +61,8 @@ class SessionTests(unittest.TestCase):
                 pass
             return subprocess.Popen([sys.executable, '-c', 'pass'])
         actual_popen = subprocess.Popen
-        def fake_popen(command):
+        def fake_popen(command, **kwargs):
+            self.assertEqual(kwargs['env']['GG_BACKUP_MANAGED'], '1')
             with patch.object(subprocess, 'Popen', actual_popen):
                 return child(command)
         with (patch.object(session, 'cancel_pending', cancel),

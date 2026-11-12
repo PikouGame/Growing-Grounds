@@ -1,10 +1,11 @@
-"""Persistent archive policy; independent of the still-pending native save trigger."""
+"""Persistent bounded retention shared by the Windows and Linux companions."""
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import shutil
 import zipfile
 
 import save_backup as archive
+from backup_control import checkpoint
 
 DEFAULTS = {'interval_seconds': 1800, 'recent': 3, 'daily': 7,
             'max_bytes': 1024**3, 'reserve_bytes': 1024**3}
@@ -13,6 +14,7 @@ DEFAULTS = {'interval_seconds': 1800, 'recent': 3, 'daily': 7,
 def scan(destination):
     records, unknown = [], []
     for path in sorted(destination.glob('gg-*.zip')):
+        checkpoint()
         try:
             archive.require(not path.is_symlink(), 'Linked archive')
             m = archive.verify(path)
@@ -70,12 +72,12 @@ def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
 
     Cooldown and change detection use verified manifests, so restarting this
     process does not reset them. All worlds must share this destination to
-    share its storage budget. A future native adapter must supply save safety.
+    share its storage budget. The session adapter establishes a stopped source.
     """
     archive.require(stopped, 'Automatic trigger must first establish a consistent, stopped source')
     policy = dict(DEFAULTS, **(policy or {}))
     archive.require(all(isinstance(v, int) and v >= 0 for v in policy.values())
-                    and policy['recent'] >= 1 and policy['max_bytes'] > 0,
+                    and policy['recent'] >= 1 and 0 < policy['max_bytes'] <= 1024**3,
                     'Invalid automatic backup policy')
     now = now or datetime.now(timezone.utc)
     archive.require(now.tzinfo is not None, 'Policy clock must include a timezone')
@@ -119,6 +121,7 @@ def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
                     'required_peak_bytes': used+estimate, 'max_bytes': policy['max_bytes']}
         # The baseline and last VERIFIED copy are never candidates, including on failure.
         for r in planned:
+            checkpoint()
             r['path'].unlink()
         result = archive.create(world, mod, destination, kind=kind, keep=100, version=version,
                                 reason='automatic-policy', stopped=True, _lock_held=True,
@@ -129,6 +132,7 @@ def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
         removed = [r['path'].name for r in planned]
         for r in remaining:
             if r['path'] not in keep:
+                checkpoint()
                 r['path'].unlink()
                 removed.append(r['path'].name)
         result.update(status='created', archive_created=True, removed=removed,

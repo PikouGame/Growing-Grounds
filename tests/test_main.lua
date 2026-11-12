@@ -16,6 +16,7 @@ local function run()
             if name=='language' then return noop end
             if name=='settings' then return {key=noop,get=noop} end
             if name=='boundary' then return {} end
+            if name=='backups' then return {install=noop} end
             if name=='runtime' then return {refresh=count('runtime')} end
             if name=='ui' or name=='world_settings' then
                 assert(env.texts==noop,'the rows are built after the language reader exists')

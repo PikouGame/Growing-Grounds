@@ -1,109 +1,106 @@
-Growing Grounds save archives — development integration
+Growing Grounds automatic backups
 
-Status
-The archive core uses Python 3.9+ and its standard library. A Linux/Proton
-session adapter now runs it automatically around managed launches. It is not
-called from the UE4SS game thread and is not yet included in release ZIPs.
-Python and systemd are already available on the development machines.
-Native Windows integration/testing and live-save checkpoints remain pending.
+Windows
+Install the complete GG archive, including tools/ and backup/. No Python
+installation, admin account, scheduled task or alternate game shortcut is needed.
+The Lua mod arms the private companion once at startup. The companion sleeps
+on the owning game process; it does not scan, copy, hash or compress saves while
+that process is running. On clean exit it waits120 seconds, then archives at
+background CPU/I/O priority. A new GG launch cancels pending/in-progress work
+and waits for its file handles to close before initialization continues.
+The worker also checks for a new Palworld process while it works, to stop before
+that process reaches the mod. No zero-cost or measured-FPS claim is made.
 
-Automatic session adapter (tools/backup_session.py)
-Configure one JSON profile per isolated game/server: session_unit and
-backup_unit (without .service), state, destination, mod, save_root (the
-SaveGames directory) or explicit worlds, version and quiet_seconds (120).
-An optional policy object overrides the defaults below. A profile must own
-its save directory; all processes that write those saves must use its launcher.
-Do not use this adapter for a save shared with unmanaged game/server processes.
+The first Windows archive is a protected baseline AFTER the first clean exit.
+It is not a pre-install backup. Keep a separate world backup before installing
+or updating a mod. A crash, forced stop or computer shutdown does not create a
+new archive. A dedicated server that never stops has no new GG checkpoints;
+Palworld's own backups remain unchanged.
 
-Launch the game/server under its named user systemd service through:
-python3 tools/backup_session.py launch PROFILE.json -- ORIGINAL_COMMAND ARGUMENTS
-An initial missing baseline is created before spawning the game. Existing
-verified baseline fingerprints avoid re-hashing them on each launch. Modified
-archives are reverified. A failed initial backup prevents an unprotected launch.
-New authoritative worlds are discovered under save_root after each exit.
+Normal solo/co-op saves: %LOCALAPPDATA%\Pal\Saved\SaveGames
+Dedicated saves: Pal\Saved\SaveGames in that server installation.
+Archives: GrowingGroundsBackups beside SaveGames.
+Status: GrowingGroundsBackupState\status.json beside SaveGames.
+A joining client's LocalData.sav cache is not a full world and is excluded.
+Global Palbox storage outside the selected worlds is not included.
 
-After exit code zero, a transient systemd timer waits two minutes. The worker
-checks the clean-exit marker, inactive session and exclusive source lock before
-archiving. A relaunch cancels the timer/worker and takes that lock before
-starting the game. The worker uses idle I/O priority, nice19, a20% CPU quota
-and a256MiB memory limit. It does no work while the managed session is active.
-Crashes and forced signals do not rotate backups. A host shutdown before the
-quiet period finishes may prevent that job from running. Long-running servers
-do not receive new GG archives until a clean stop; this is not live protection.
-Native Palworld backups remain separate and are not disabled or changed.
-State and skip/error details are available in state/status.json and the user
-service journal. This integration has no game UI or keyboard shortcut.
+Proton/Linux — one-time setup
+Python 3.9+ and a working user systemd session are required. Use the shipped
+setup tool with the actual SaveGames directory in your Proton prefix:
 
-Automatic policy prototype (tools/backup_policy.py)
-PK requires automatic operation, with no backup storm after quick relaunches.
-The policy reads successful archive manifests across launches: a 30-minute
-cooldown, unchanged-save detection, three recent copies and one per previous
-day for seven days. One copy can serve both retention categories. The protected
-baseline is separate. A single archive directory shares a 1 GiB budget across
-worlds and reserves 1 GiB of free disk space. These are configurable defaults.
-When space is tight, verified older history can be pruned, preserving every
-baseline and the latest verified backup of each world. If those copies plus
-the new archive cannot fit, it skips creation and reports storage-limit.
-ZIP writes themselves are bounded by the remaining budget. Unexpected clock
-rollback skips creation instead of resetting the cooldown. The session adapter
-establishes a stopped source; it never pretends a live copy is a completed save.
+python3 tools/backup_setup.py --save-root '/actual/prefix/drive_c/users/steamuser/AppData/Local/Pal/Saved/SaveGames'
 
-Contents
-Each ZIP contains the complete selected world directory except its existing
-backup/ rotations, plus GG config.lua and any world-settings.ini / .bak.
-World data includes all Players files and other files present in that world.
-It does not include other worlds, account-wide Global Palbox storage, game
-binaries, server passwords or client-side files that only exist on another PC.
-For a dedicated server, run it on the server's authoritative save directory;
-a client's LocalData.sav cache cannot replace the world save.
+It prints a Steam launch-options line ending in %command%. Paste that line into
+Palworld's launch options. The generated launcher forwards the original game
+command and environment. Keep your MangoHud/other launch wrappers around the
+original command as needed; no graphics or game settings are changed.
+For a dedicated server, run the generated gg-launch followed by its usual
+server command instead. A profile must own its save folder: use that launcher
+for every process that writes those saves. The generated files stay beside
+SaveGames; neither game executables nor existing worlds are modified by setup.
 
-manifest.json records the world ID, UTC creation time, mod version, reason,
-backup type, file sizes and SHA-256 hashes. Archive contents are checked against
-the manifest before publication and again before restoration. Hashes detect
-corruption; they are not a signature establishing who created an archive.
+This launcher first cancels any pending backup, protects missing initial
+baselines BEFORE starting the game, then holds the session lock until exit.
+After a clean exit a separate user timer waits120 seconds and runs the archive
+worker. A quick restart cancels that worker before the game starts. The worker
+uses idle I/O priority, nice 19, a 20% CPU quota and a 256 MiB memory limit.
+If an initial baseline cannot be created, the protected launch reports that
+failure instead of pretending the world is protected. Remove the launch option
+to launch without GG backups. No archive is made during a managed session.
+An unmanaged launch cannot provide the same lock guarantee.
 
-Consistency and storage
-Stop the game/server cleanly before creating an archive. --source-stopped is
-an explicit operator confirmation, not process detection. The tool also checks
-the file inventory and reads each file again to detect changes, but that does
-not make a live copy a consistent game save. Do not use it on a running world.
-Keep the archive destination outside the world and mod directories. Account
-cloud synchronization must not modify the source during the operation.
+Retention and disk space
+All worlds under one SaveGames installation share a hard1 GiB archive-directory
+budget, including temporary archives. The policy also leaves1 GiB of free disk
+space. It keeps the original baseline, the most recent three rolling copies,
+and one per previous day for seven days. Copies serving two categories are
+not duplicated. It skips unchanged saves and applies a 30-minute cooldown that
+survives restarts. A backwards clock skips work instead of bypassing cooldown.
 
-The first baseline is protected and cannot be replaced by this tool. Rotating
-backups retain the latest five by default, separately per world. Old rotating
-archives are removed only after a new one passes verification. Baselines,
-unrecognized files and corrupt archives are left untouched. Consequently this
-is a count limit, not a hard disk quota. Keep archives on another disk as well
-if you want protection against drive failure; this tool does not upload data.
-A failed write does not remove the last verified backup. .partial files left
-by a forcibly killed process are not valid archives and count against the
-storage budget. The operating system releases its locks when a process dies;
-the small .gg-backup.lock file remains intentionally and must not be removed.
+Verified older history may be removed to make room, but every baseline and the
+latest verified copy of every world are protected. If a new complete archive
+cannot fit alongside those protected copies, it is skipped with storage-limit
+in status.json. Unrecognized/corrupt files are never deleted automatically and
+count against the budget. Native Palworld backup/ rotations are excluded from
+GG archives and are not included in this GG-only1 GiB limit.
 
-Commands (replace placeholders with the actual paths)
-python3 tools/save_backup.py create --world WORLD_GUID_FOLDER --mod BASE_RANGE_GROWTH_FOLDER --destination ARCHIVE_FOLDER --kind baseline --version MOD_VERSION --reason before-update --source-stopped
-python3 tools/save_backup.py create --world WORLD_GUID_FOLDER --mod BASE_RANGE_GROWTH_FOLDER --destination ARCHIVE_FOLDER --keep 5 --version MOD_VERSION --source-stopped
-python3 tools/save_backup.py verify ARCHIVE.zip
-python3 tools/save_backup.py restore-copy ARCHIVE.zip NEW_REVIEW_FOLDER
+Archive and restore
+Each ZIP contains the complete authoritative world (including Players), GG
+config.lua and world-settings.ini if present, plus a manifest with world ID,
+UTC creation time, mod version, sizes and SHA256 hashes. Source inventory and
+bytes are checked for changes; archive contents are verified before a unique
+atomic publication. A cancellation discards its incomplete .partial file.
+A machine/power failure may leave a .partial file; it counts toward the cap and
+is never offered as a completed backup. Hashes detect corruption, not authorship.
+Archives are local; no uploads or network calls occur in the runtime companion.
 
-Restoring
-restore-copy always writes a new folder with world/, settings/ and manifest.json.
-It refuses an existing destination and checks extracted bytes. It never replaces
-an active save or runs config.lua. A RESTORE-INCOMPLETE.txt marker means the
-extraction did not finish; do not use that copy.
-While the game/server remains stopped, review the world ID and date, preserve
-the current world, then install the restored world and its matching GG settings.
-Use a compatible mod version: loading expanded Palbox storage without the mod
-may remove slots. Restoring rolls back world/player progress together.
-Before trusting an automatic feature, test a restored copy in the actual game.
+On Windows, use the included interpreter from the installed mod directory:
+backup\python\python.exe tools\save_backup.py verify ARCHIVE.zip
+backup\python\python.exe tools\save_backup.py restore-copy ARCHIVE.zip NEW_FOLDER
 
-Verification
-python3 -m unittest discover -s tests -p 'test*backup*.py' -v
-Tests cover full-file round trips, baseline/rotation protection, client-cache
-rejection, corruption, unsafe paths, source changes, failed writes and locking.
-They also check source locking, quick-relaunch cancellation, clean-exit/quiet
-gates, world discovery and cached baseline verification. A native systemd
-lifecycle fixture checks that archiving occurs after exit and not during play.
-Those checks do not establish that a world loads in Palworld or that the
-Windows integration works. No frame-time benchmark is claimed.
+On Linux use python3 in place of backup\python\python.exe. Restore-copy verifies
+and writes a NEW review folder. It never replaces a live save or runs Lua config.
+Stop the game/server, preserve its current save, then restore the reviewed world
+and matching settings. This rolls player/world progress back together. Keep GG
+installed when loading Pals in extra Palbox boxes. RESTORE-INCOMPLETE.txt means
+the restore did not finish and must not be used. Keep an independent backup if
+you also need protection from drive failure.
+
+Disable/remove
+Windows: automaticBackups=false in config.lua stops arming the companion at the
+next launch. Let an existing session close and its pending worker finish first.
+Proton/Linux: remove the generated Steam launch option/server wrapper. Do not
+remove GG files while a backup worker is active. Existing ZIPs are retained
+when the mod is removed. The small lock file is deliberately left in place;
+never delete it to bypass a lock.
+
+Build and validation
+The embedded CPython 3.14.10 x64 archive is pinned to Python.org's release SHA256.
+Its license and runtime-provenance.json ship with GG. There is no system-wide
+installation and the interpreter ignores ambient Python packages.
+Build once: python3 tools/backup_runtime.py --fetch
+Package: python3 tools/release.py
+Tests: python3 -m unittest discover -s tests -p 'test*backup*.py' -v
+Windows lifecycle fixture: tests/windows_backup_smoke.py (disposable paths only).
+The fixture under Wine proves Win32 process/cancellation/file handling, not a
+physical Windows Steam installation. That remains part of release validation.

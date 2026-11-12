@@ -3,6 +3,8 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import unittest
 from unittest.mock import patch
 import zipfile

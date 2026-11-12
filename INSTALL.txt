@@ -131,3 +131,10 @@ See README.md for credits, licensing and compatibility details.
 We'd love your comments, experiences and bug reports so we can investigate and
 improve the mod: https://github.com/PikouGame/Growing-Grounds/issues
 Please remove personal information before sharing logs.
+
+Automatic backups
+Install the full package, including tools/, backup/ and backup-version.txt.
+Windows arms the companion automatically; no separate Python install is needed.
+Proton/Linux needs the one-time launcher setup in BACKUPS.txt. The archive
+budget is1 GiB shared across worlds; processing waits until a clean game exit.
+The first Windows baseline is after exit, so keep a pre-install backup yourself.

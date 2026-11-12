@@ -1,4 +1,7 @@
 return {
+    -- Automatic archives after a clean exit; 120s quiet period, shared 1 GiB cap.
+    -- Windows is automatic; Proton needs the one-time setup in BACKUPS.txt.
+    automaticBackups = true,
     -- Host/server defaults. Local worlds can override these in World Settings.
     -- Maximum radius BONUS, reached at the last base level and spread evenly over
     -- the levels before it: +100% doubles the radius (35m -> 70m).

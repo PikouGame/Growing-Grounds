@@ -17,6 +17,7 @@ local function guard(label, fn)
 end
 local function valid(object) return object and object:IsValid() end
 local env = {root=root, range=Range, config=Config, log=log, guard=guard, valid=valid}
+guard('automatic backups',function() dofile(root..'src/backups.lua')(env).install() end)
 env.objects=dofile(root..'src/objects.lua')(env)
 env.texts=dofile(root..'src/language.lua')(env,dofile(root..'src/texts.lua'))
 env.settings = dofile(root .. 'src/settings.lua')(root, Range, Config, nil, log)

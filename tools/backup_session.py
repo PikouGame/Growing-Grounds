@@ -16,6 +16,7 @@ import sys
 import time
 
 import backup_policy
+from backup_control import Cancelled
 
 
 def load_profile(path):
@@ -27,6 +28,9 @@ def load_profile(path):
         raise ValueError('Session and backup need separate units')
     for key in ('state', 'destination', 'mod'):
         p[key] = Path(p[key]).resolve()
+    version = p['mod']/'backup-version.txt'
+    if version.is_file():
+        p['version'] = version.read_text().strip()
     p['worlds'] = [Path(w).resolve() for w in p.get('worlds', [])]
     if 'save_root' in p:
         p['save_root'] = Path(p['save_root']).resolve()
@@ -144,7 +148,7 @@ def launch(profile_path, command):
         for sig in (signal.SIGINT, signal.SIGTERM):
             previous[sig] = signal.signal(sig, forward)
         try:
-            child = subprocess.Popen(command)
+            child = subprocess.Popen(command, env=dict(os.environ, GG_BACKUP_MANAGED='1'))
             code = child.wait()
         finally:
             for sig, handler in previous.items():
@@ -162,7 +166,7 @@ def launch(profile_path, command):
 def worker(profile_path):
     profile = load_profile(profile_path)
     def cancelled(_sig, _frame):
-        raise InterruptedError('Backup cancelled for session restart')
+        raise Cancelled('Backup cancelled for session restart')
     old = signal.signal(signal.SIGTERM, cancelled)
     try:
         try:
@@ -184,7 +188,7 @@ def worker(profile_path):
                 return {'status': 'idle', 'results': results}
         except BlockingIOError:
             return {'status': 'session-active'}
-        except InterruptedError:
+        except (InterruptedError, Cancelled):
             return {'status': 'cancelled'}
     finally:
         signal.signal(signal.SIGTERM, old)

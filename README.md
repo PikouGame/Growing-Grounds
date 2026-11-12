@@ -29,6 +29,19 @@ is ready. There is no fixed countdown, no terrain reuse between animations, and
 no speculative scanning while you play. The outward wave lasts 2.4 seconds;
 the rising effect lifts 6 metres by default and gradually softens the terrain relief.
 
+## Automatic save backups
+
+GG includes local save archives with a shared **1 GiB budget**. After a clean
+exit it waits two minutes, skips quick relaunches and unchanged saves, and
+keeps a protected baseline plus recent/daily history. It verifies every archive
+before publishing it. Archives contain the full world, players and GG settings.
+
+Windows uses the included companion automatically. Proton/Linux needs the
+one-time launcher setup in [BACKUPS.txt](BACKUPS.txt). Windows creates its first
+baseline after the first clean exit; keep a separate backup before installing.
+Long-running servers get a new GG checkpoint only after a clean stop. Native
+Palworld backups stay enabled. See BACKUPS.txt for retention, status and restore.
+
 ## Your world's settings
 
 - **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.

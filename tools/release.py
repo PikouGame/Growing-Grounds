@@ -5,11 +5,16 @@ import json
 import re
 import shutil
 import zipfile
+import backup_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = '0.1.7-alpha'
 RUNTIME = [
     'enabled.txt', 'config.lua', 'Scripts/main.lua',
+    'src/backups.lua', 'backup-version.txt',
+    'tools/save_backup.py', 'tools/backup_policy.py', 'tools/backup_control.py',
+    'tools/backup_win32.py', 'tools/backup_windows.py',
+    'tools/backup_session.py', 'tools/backup_setup.py',
     'src/range.lua', 'src/runtime.lua', 'src/ui.lua',
     'src/settings.lua', 'src/world_settings.lua',
     'src/storage.lua', 'src/palbox.lua', 'src/chest_ui.lua',
@@ -22,7 +27,7 @@ RUNTIME = [
     'assets/contour-gradient.svg', 'assets/contour-gradient.png',
     'assets/ground-wave.svg', 'assets/ground-wave.png',
 ]
-DOCS = ['INSTALL.txt', 'LICENSE.txt', 'README.md']
+DOCS = ['INSTALL.txt', 'LICENSE.txt', 'README.md', 'BACKUPS.txt']
 BUILD = ROOT / 'build'
 BUILD.mkdir(exist_ok=True)
 
@@ -51,6 +56,7 @@ for name in RUNTIME:
     if name.endswith('.lua'):
         assert 'RegisterKeyBind' not in (ROOT / name).read_text(), name
 assert VERSION in (ROOT / 'Scripts/main.lua').read_text()
+assert (ROOT/'backup-version.txt').read_text().strip() == VERSION
 # Every module and image the runtime loads must ship: one left out breaks the mod at load.
 loaded = set()
 for name in RUNTIME:
@@ -59,14 +65,17 @@ for name in RUNTIME:
 missing = sorted(loaded - set(RUNTIME))
 assert not missing, f'loaded at runtime but not in the archive: {missing}'
 
-manual = {f'BaseRangeGrowth/{name}': (ROOT / name).read_bytes()
-          for name in RUNTIME + DOCS}
+files = {name: (ROOT / name).read_bytes() for name in RUNTIME + DOCS}
+files.update(backup_runtime.entries())
+files['backup/runtime-provenance.json'] = (json.dumps(backup_runtime.provenance(), indent=2)+'\n').encode()
+manual = {'BaseRangeGrowth/'+name: data for name, data in files.items()}
 receipts = [archive(f'Growing-Grounds-{VERSION}.zip', manual)]
 
 # Both rules are required: the dedicated server uses IsServer=true rules.
 # Verify the dependency package name in the installed UE4SS Workshop Info.json
 # before upload; the Steam route has not been tested on this development setup.
-targets = ['./Scripts', './src', './assets', './config.lua', './enabled.txt']
+targets = ['./Scripts', './src', './assets', './tools', './backup',
+           './config.lua', './enabled.txt', './backup-version.txt']
 info = {
     'ModName': 'Growing Grounds', 'PackageName': 'BaseRangeGrowth',
     'Thumbnail': 'thumbnail.png', 'Version': VERSION, 'DebugMode': False,
@@ -78,7 +87,7 @@ info = {
         {'Type': 'Lua', 'IsServer': True, 'Targets': targets},
     ],
 }
-workshop = {name: (ROOT / name).read_bytes() for name in RUNTIME + DOCS}
+workshop = dict(files)
 workshop['Info.json'] = (json.dumps(info, indent=2) + '\n').encode()
 workshop['thumbnail.png'] = (ROOT / 'assets/screenshots/base-range-level8.png').read_bytes()
 stage = BUILD / f'workshop-{VERSION}'
@@ -95,6 +104,7 @@ receipts.append(archive(f'Growing-Grounds-{VERSION}-workshop.zip', workshop))
 (BUILD / 'release-manifest.json').write_text(json.dumps({
     'version': VERSION, 'archives': receipts,
     'workshop_deployment_verified': False,
-    'runtime_sha256': {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-                       for name in RUNTIME},
+    'runtime_sha256': {name: hashlib.sha256(data).hexdigest()
+                       for name, data in files.items() if name not in DOCS},
+    'backup_runtime': backup_runtime.provenance(),
 }, indent=2) + '\n')

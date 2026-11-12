@@ -1,6 +1,6 @@
 """GG archive core. The caller must supply a stopped, consistent world save.
 
-This is an offline development tool, not an automatic UE4SS runtime feature.
+Called by the automatic session companions or by the offline restore CLI.
 Python standard library only; archives can also be opened with ordinary ZIP tools.
 """
 import argparse
@@ -13,9 +13,12 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
+import sys
 import tempfile
 import uuid
 import zipfile
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from backup_control import checkpoint
 
 FORMAT = 'growing-grounds-save/1'
 SETTINGS = ('config.lua', 'world-settings.ini', 'world-settings.ini.bak')
@@ -33,6 +36,7 @@ class LimitedFile:
         return getattr(self.raw, name)
 
     def write(self, data):
+        checkpoint()
         require(self.raw.tell()+len(data) <= self.limit, 'Archive storage budget exceeded')
         return self.raw.write(data)
 
@@ -44,7 +48,11 @@ def require(condition, message):
 
 def digest(stream):
     h, size = hashlib.sha256(), 0
-    while data := stream.read(CHUNK):
+    while True:
+        checkpoint()
+        data = stream.read(CHUNK)
+        if not data:
+            break
         h.update(data)
         size += len(data)
     return {'size': size, 'sha256': h.hexdigest()}
@@ -68,8 +76,10 @@ def safe_name(name):
 
 
 def regular(path):
+    checkpoint()
     s = path.lstat()
-    require(stat.S_ISREG(s.st_mode), 'Only regular files can be archived: '+str(path))
+    require(stat.S_ISREG(s.st_mode) and not getattr(s, 'st_file_attributes', 0) & 0x400,
+            'Only regular files without reparse points can be archived: '+str(path))
     return (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
 
 
@@ -78,11 +88,14 @@ def inventory(world, mod):
     def unreadable(error):
         raise error
     for directory, dirs, names in os.walk(world, followlinks=False, onerror=unreadable):
+        checkpoint()
         folder = Path(directory)
         if folder == world and 'backup' in dirs:
             dirs.remove('backup')  # Do not recursively archive the game's rotations.
         for name in dirs:
-            require(not (folder/name).is_symlink(), 'Save directory contains a symbolic link')
+            p = folder/name
+            require(not p.is_symlink() and not getattr(p.lstat(), 'st_file_attributes', 0) & 0x400,
+                    'Save directory contains a symbolic link or junction')
         for name in names:
             p = folder/name
             rel = 'world/'+p.relative_to(world).as_posix()
@@ -123,6 +136,7 @@ def locked(folder):
 
 
 def verify(archive):
+    checkpoint()
     with zipfile.ZipFile(archive) as z:
         infos = z.infolist()
         names = [i.filename for i in infos]
@@ -201,7 +215,11 @@ def create(world, mod, destination, *, kind='rolling', keep=5, version='unknown'
                         require(regular(path) == fingerprint, 'Source changed during backup')
                         h, size = hashlib.sha256(), 0
                         with path.open('rb') as source, z.open(name, 'w', force_zip64=True) as target:
-                            while data := source.read(CHUNK):
+                            while True:
+                                checkpoint()
+                                data = source.read(CHUNK)
+                                if not data:
+                                    break
                                 target.write(data)
                                 h.update(data)
                                 size += len(data)
@@ -219,6 +237,7 @@ def create(world, mod, destination, *, kind='rolling', keep=5, version='unknown'
             verify(temporary)
             # Unique name plus an exclusive folder lock; never replace a previous archive.
             require(not output.exists(), 'Archive name already exists')
+            checkpoint()
             os.rename(temporary, output)
             sync_directory(destination)
         finally:
@@ -234,6 +253,7 @@ def create(world, mod, destination, *, kind='rolling', keep=5, version='unknown'
                 except (ValueError, OSError, zipfile.BadZipFile, KeyError) as e:
                     warnings.append(f'Left unverified archive untouched: {p.name}: {e}')
             for _, old in sorted(candidates)[:-keep]:
+                checkpoint()
                 old.unlink()
                 removed.append(old.name)
             sync_directory(destination)
