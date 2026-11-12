@@ -45,7 +45,7 @@ local players={}
 local E={range=Range,config={},valid=valid,
     log=function(s) logs[#logs+1]=s end,
     guard=function(_,fn) local ok,err=pcall(fn);if not ok then errors[#errors+1]=err end;return ok,err end,
-    runtime={isAuthority=function(p) return p.server end,policy=function(p) return Range.settings(p.policy) end},
+    runtime={levels=function() return 35 end,isAuthority=function(p) return p.server end,policy=function(p) return Range.settings(p.policy) end},
     objects={find=function(p)
         if p=='/Script/Pal.PalIndividualCharacterSlot' then return slotClass end
         if p=='/Script/Pal.PalObjectReplicatorComponent' then return replicatorClass end
@@ -109,15 +109,15 @@ assert(created==30 and c.updates==1,'steady state allocates/writes nothing')
 -- A Pal in the original area survives every resize as the exact same slot.
 local occupied=c:Get(5);occupied.empty=false;occupied.pal='original-pal'
 g.level=33;P.refresh();drain()
-assert(c:Num()==1920 and s.PageNum==64 and c:Get(5)==occupied)
-for _,level in ipairs({34,35}) do g.level=level;local count=created;P.refresh();drain();assert(c:Num()==1920 and created==count) end
--- One page per yield; a new cap does not spread extra pages across 35 levels.
-p.policy.maxPalboxBonusPages=64;P.refresh()
+assert(c:Num()==1860 and s.PageNum==62 and c:Get(5)==occupied)
+for _,level in ipairs({34,35}) do g.level=level;P.refresh();drain();assert(s.PageNum==level+29) end
+-- Even a multi-box increase publishes only one whole box per game-thread yield.
+p.policy.maxPalboxBoxes=66;P.refresh()
 table.remove(timers,1)();assert(c:Num()==1950 and #timers==1)
-drain();assert(c:Num()==1980 and s.PageNum==66,'at level35 cap64 grants +34, not +64')
+drain();assert(c:Num()==1980 and s.PageNum==66,'last level reaches the total cap')
 -- Lowering/off never deletes occupied or locked slots, and shrinks whole pages.
 local extra=c:Get(1979);extra.empty=false;extra.pal='extra-pal'
-p.policy.maxPalboxBonusPages=0;P.refresh();drain()
+p.policy.maxPalboxBoxes=32;P.refresh();drain()
 assert(c:Num()==1980 and c:Get(1979)==extra and extra.pal=='extra-pal')
 extra.empty=true;extra.locked=true;P.refresh();drain();assert(c:Num()==1980)
 extra.locked=false;s.SyncPageIndex=65;P.refresh();drain();assert(c:Num()==1980,'keep an actively synchronized page')
@@ -127,7 +127,7 @@ assert(#owner.ReferencedObjects==0,'release only our obsolete references')
 assert(not network.alive,'last owned slot removed destroys its dedicated replicator')
 -- Different guilds grant different personal bonuses; no base-count multiplier.
 local p2,s2,c2=newPlayer(3,true)
-p.policy.maxPalboxBonusPages=2;P.refresh();drain()
+p.policy.maxPalboxBoxes=34;P.refresh();drain()
 assert(c:Num()==1020 and c2:Num()==1020)
 g.level=1;P.refresh();drain();assert(c:Num()==960 and c2:Num()==1020)
 -- Missing load state is retried; construction does not permanently miss a player.
@@ -139,7 +139,7 @@ local p4,s4,c4=newPlayer(2,true);failSetup=true
 local held=#owner.ReferencedObjects
 P.refresh();drain();assert(c4:Num()==960 and s4.PageNum==32 and #owner.ReferencedObjects==held and #errors==1)
 local count=created;failSetup=false;P.refresh();drain();assert(created==count,'do not hammer a failing native operation')
-p4.policy.maxPalboxBonusPages=1;P.refresh();drain();assert(c4:Num()==990,'changed policy allows a fresh attempt')
+p4.policy.maxPalboxBoxes=65;P.refresh();drain();assert(c4:Num()==990,'changed policy allows a fresh attempt')
 -- External expansions above GG's entire cap are preserved.
 local px,sx,cx=newPlayer(35,true)
 for i=960,2999 do cx.SlotArray[i+1]=slot(i,cx) end
@@ -154,6 +154,21 @@ hooks['/Script/Pal.PalPlayerState:RequestJoinPlayer_ToServer']({get=function() r
 P.refresh();drain()
 assert(cl:Num()==1020 and sl.PageNum==34 and cl:Get(960)==savedPal)
 assert(#pl:GetOwner().components==0,'native-created load slots do not need a duplicate subobject channel')
+-- Start below vanilla; occupied and locked boxes still prevent truncation.
+local low,ls,lc,lg=newPlayer(1,true)
+low.policy={startingPalboxBoxes=1,maxPalboxBoxes=16}
+local saved=lc:Get(945);saved.empty=false;saved.pal='keep-existing-pal'
+P.refresh();drain();assert(ls.PageNum==32 and lc:Get(945)==saved)
+saved.empty=true;P.refresh();drain();assert(ls.PageNum==1 and lc:Num()==30)
+lg.level=18;P.refresh();drain();assert(ls.PageNum==9)
+lg.level=35;P.refresh();drain();assert(ls.PageNum==16)
+-- Reset restores the original game count even when configured below vanilla.
+E.config.resetToVanilla=true;P.refresh();drain();assert(ls.PageNum==32)
+E.config.resetToVanilla=false;P.refresh();drain();assert(ls.PageNum==16)
+-- A changed level table is part of reconciliation/retry policy.
+lg.level=18;E.runtime.levels=function() return 18 end
+P.refresh();drain();assert(ls.PageNum==16)
+E.runtime.levels=function() return 35 end;P.refresh();drain();assert(ls.PageNum==9)
 -- World travel drops only references owned by this module.
 local foreign=obj('foreign');owner.ReferencedObjects[#owner.ReferencedObjects+1]=foreign
 players={};world=obj('new-world');P.refresh();drain()

@@ -3,9 +3,9 @@
 -- delivered to the live client. No game component is repurposed.
 -- X/Y are hundredths of current/next percent. Z carries a version marker, level,
 -- range-enabled flag and chest cap as exact integers. No extra replicated object.
--- Scale is an optional extension: X=max percent in hundredths, Y/Z repeat the
--- current radius and policy stamp. Identity scale means an older server; split
--- location/scale replication never borrows the client's own range setting.
+-- Legacy scale stores a maximum radius and repeated radius/policy stamp.
+-- Total-cap scale stores maximum radius, packed start/end and a repeated revision.
+-- Split replication never borrows the client's own settings.
 return function(E)
     local P = {}
     local marker, records, reported = {}, {}, {}
@@ -13,6 +13,10 @@ return function(E)
     -- Fixed wire radix: 7 bits hold chest cap + range flag; Palbox cap follows.
     -- The largest encoded position stays below 2^24 (exact float integers).
     local PALBOX_MAGIC, FLAGS_RADIX = 1000000, 128
+    -- Version 4 uses a negative stamp (old clients reject it). Scale.Y packs
+    -- start/total; scale.Z repeats the stamp so split property updates are hidden.
+    -- A 7-bit revision changes with either policy or preview. All stamps < 2^24.
+    local TOTAL_RADIX, REVISIONS = 97, 128
     local componentPath='/Script/Engine.SceneComponent'
     local function find(path) return E.objects.find(path) end
     local function finite(n) return type(n)=='number' and n==n and math.abs(n)<math.huge end
@@ -26,13 +30,22 @@ return function(E)
         if not finite(x) or not finite(y) or not finite(z) then return end
         local limits=E.range.limits
         local payload=z-MAGIC
-        local level,rangeEnabled,chestCap,palboxCap
-        if z>=PALBOX_MAGIC then
+        local level,rangeEnabled,chestCap,palboxCap,revision
+        if z<0 then
+            if z%1~=0 then return end
+            payload=-z-1
+            local packed=math.floor(payload/(MAX_LEVEL+1))
+            local flags=packed%FLAGS_RADIX
+            revision=math.floor(packed/FLAGS_RADIX)
+            level=payload-packed*(MAX_LEVEL+1)
+            if revision>=REVISIONS or flags>limits.maxChestBonusSlots*2+1 then return end
+            rangeEnabled,chestCap=flags%2==1,math.floor(flags/2)
+        elseif z>=PALBOX_MAGIC then
             payload=z-PALBOX_MAGIC
             local packed=math.floor(payload/(MAX_LEVEL+1))
             palboxCap=math.floor(packed/FLAGS_RADIX)
             local flags=packed%FLAGS_RADIX
-            if palboxCap>limits.maxPalboxBonusPages or flags>limits.maxChestBonusSlots*2+1 then return end
+            if palboxCap>64 or flags>limits.maxChestBonusSlots*2+1 then return end
             level=payload-packed*(MAX_LEVEL+1)
             rangeEnabled,chestCap=flags%2==1,math.floor(flags/2)
         elseif payload>=1 then
@@ -48,7 +61,7 @@ return function(E)
         local maxPercent=(100+limits.maxRangeBonusPercent)*100+1
         if x<9999 or x>maxPercent or (y~=-100 and (y<9999 or y>maxPercent)) then return end
         return {level=level,current=x/100,nextPercent=y~=-100 and y/100 or nil,
-            rangeEnabled=rangeEnabled,chestCap=chestCap,palboxCap=palboxCap}
+            rangeEnabled=rangeEnabled,chestCap=chestCap,palboxCap=palboxCap,totalRevision=revision}
     end
     local function ownerBase(component)
         local owner=component:GetOwner()
@@ -77,7 +90,18 @@ return function(E)
         local location=record.component.RelativeLocation
         local value=decode(location)
         local scale=record.component.RelativeScale3D
-        if value and scale and finite(scale.X) and finite(scale.Y) and finite(scale.Z)
+        if value and value.totalRevision~=nil then
+            if scale and finite(scale.X) and finite(scale.Y) and scale.Z==location.Z
+                    and scale.Y%1==0 and scale.Y>=0 and scale.Y<TOTAL_RADIX*TOTAL_RADIX then
+                local start,maximum=scale.Y%TOTAL_RADIX,math.floor(scale.Y/TOTAL_RADIX)
+                if start>=1 and maximum>=start and maximum<=E.range.limits.maxPalboxBoxes then
+                    value.palboxStart,value.palboxMaximum=start,maximum
+                end
+                if scale.X>=9999 and scale.X<=(100+E.range.limits.maxRangeBonusPercent)*100+1 then
+                    value.maximumPercent=scale.X/100
+                end
+            end
+        elseif value and scale and finite(scale.X) and finite(scale.Y) and finite(scale.Z)
                 and math.abs(scale.Y-location.X)<=0.01 and scale.Z==location.Z
                 and scale.X>=9999 and scale.X<=(100+E.range.limits.maxRangeBonusPercent)*100+1 then
             value.maximumPercent=scale.X/100
@@ -89,7 +113,7 @@ return function(E)
         if not value then return end
         return table.concat({value.level,value.current,tostring(value.nextPercent),
             tostring(value.rangeEnabled),tostring(value.chestCap),tostring(value.palboxCap),
-            tostring(value.maximumPercent)},':')
+            tostring(value.maximumPercent),tostring(value.palboxStart),tostring(value.palboxMaximum)},':')
     end
     function P.read(model,baseline,level,radius)
         -- Policy remains server-authored during split replication. The UI must
@@ -99,11 +123,11 @@ return function(E)
             return nil,value,true
         end
         local id=guid(model:GetId())
-        local signature=table.concat({level,value.current,tostring(value.nextPercent),tostring(value.maximumPercent)},':')
+        local signature=table.concat({level,value.current,tostring(value.nextPercent),tostring(value.maximumPercent),tostring(value.palboxStart),tostring(value.palboxMaximum)},':')
         if reported[id]~=signature then
             reported[id]=signature
-            E.log(string.format('received server preview: level=%d current=%.2f next=%s maximum=%s',
-                level,value.current,tostring(value.nextPercent),tostring(value.maximumPercent)))
+            E.log(string.format('received server preview: level=%d current=%.2f next=%s maximum=%s Palbox=%s..%s',
+                level,value.current,tostring(value.nextPercent),tostring(value.maximumPercent),tostring(value.palboxStart),tostring(value.palboxMaximum)))
         end
         return value.nextPercent,value
     end
@@ -142,6 +166,31 @@ return function(E)
             location.Z=PALBOX_MAGIC+model:GetLevel()+(MAX_LEVEL+1)*
                 (bonuses.palboxCap*FLAGS_RADIX+bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0))
         end
+        local previous=marker[id] or records[id]
+        local previousComponent=previous and previous.component
+        local prior=E.valid(previousComponent) and decode(previousComponent.RelativeLocation)
+        local priorScale=E.valid(previousComponent) and previousComponent.RelativeScale3D
+        local totalPolicy=bonuses.totalPolicy or bonuses.palboxStart~=nil
+        local packedTotal=0
+        if totalPolicy and bonuses.palboxStart~=nil then
+            local start,maximum=bonuses.palboxStart,bonuses.palboxMaximum
+            assert(finite(start) and finite(maximum) and start%1==0 and maximum%1==0
+                and start>=1 and start<=maximum and maximum<=E.range.limits.maxPalboxBoxes,'Invalid Palbox totals')
+            packedTotal=start+TOTAL_RADIX*maximum
+        end
+        if totalPolicy then
+            local revision=prior and prior.totalRevision or 0
+            if prior and (prior.totalRevision==nil or prior.level~=model:GetLevel()
+                    or math.abs(prior.current*100-location.X)>0.01
+                    or math.abs((prior.nextPercent and prior.nextPercent*100 or -100)-location.Y)>0.01
+                    or prior.rangeEnabled~=bonuses.rangeEnabled or prior.chestCap~=bonuses.chestCap
+                    or not priorScale or priorScale.Y~=packedTotal
+                    or math.abs(priorScale.X-(maximumPercent and maximumPercent*100 or 0))>0.01) then
+                revision=(revision+1)%REVISIONS
+            end
+            location.Z=-(1+model:GetLevel()+(MAX_LEVEL+1)*
+                (revision*FLAGS_RADIX+bonuses.chestCap*2+(bonuses.rangeEnabled and 1 or 0)))
+        end
         assert(decode(location),'Invalid server preview')
         local scale={X=1,Y=1,Z=1}
         if maximumPercent then
@@ -149,6 +198,7 @@ return function(E)
                 maximumPercent<=100+E.range.limits.maxRangeBonusPercent+0.0001,'Invalid maximum preview')
             scale={X=maximumPercent*100,Y=location.X,Z=location.Z}
         end
+        if totalPolicy then scale={X=maximumPercent and maximumPercent*100 or 0,Y=packedTotal,Z=location.Z} end
         local state=marker[id]
         local component=state and state.component
         if not E.valid(component) or component:GetFullName()~=state.path then

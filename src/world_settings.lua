@@ -10,7 +10,8 @@ return function(E)
         -- title and tip are keys of the texts, read in the game's language at each paint.
         {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent, step=1},
         {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots, step=E.range.chestSlotStep},
-        {key='maxPalboxBonusPages', title='palboxCapTitle', tip='palboxCapTip', min=0, max=E.range.limits.maxPalboxBonusPages, step=1},
+        {key='startingPalboxBoxes', title='palboxStartTitle', tip='palboxStartTip', min=1, max=E.range.limits.maxPalboxBoxes, step=1},
+        {key='maxPalboxBoxes', title='palboxCapTitle', tip='palboxCapTip', min=1, max=E.range.limits.maxPalboxBoxes, step=1},
     }
     local function object(path) return E.objects.find(path) end
     local function stringValue(value)
@@ -72,7 +73,7 @@ return function(E)
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
-        E.log('World Settings: range, chest and Palbox bonus cap rows ready')
+        E.log('World Settings: range, chest and Palbox start/total rows ready')
     end
     function W.change(row, value)
         local entry = owned[row:GetFullName()]
@@ -85,7 +86,15 @@ return function(E)
             local step=entry.spec.step
             value=math.floor(value/step+0.5)*step
         end
-        local normalized = E.range.settings({[entry.spec.key]=value})[entry.spec.key]
+        local candidate={}
+        for k,v in pairs(state.draft) do candidate[k]=v end
+        candidate[entry.spec.key]=value
+        -- Moving the start above the end raises the end; lowering the end
+        -- lowers the start. Keep both visible sliders consistent with the draft.
+        if entry.spec.key=='startingPalboxBoxes' and type(value)=='number' and value==value then
+            candidate.maxPalboxBoxes=math.max(state.draft.maxPalboxBoxes,value)
+        end
+        local normalized = E.range.settings(candidate)[entry.spec.key]
         normalized = math.max(entry.spec.min,math.min(entry.spec.max,math.floor(normalized+0.5)))
         if state.draft[entry.spec.key]==normalized then
             paint(row,entry.spec,normalized)
@@ -97,7 +106,8 @@ return function(E)
         assert(E.valid(menu) and menu:GetFullName()==entry.screen, 'Settings menu closed')
         menu.IsEditedSettingFlag = true
         menu.IsEditedInCustomSetting = true
-        paint(row,entry.spec,normalized)
+        state.draft=E.range.settings(candidate)
+        W.attach(menu,state)
     end
     function W.sliderUpdated(slider)
         local path=sliders[slider:GetFullName()]

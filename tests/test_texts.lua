@@ -2,7 +2,7 @@ local root = assert(arg[1], 'pass the mod root with trailing slash')
 local Texts = dofile(root .. 'src/texts.lua')
 
 local cultures = {'en','ja','de','es','es-MX','fr','id','it','ko','pl','pt-BR','ru','th','tr','vi','zh-Hans','zh-Hant'}
-local keys = {'rangeRow','chestRow','rangeCapTitle','rangeCapTip','chestCapTitle','chestCapTip','palboxRow','palboxCapTitle','palboxCapTip','chestCapacity','off'}
+local keys = {'rangeRow','chestRow','rangeCapTitle','rangeCapTip','chestCapTitle','chestCapTip','palboxRow','palboxCapTitle','palboxCapTip','palboxStartTitle','palboxStartTip','chestCapacity','off'}
 
 local function same(a, b, what)
     assert(#a == #b, what .. ': ' .. #a .. ' items, expected ' .. #b)
@@ -255,8 +255,9 @@ print('PASS: the language reader follows the engine, falls back to English and l
 
 for _,culture in ipairs(cultures) do
     local t=Texts.get(culture)
-    assert(has(t.palboxCapTitle,'Growing Grounds'))
-    for _,number in ipairs({'0','1','32','64'}) do assert(has(t.palboxCapTip,number),culture..' Palbox tip lost '..number) end
+    assert(has(t.palboxCapTitle,'Growing Grounds') and has(t.palboxStartTitle,'Growing Grounds'))
+    for _,n in ipairs({'1','32'}) do assert(has(t.palboxStartTip,n)) end
+    for _,number in ipairs({'1','96','64'}) do assert(has(t.palboxCapTip,number),culture..' Palbox tip lost '..number) end
 end
 print('PASS: Palbox settings and reward labels provided in all 17 cultures')
 

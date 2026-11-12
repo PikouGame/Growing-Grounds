@@ -260,3 +260,52 @@ cc:SetRelativeScale3D(maximumComponent.RelativeScale3D)
 server=false;boxes={remote};client.refresh()
 assert(maximumRead()==nil,'removing the maximum clears its payload')
 print('PASS: maximum preview round-trip, split replication, legacy absence, malformed values and no extra component')
+
+-- Total-cap protocol: policy is server-authored and the two replicated fields
+-- may arrive in either order. Never paint a locally guessed total in between.
+server=true;local totalHost=box('totalPublisher');boxes={totalHost}
+local start,finish=1,16
+E.runtime.bonuses=function() return {totalPolicy=true,rangeEnabled=true,chestCap=18,palboxStart=start,palboxMaximum=finish} end
+local totals=make(E);totals.refresh();totals.publish(totalHost,base,145,200);totals.finish()
+local tc=totalHost.components[1]
+local function readTotals(location,scale)
+    cc.RelativeLocation=location;cc.RelativeScale3D=scale
+    server=false;boxes={remote};client.refresh()
+    local _,value=client.read(base,3500,9,4900)
+    return value
+end
+local value=readTotals(tc.RelativeLocation,tc.RelativeScale3D)
+assert(value.palboxStart==1 and value.palboxMaximum==16 and value.maximumPercent==200)
+local oldLocation,oldScale=tc.RelativeLocation,tc.RelativeScale3D
+start,finish=8,64
+server=true;boxes={totalHost};totals.refresh();totals.publish(totalHost,base,145,200);totals.finish()
+assert(oldLocation.Z~=tc.RelativeLocation.Z,'same-level policy edit changes the coherent stamp')
+assert(readTotals(oldLocation,tc.RelativeScale3D).palboxStart==nil,'scale arriving first hides totals')
+assert(readTotals(tc.RelativeLocation,oldScale).palboxStart==nil,'location arriving first hides totals')
+value=readTotals(tc.RelativeLocation,tc.RelativeScale3D)
+assert(value.palboxStart==8 and value.palboxMaximum==64)
+for _,bad in ipairs({-1,1.5,97*97,97+2,0/0,math.huge}) do
+    value=readTotals(tc.RelativeLocation,{X=20000,Y=bad,Z=tc.RelativeLocation.Z})
+    assert(value.palboxStart==nil,'malformed total pair accepted')
+end
+for _,pair in ipairs({{1,1},{1,96},{32,64},{96,96}}) do
+    start,finish=pair[1],pair[2]
+    server=true;boxes={totalHost};totals.refresh();totals.publish(totalHost,base,145,200);totals.finish()
+    value=readTotals(tc.RelativeLocation,tc.RelativeScale3D)
+    assert(value.palboxStart==start and value.palboxMaximum==finish)
+    assert(math.abs(tc.RelativeLocation.Z)<2^24)
+end
+-- Wrap the revision counter, retain exact integers and avoid idle writes.
+for i=1,130 do
+    start=i%2+1
+    server=true;boxes={totalHost};totals.refresh();totals.publish(totalHost,base,145,200);totals.finish()
+    assert(math.abs(tc.RelativeLocation.Z)<2^24 and tc.RelativeLocation.Z%1==0)
+    local before=updates
+    totals.refresh();totals.publish(totalHost,base,145,200);totals.finish();assert(updates==before)
+end
+start,finish=nil,nil
+server=true;boxes={totalHost};totals.refresh();totals.publish(totalHost,base,nil);totals.finish()
+value=readTotals(tc.RelativeLocation,tc.RelativeScale3D)
+assert(value.palboxStart==nil and value.palboxMaximum==nil,'reset removes total rewards')
+assert(#totalHost.components==1,'new protocol reuses one non-ticking component')
+print('PASS: total Palbox protocol, split updates both orders, bounds, reset, revision rollover and no idle writes')

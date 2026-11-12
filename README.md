@@ -12,10 +12,15 @@ Chests grow with your base: **18 bonus slots** by default, arriving steadily
 from your first upgrade to the final base level. Guild Chests receive the bonus
 once for their shared inventory.
 
-Your regular Palbox gains **one extra box per base upgrade**, starting with no
-bonus at level 1. The default cap is **32 extra boxes**, reached at level 33;
-levels 34 and 35 keep that bonus. Each player receives the bonus of their guild,
-regardless of its number of bases. The Global Palbox is separate.
+Choose how many regular **Palbox boxes** you start with and their **total cap**.
+Defaults: **32 at base level 1 → 64 at the last level**. Whole boxes unlock
+steadily across all base levels. You can instead choose **1 → 16**, or set both
+values equal for a fixed capacity. Each player follows their guild level once;
+extra bases do not multiply storage. The Global Palbox is separate.
+
+This starting/total-cap feature is an **unreleased development change**. The
+published 0.2.0-beta still uses the earlier extra-box cap. New native-game
+validation is pending; automated checks do not establish live save compatibility.
 
 ## A little celebration for every upgrade
 
@@ -46,10 +51,16 @@ Palworld backups stay enabled. See BACKUPS.txt for retention, status and restore
 
 - **Maximum range bonus:** 0 to +300%; default +100%, spread evenly over all base levels. A +300% bonus means four times the original radius.
 - **Bonus chest slots:** 18 by default, spread evenly over all base levels; adjustable from 0 to 42 in steps of six. Guild Chests share one bonus.
-- **Bonus Palbox boxes:** cap 0 to 64; default 32. A higher cap still grants only
-  one box per upgrade: level 35 can earn at most 34 extra boxes.
-- Local worlds have three Growing Grounds sliders at the bottom of custom World
+- **Starting Palbox boxes:** 1–96; default 32. This is the total at base level 1.
+- **Maximum total Palbox boxes:** 1–96; default 64, including the starting boxes.
+  Raising the start above the maximum raises the maximum; lowering the maximum
+  below the start lowers the start. Existing occupied, locked or open boxes remain
+  until cleared/closed, even if they exceed the chosen capacity.
+- Local worlds have four Growing Grounds sliders at the bottom of custom World
   Settings. Dedicated-server owners configure the same values in `config.lua`.
+- Old `maxPalboxBonusPages` settings migrate to a starting count of 32 and a total
+  cap of 32 + the old bonus. The new spread replaces the old +1-per-upgrade rule.
+  Explicit `maxPalboxBoxes` takes precedence. Update both server and clients.
 - Nearby bases can limit growth further. New Palboxes reserve room for both
   bases to reach the cap: 140 m between centres with the default 35 m base and
   +100% bonus cap. Stronger native restrictions remain in place.
@@ -169,7 +180,7 @@ not receive extra growth; other nearby bases may reach a lower cap.
 ## Configuration
 
 Gameplay options: `maxRangeBonusPercent`, `maxChestBonusSlots`,
-`maxPalboxBonusPages`, `resetToVanilla`.
+`startingPalboxBoxes`, `maxPalboxBoxes`, `resetToVanilla`.
 Visual options: `upgradeAnimation`, `upgradeWave`, `upgradeRibbon`,
 `upgradeEffectHeight` (centimetres).
 

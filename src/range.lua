@@ -4,7 +4,7 @@
 local Range = {}
 
 -- The one source of the setting maxima: clamps, sliders and the preview decoder derive from it.
-Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=42, maxPalboxBonusPages=64}
+Range.limits = {maxRangeBonusPercent=300, maxChestBonusSlots=42, maxPalboxBoxes=96}
 Range.chestSlotStep = 6
 
 local function finite(value)
@@ -35,11 +35,18 @@ function Range.settings(settings)
     local limits = Range.limits
     slots = math.max(0, math.min(limits.maxChestBonusSlots, slots))
     slots = math.floor(slots / Range.chestSlotStep + 0.5) * Range.chestSlotStep
-    local pages = settings.maxPalboxBonusPages
-    if not finite(pages) then pages = 32 end
-    pages = math.floor(math.max(0, math.min(limits.maxPalboxBonusPages, pages)) + 0.5)
+    -- Legacy bonus caps become total caps once; new explicit totals win.
+    local maximum = settings.maxPalboxBoxes
+    if maximum == nil and finite(settings.maxPalboxBonusPages) then
+        maximum = 32 + math.floor(math.max(0, math.min(64, settings.maxPalboxBonusPages)) + 0.5)
+    end
+    if not finite(maximum) then maximum = 64 end
+    maximum = math.floor(math.max(1, math.min(limits.maxPalboxBoxes, maximum)) + 0.5)
+    local start = settings.startingPalboxBoxes
+    if not finite(start) then start = 32 end
+    start = math.floor(math.max(1, math.min(maximum, start)) + 0.5)
     return {maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
-        maxChestBonusSlots=slots, maxPalboxBonusPages=pages}
+        maxChestBonusSlots=slots, startingPalboxBoxes=start, maxPalboxBoxes=maximum}
 end
 
 -- A cap spread evenly over the game's base levels: level 1 gives 0, the last
@@ -72,17 +79,11 @@ function Range.storageBonus(level, settings, maxLevel)
     return Range.storageAtCap(level, Range.settings(settings).maxChestBonusSlots, maxLevel)
 end
 
--- One whole Palbox page per upgrade, starting with none at level 1. This
--- bonus is deliberately independent of the size of the game's level table.
-function Range.palboxAtCap(level, cap)
-    validLevel(level)
-    assert(finite(cap) and cap >= 0 and cap % 1 == 0 and cap <= Range.limits.maxPalboxBonusPages,
-        'invalid Palbox bonus cap')
-    return math.min(level - 1, cap)
-end
-
-function Range.palboxBonus(level, settings)
-    return Range.palboxAtCap(level, Range.settings(settings).maxPalboxBonusPages)
+-- Total regular Palbox boxes, including the game's original capacity.
+-- Identical start/end values give a fixed capacity at every base level.
+function Range.palboxTotal(level, settings, maxLevel)
+    local policy = Range.settings(settings)
+    return policy.startingPalboxBoxes + spread(policy.maxPalboxBoxes-policy.startingPalboxBoxes, level, maxLevel)
 end
 
 function Range.radius(originalRadius, level, settings, maxLevel)

@@ -32,11 +32,11 @@ do
     local keys={}
     for k in pairs(Range.settings({growthPercentPerLevel=4,maxRangePercent=150,other=1})) do keys[#keys+1]=k end
     table.sort(keys)
-    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBonusPages,maxRangeBonusPercent',table.concat(keys,','))
+    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBoxes,maxRangeBonusPercent,startingPalboxBoxes',table.concat(keys,','))
     keys={}
     for k in pairs(Range.limits) do keys[#keys+1]=k end
     table.sort(keys)
-    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBonusPages,maxRangeBonusPercent',table.concat(keys,','))
+    assert(table.concat(keys,',')=='maxChestBonusSlots,maxPalboxBoxes,maxRangeBonusPercent',table.concat(keys,','))
 end
 -- Any cap, any table: nearest whole percent, the whole cap on the last level and after,
 -- never above it, never down. A level table of 35, 40, 2 and a missing one.
@@ -626,26 +626,36 @@ near(Range.storageAtCap(35,20,35),20);near(Range.storageAtCap(35,40,35),40)
 for _,cap in ipairs({-1,1.5,43,math.huge,0/0,'18'}) do assert(not pcall(Range.storageAtCap,35,cap,35)) end
 print('PASS: default18, six-slot caps through42, migration rounding, 72-slot Guild Chest and authoritative legacy previews')
 
--- Palbox pages: +1 per upgrade, never spread to fit the level table.
-assert(Range.settings().maxPalboxBonusPages==32)
-assert(dofile(root..'config.lua').maxPalboxBonusPages==32)
-assert(Range.limits.maxPalboxBonusPages==64)
-for level,expected in pairs({[1]=0,[2]=1,[10]=9,[32]=31,[33]=32,[34]=32,[35]=32,[66]=32}) do
-    assert(Range.palboxBonus(level)==expected)
-end
-for cap=0,64 do
-    for level=1,100 do
-        local expected=level<=cap+1 and level-1 or cap
-        assert(Range.palboxBonus(level,{maxPalboxBonusPages=cap})==expected)
+-- Totals are monotonic, integer and reach the selected end on the last level.
+assert(Range.settings().startingPalboxBoxes==32 and Range.settings().maxPalboxBoxes==64)
+assert(dofile(root..'config.lua').maxPalboxBoxes==64)
+for _,levels in ipairs({2,35,50}) do
+    for start=1,96 do
+        for maximum=start,96 do
+            local previous=start
+            for level=1,levels+1 do
+                local total=Range.palboxTotal(level,{startingPalboxBoxes=start,maxPalboxBoxes=maximum},levels)
+                assert(total==start+ref(level,maximum-start,levels))
+                assert(total>=previous and total<=maximum and total%1==0)
+                previous=total
+            end
+        end
     end
 end
-assert(Range.palboxBonus(35,{maxPalboxBonusPages=64})==34)
-for _,pair in ipairs({{-1,0},{100,64},{32.49,32},{32.5,33},{0/0,32},{math.huge,32},{'64',32},{false,32}}) do
-    assert(Range.settings({maxPalboxBonusPages=pair[1]}).maxPalboxBonusPages==pair[2])
+for level,expected in pairs({[1]=1,[2]=1,[3]=2,[18]=9,[34]=16,[35]=16}) do
+    assert(Range.palboxTotal(level,{startingPalboxBoxes=1,maxPalboxBoxes=16})==expected)
 end
-for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.palboxBonus,bad)) end
-for _,bad in ipairs({-1,65,1.5,math.huge,0/0,'32'}) do assert(not pcall(Range.palboxAtCap,2,bad)) end
-print('PASS: Palbox page caps 0..64, default 32, +1 per upgrade, plateau at levels 33..35')
+assert(Range.palboxTotal(33)==62 and Range.palboxTotal(34)==63 and Range.palboxTotal(35)==64)
+for old=0,64 do
+    local migrated=Range.settings({maxPalboxBonusPages=old})
+    assert(migrated.startingPalboxBoxes==32 and migrated.maxPalboxBoxes==32+old)
+end
+assert(Range.settings({maxPalboxBonusPages=64,maxPalboxBoxes=16}).maxPalboxBoxes==16)
+assert(Range.settings({maxPalboxBoxes=16}).startingPalboxBoxes==16)
+assert(Range.settings({startingPalboxBoxes=0,maxPalboxBoxes=999}).startingPalboxBoxes==1)
+assert(Range.settings({startingPalboxBoxes=0,maxPalboxBoxes=999}).maxPalboxBoxes==96)
+for _,bad in ipairs({0,-1,1.5,math.huge,0/0,'8'}) do assert(not pcall(Range.palboxTotal,bad)) end
+print('PASS: Palbox total/start bounds, spread, custom level tables, fixed size and legacy migration')
 
 do
     local priorAll,priorConfig,priorPreview=FindAllOf,E.config,E.preview
@@ -669,3 +679,27 @@ do
     FindAllOf,E.config,E.preview=priorAll,priorConfig,priorPreview
 end
 print('PASS: maximum radius respects neighbours on authority and only server data on clients')
+
+do
+    local priorAll,priorConfig,priorPreview=FindAllOf,E.config,E.preview
+    local base=newBase(18,5250,true)
+    FindAllOf=function(kind) return kind=='PalBaseCampModel' and {base} or {} end
+    E.config={startingPalboxBoxes=1,maxPalboxBoxes=16}
+    local runtime=capRuntime(3500)
+    local snap=runtime.snapshot(base)
+    assert(snap.palboxCurrent==9 and snap.palboxNext==9)
+    local policy=runtime.bonuses(base)
+    assert(policy.totalPolicy and policy.palboxStart==1 and policy.palboxMaximum==16)
+    base.authority=false
+    E.config={startingPalboxBoxes=64,maxPalboxBoxes=96}
+    E.preview={read=function() return 156,{palboxStart=1,palboxMaximum=16} end}
+    assert(runtime.snapshot(base).palboxCurrent==9,'client uses server totals, not its configuration')
+    E.preview={read=function() return nil,{palboxStart=1,palboxMaximum=16},true end}
+    assert(runtime.snapshot(base).palboxCurrent==nil,'pending level/radius does not show stale totals')
+    E.preview={read=function() return 156,{palboxCap=32} end}
+    assert(runtime.snapshot(base).palboxCurrent==nil,'legacy bonus data must not be labelled as totals')
+    base.authority=true;E.config.resetToVanilla=true
+    assert(runtime.snapshot(base).palboxCurrent==nil,'reset hides the capacity reward')
+    FindAllOf,E.config,E.preview=priorAll,priorConfig,priorPreview
+end
+print('PASS: total reward values, server policy, split-state hiding, legacy and reset semantics')

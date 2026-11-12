@@ -1,3 +1,11 @@
+Unreleased — configurable total Palbox capacity
+
+- Choose the starting number of Palbox boxes (minimum 1) and the TOTAL cap. Defaults: 32 → 64. Whole boxes are spread across all base levels, like chest slots.
+- Four World Settings controls; the Palbox reward row now shows total boxes. Occupied, locked and open boxes are retained when reducing capacity. Global Palbox unchanged.
+- Older bonus caps migrate to 32 + the old cap. Install the matching version on server and clients. Native validation of this change is pending.
+
+Share how it plays, ask questions or report issues at https://github.com/PikouGame/Growing-Grounds/issues so we can investigate.
+
 Growing Grounds 0.2.0-beta — more room for your Pals
 
 - Your regular Palbox gains one extra box per base upgrade. Default cap: 32 extra boxes; configurable from 0 to 64. Level 1 gives none, level 33 reaches the default cap. At level 35, a higher cap can grant at most 34 extra boxes. Global Palbox storage is unchanged.

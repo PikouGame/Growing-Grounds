@@ -6,7 +6,7 @@ return {
     -- Maximum radius BONUS, reached at the last base level and spread evenly over
     -- the levels before it: +100% doubles the radius (35m -> 70m).
     -- World Settings: 0..+300%. +300% means 4x radius, not area.
-    -- Set any cap to 0 to disable that bonus. Occupied extra storage is preserved.
+    -- Set the range or chest cap to 0 to disable that bonus. Occupied extra storage is preserved.
     -- Old maxRangePercent totals remain supported without changing their effect.
     -- An old growthPercentPerLevel line is ignored, except 0, which still switches range off.
     maxRangeBonusPercent = 100,
@@ -14,10 +14,14 @@ return {
     -- evenly over the levels: with 18, +1 at level 2, 5 at level 10, 18 at level 35.
     -- Other values round to the nearest step (20 -> 18; 40 -> 42).
     maxChestBonusSlots = 18,
-    -- Extra regular Palbox boxes, not individual Pal slots or Global Palbox
-    -- storage. One box per base upgrade: level 1 = 0; levels 33..35 = +32.
-    -- Cap 0..64, default 32. A higher cap still grants only one per upgrade.
-    maxPalboxBonusPages = 32,
+    -- TOTAL regular Palbox boxes, not extra boxes or Global Palbox storage.
+    -- Both settings: 1..96. Start cannot exceed maximum (it is lowered if needed).
+    -- Spread whole boxes across all base levels, reaching the total cap at the last.
+    -- Defaults: 32 at level 1 -> 64 at level 35. Example: start 1, maximum 16.
+    -- Set both equal for a fixed capacity. Occupied/locked/open boxes are kept.
+    -- Legacy maxPalboxBonusPages is read as 32 + bonus when no total cap is set.
+    startingPalboxBoxes = 32,
+    maxPalboxBoxes = 64,
     -- To uninstall cleanly: set true on the SERVER, restart, load the world,
     -- wait for the chest reset in UE4SS.log; every player must also empty their
     -- bonus Palbox boxes and recover the native box count. See INSTALL.txt.

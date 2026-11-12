@@ -39,16 +39,21 @@ Configuration
   The World Settings slider offers 0..+300%; +300% means four times the radius.
   Existing maxRangePercent totals keep their former effective limit; 200 becomes
   +100. Do not add the new key beside the old one unless you intend to override it.
-  Set any cap to 0 to disable its bonus and hide its reward row.
+  Set the range or chest cap to 0 to disable that bonus. Set both Palbox counts
+  to 32 for the ordinary fixed capacity, or use resetToVanilla before removal.
 - maxChestBonusSlots=18: bonus chest slots at the last base level, spread evenly
   over all levels (with 18: 1 at level 2, 5 at level 10, 18 at level 35).
   Bonus limit 0..42 in steps of 6; other values round to the nearest step. Guild Chests share one bonus for the whole guild.
   Lower limits retain occupied overflow slots until they are emptied.
-- maxPalboxBonusPages=32: extra regular Palbox boxes, one per base upgrade.
-  Level 1 gives 0; levels 33, 34 and 35 give +32 with the default cap.
-  Limit 0..64, whole boxes. At level 35 even cap 64 grants only +34.
+- startingPalboxBoxes=32: TOTAL boxes at base level 1, minimum 1, maximum 96.
+- maxPalboxBoxes=64: TOTAL boxes at the final base level, including starting boxes.
+  Limit 1..96; start is lowered to the maximum if larger. Whole boxes are spread
+  across all base levels. Example: start 1 / maximum 16 gives 1 at level 1,
+  9 at level 18 and 16 at level 35. Equal values give a fixed capacity.
+  Legacy maxPalboxBonusPages migrates to start 32 / total 32 + old bonus unless
+  an explicit maxPalboxBoxes is present. The old +1-per-upgrade rule is replaced.
   Each player follows their guild level once; extra bases do not multiply it.
-  Global Palbox storage is unchanged. Occupied extra boxes are retained.
+  Global Palbox storage is unchanged. Occupied/locked/open boxes are retained.
 - resetToVanilla=false: see removal instructions before changing this.
 - upgradeAnimation=true: enables the automatic upgrade celebration.
 - upgradeRibbon=true: enables glow effects; false disables both wave and rise.
@@ -56,7 +61,7 @@ Configuration
 - upgradeEffectHeight=600: rise height in centimetres (clamped to 100..2000).
 
 
-Local/co-op hosts can change the range, chest and Palbox bonus caps at the bottom of custom World
+Local/co-op hosts can change the range/chest caps and Palbox starting/total counts at the bottom of custom World
 Settings. Values save per world after native confirmation, in world-settings.ini.
 Dedicated servers use config.lua defaults unless that host has a per-world
 sidecar override. Server settings always control gameplay and the next-value UI.
@@ -112,8 +117,11 @@ Buildings in the added area may lose coverage. An exact rollback requires the
 pre-install world backup, which also rolls back progress since that backup.
 
 Compatibility and verification
-Palbox expansion is a development candidate. Native replication, transfer,
-save/reload and removal are NOT VERIFIED yet; test it on a world copy.
+The new Palbox starting/total-cap progression is an unreleased development change.
+Its native replication, smaller starting sizes and save/reload are NOT VERIFIED
+yet; test it on a world copy. The previous 0.2.0-beta expansion was checked in
+solo and dedicated-server sessions. Update server and clients together; an older
+client cannot display the new total-cap preview.
 Inspected Palworld v1.0.5.102999; client Steam build 25246127, server 25247047;
 UE4SS Palworld fork 2281fa31. Windows executables were tested through Proton/Wine.
 Native Windows OS execution and Workshop deployment are not verified.

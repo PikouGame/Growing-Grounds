@@ -27,10 +27,10 @@ return function(E)
             record={pages=pages,size=size,settings=settings}
             dimensions[name]=record
         end
-        local ceiling=record.pages+E.range.limits.maxPalboxBonusPages
+        local ceiling=math.max(record.pages+64,E.range.limits.maxPalboxBoxes)
         if settings.PalBoxPageNum==record.pages then
             settings.PalBoxPageNum=ceiling
-            E.log(string.format('Palbox load capacity reserved: %d native + %d possible bonus pages',record.pages,E.range.limits.maxPalboxBonusPages))
+            E.log(string.format('Palbox load capacity reserved: %d pages (%d native)',ceiling,record.pages))
         end
         assert(settings.PalBoxPageNum==ceiling and settings.PalBoxSlotNumInPage==record.size,
             'Another mod changed Palbox dimensions')
@@ -120,10 +120,11 @@ return function(E)
         if before==0 then return end
         assert(integer(before) and before%size==0,'Palbox slots do not form complete pages')
         local policy=E.runtime.policy(player)
-        local bonus=E.config.resetToVanilla and 0 or E.range.palboxBonus(level,policy)
+        local levels=E.runtime.levels()
+        local total=E.config.resetToVanilla and native or E.range.palboxTotal(level,policy,levels)
         return {player=player,storage=storage,container=container,native=native,size=size,
-            before=before,desired=(native+bonus)*size,level=level,
-            name=container:GetFullName(),signature=level..':'..policy.maxPalboxBonusPages..':'..tostring(E.config.resetToVanilla)}
+            before=before,desired=total*size,level=level,
+            name=container:GetFullName(),signature=table.concat({level,policy.startingPalboxBoxes,policy.maxPalboxBoxes,tostring(levels),tostring(E.config.resetToVanilla)},':')}
     end
     local function announce(job,target)
         local storage,container=job.storage,job.container
@@ -139,7 +140,7 @@ return function(E)
         local container,storage=job.container,job.storage
         local before,desired,size=job.before,job.desired,job.size
         -- Do not cut down an expansion beyond anything GG could have added.
-        if before>(job.native+E.range.limits.maxPalboxBonusPages)*size then
+        if before>math.max(job.native+64,E.range.limits.maxPalboxBoxes)*size then
             if reported[job.name]~='external' then E.log('Palbox: larger external expansion left unchanged') end
             reported[job.name]='external';return
         end

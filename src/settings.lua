@@ -53,7 +53,7 @@ return function(root, Range, defaults, filesystem, log, clock)
                 local name, value = line:match('^(%w+)%s*=%s*([%d%.%-]+)%s*$')
                 if name=='growthPercentPerLevel' or name=='maxRangeBonusPercent'
                     or name=='maxRangePercent' or name=='maxChestBonusSlots'
-                    or name=='maxPalboxBonusPages' then
+                    or name=='maxPalboxBonusPages' or name=='startingPalboxBoxes' or name=='maxPalboxBoxes' then
                     worlds[section][name] = tonumber(value)
                 end
             end
@@ -66,6 +66,10 @@ return function(root, Range, defaults, filesystem, log, clock)
         -- Prefer this world's legacy cap over the installation default.
         if values and values.maxRangeBonusPercent==nil and values.maxRangePercent~=nil then
             merged.maxRangeBonusPercent=nil
+        end
+        if values and values.maxPalboxBoxes==nil and values.maxPalboxBonusPages~=nil then
+            merged.maxPalboxBoxes=nil
+            merged.startingPalboxBoxes=values.startingPalboxBoxes or 32
         end
         for k,v in pairs(values or {}) do merged[k]=v end
         return Range.settings(merged)
@@ -87,8 +91,8 @@ return function(root, Range, defaults, filesystem, log, clock)
         table.sort(ids)
         for _,k in ipairs(ids) do
             local value = normalize(nextWorlds[k])
-            lines[#lines+1] = string.format('[%s]\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\nmaxPalboxBonusPages=%d\n',
-                k, value.maxRangeBonusPercent, value.maxChestBonusSlots, value.maxPalboxBonusPages)
+            lines[#lines+1] = string.format('[%s]\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\nstartingPalboxBoxes=%d\nmaxPalboxBoxes=%d\n',
+                k, value.maxRangeBonusPercent, value.maxChestBonusSlots, value.startingPalboxBoxes, value.maxPalboxBoxes)
         end
         local temp, backup = path..'.tmp', path..'.bak'
         local file = assert(fs.open(temp, 'w'))
