@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 import re
 
-GAME = re.compile(r'^(Palworld|PalServer)-(Win64|WinGDK)-Shipping\.exe$', re.I)
+GAME = re.compile(r'^(Palworld-(Win64|WinGDK)-Shipping|PalServer-Win64-Shipping(-Cmd)?)\.exe$', re.I)
 
 
 class ProcessEntry(C.Structure):

@@ -12,6 +12,7 @@ import backup_windows as session
 import backup_policy
 import save_backup
 from backup_control import Cancelled, cancellable
+from backup_win32 import GAME
 
 
 class FakeWin:
@@ -35,6 +36,15 @@ class FakeWin:
 
 
 class WindowsTests(unittest.TestCase):
+    def test_shipping_console_server_and_its_save_root(self):
+        for name in ('Palworld-Win64-Shipping.exe', 'Palworld-WinGDK-Shipping.exe',
+                     'PalServer-Win64-Shipping.exe', 'PalServer-Win64-Shipping-Cmd.exe'):
+            self.assertIsNotNone(GAME.fullmatch(name))
+        self.assertIsNone(GAME.fullmatch('Palworld-helper.exe'))
+        game = self.root/'server/Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe'
+        save, archives, state = session.paths(game, self.mod)
+        self.assertEqual(save, self.root/'server/Pal/Saved/SaveGames')
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name);self.mod = self.root/'mod';self.mod.mkdir()
