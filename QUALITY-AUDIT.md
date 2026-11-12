@@ -19,6 +19,36 @@ et limites consignées ici. Aucun déploiement ni publication.
 
 ## Liste courante
 
+Centralisation des réglages — approuvée explicitement :
+- [x] Partager les définitions canoniques entre calcul, persistance et sliders.
+- [x] Conserver migrations, valeurs, ordre/format des fichiers et contrôles natifs.
+- [x] Comparer au code précédent, exécuter les suites pertinentes et committer.
+Le fichier utilisateur `config.lua` reste explicite et éditable ; sa concordance
+avec les valeurs par défaut canoniques est vérifiée par les tests.
+
+Les cinq définitions résident dans `src/range.lua`, sans nouveau module ni
+dépendance. `Range.settingFields()` fournit des copies des noms, valeurs par
+défaut, minima, références aux maxima/pas existants, clés de traduction et formats
+d'affichage/enregistrement. Le calcul lit les mêmes défauts/minima ; `settings`
+en déduit la liste de lecture/écriture ; `world_settings` en déduit ses sliders.
+Les copies empêchent un consommateur de modifier les défauts internes. Les
+formats réseau et valeurs de migration historiques restent indépendants : leur
+signification ne doit pas suivre un futur changement de défaut. Les valeurs
+fractionnaires autorisées dans la configuration restent fractionnaires.
+
+Preuves : `.local/quality-audit/settings-schema/receipt.json`. Sous Lua 5.5 et
+5.4, comparaison avec le code de `4564d81` : **17 537 cas de normalisation et
+progression**, incluant toutes les paires Palbox 1..96, tous les couples entiers
+gain/plafond et des valeurs invalides/historiques ; **2 002 cycles de persistance
+et relecture identiques octet par octet**. Les deux sources antérieures et le
+comparateur sont conservés dans ce dossier de preuves. Les 15 suites Lua passent
+sous les deux versions ; les trois tests Python de distribution et l'assemblage
+réel des archives passent. Les nouvelles assertions permanentes vérifient la
+concordance de `config.lua`, les clés des 17 cultures, l'isolation des métadonnées
+et un format enregistré exact. Aucun réglage utilisateur, sauvegarde réelle,
+contrôle natif ou placement de logo modifié. Validation native de cette révision
+non effectuée ; rien n'attend PK pour terminer cette refactorisation locale.
+
 Suivi après audit — scénarios automatisés approuvés :
 - [x] Reprendre le checkout et conserver les ajouts stabilisés du logo natif
   (`451fcf0`, `0d2a249`) sans intervenir sur le runtime.

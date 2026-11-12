@@ -11,6 +11,26 @@ end
 assert(Range.settings().growthPercentPerLevel==4)
 assert(dofile(root..'config.lua').growthPercentPerLevel==4)
 assert(Range.settings().maxRangeBonusPercent==100)
+do
+    local shipped=dofile(root..'config.lua')
+    local defaults=Range.settings()
+    local Texts=dofile(root..'src/texts.lua')
+    local fields=Range.settingFields()
+    assert(#fields==5,'five canonical world settings')
+    for _,spec in ipairs(fields) do
+        assert(shipped[spec.key]==spec.default and defaults[spec.key]==spec.default,
+            'editable config and runtime defaults disagree for '..spec.key)
+        assert(spec.default>=spec.min and spec.default<=spec.max)
+        for _,culture in ipairs(Texts.cultures) do
+            local texts=Texts.get(culture)
+            assert(type(texts[spec.title])=='string' and type(texts[spec.tip])=='string',
+                'missing setting translation for '..spec.key..' in '..culture)
+        end
+    end
+    fields[1].default=-999;fields[1].max=-999;fields[1].key='not-a-setting'
+    assert(Range.settings().growthPercentPerLevel==4 and Range.settingFields()[1].max==20,
+        'consumer metadata must not mutate runtime defaults or bounds')
+end
 for level,bonus in pairs({[1]=0,[2]=4,[8]=28,[11]=40,[25]=96,[26]=100,[35]=100}) do
     near(Range.percent(level),100+bonus)
     near(Range.radius(3500,level),3500*(100+bonus)/100)

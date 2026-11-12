@@ -422,3 +422,27 @@ local capBefore=repaired.value
 W.change(removed,250)
 assert(repaired.value==capBefore,'events from a detached old setting cannot change the current draft')
 print('PASS: reconstructed settings retain group placement')
+
+-- Persistence is a compatibility surface: preserve byte order, precision and
+-- blank lines while obtaining the canonical field list from the shared module.
+do
+    local previous=files
+    files={}
+    local canonical=factory('',Range,{},fs)
+    canonical.save(b,{})
+    canonical.save(a,{growthPercentPerLevel=0.125,maxRangeBonusPercent=57.3,
+        maxChestBonusSlots=40,startingPalboxBoxes=8,maxPalboxBoxes=64,unknownSetting=999})
+    local expected='; Growing Grounds per-world settings. Keep when updating.\n\n'
+        ..'['..a..']\ngrowthPercentPerLevel=0.125\nmaxRangeBonusPercent=57.3\n'
+        ..'maxChestBonusSlots=42\nstartingPalboxBoxes=8\nmaxPalboxBoxes=64\n\n'
+        ..'['..b..']\ngrowthPercentPerLevel=4\nmaxRangeBonusPercent=100\n'
+        ..'maxChestBonusSlots=18\nstartingPalboxBoxes=32\nmaxPalboxBoxes=64\n'
+    assert(files['world-settings.ini']==expected,'canonical serialization changed bytes')
+    files['world-settings.ini']=expected..'unknownSetting=999\n'
+    local loaded=factory('',Range,{},fs)
+    assert(loaded.get(a).growthPercentPerLevel==0.125 and loaded.get(b).unknownSetting==nil)
+    loaded.save(b,loaded.get(b))
+    assert(files['world-settings.ini']==expected,'canonical read/write must preserve format and ignore unknown fields')
+    files=previous
+end
+print('PASS: canonical world settings retain exact ordering, precision, spacing, defaults and unknown-key rejection')

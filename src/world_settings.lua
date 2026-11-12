@@ -6,14 +6,7 @@ return function(E)
     local rowPath = '/Game/Pal/Blueprint/UI/UserInterface/Title/WBP_Title_WorldSettings_ListContent.WBP_Title_WorldSettings_ListContent_C'
     local outerPath = '/Game/Pal/Blueprint/UI/Title/WBP_WorldSetting.WBP_WorldSetting_C'
     local screens, owned, sliders, hooks = {}, {}, {}, {}
-    local fields = {
-        -- title and tip are keys of the texts, read in the game's language at each paint.
-        {key='growthPercentPerLevel', title='rangeGrowthTitle', tip='rangeGrowthTip', min=0, max=E.range.limits.growthPercentPerLevel, step=1},
-        {key='maxRangeBonusPercent', title='rangeCapTitle', tip='rangeCapTip', min=0, max=E.range.limits.maxRangeBonusPercent, step=1},
-        {key='maxChestBonusSlots', title='chestCapTitle', tip='chestCapTip', min=0, max=E.range.limits.maxChestBonusSlots, step=E.range.chestSlotStep},
-        {key='startingPalboxBoxes', title='palboxStartTitle', tip='palboxStartTip', min=1, max=E.range.limits.maxPalboxBoxes, step=1},
-        {key='maxPalboxBoxes', title='palboxCapTitle', tip='palboxCapTip', min=1, max=E.range.limits.maxPalboxBoxes, step=1},
-    }
+    local fields = E.range.settingFields()
     local function object(path) return E.objects.find(path) end
     local function stringValue(value)
         return type(value)=='string' and value or value:ToString()
@@ -23,7 +16,7 @@ return function(E)
         row.Text_OptionTitle:SetText(FText(texts[spec.title]))
         row:SetToolTipText(FText(texts[spec.tip]))
         if value~=nil then
-            local display=value==0 and texts.off or ((spec.key=='maxRangeBonusPercent' or spec.key=='growthPercentPerLevel') and string.format('+%g%%',value) or tostring(value))
+            local display=value==0 and texts.off or (spec.display and string.format(spec.display,value) or tostring(value))
             row.WBP_OptionSettings_ListContentSlider.BP_PalTextBlock_Value:SetText(FText(display))
         end
     end

@@ -7,6 +7,37 @@ local Range = {}
 Range.limits = {growthPercentPerLevel=20,maxRangeBonusPercent=300, maxChestBonusSlots=42, maxPalboxBoxes=96}
 Range.chestSlotStep = 6
 
+-- Canonical world settings in persistence/UI order. Historical migration and
+-- wire constants stay separate: a new default must never rewrite old meaning.
+local definitions = {
+    {key='growthPercentPerLevel', default=4, min=0, limit='growthPercentPerLevel', step=1,
+        format='%.6g', display='+%g%%', title='rangeGrowthTitle', tip='rangeGrowthTip'},
+    {key='maxRangeBonusPercent', default=100, min=0, limit='maxRangeBonusPercent', step=1,
+        format='%.6g', display='+%g%%', title='rangeCapTitle', tip='rangeCapTip'},
+    {key='maxChestBonusSlots', default=18, min=0, limit='maxChestBonusSlots', stepKey='chestSlotStep',
+        format='%d', title='chestCapTitle', tip='chestCapTip'},
+    {key='startingPalboxBoxes', default=32, min=1, limit='maxPalboxBoxes', step=1,
+        format='%d', title='palboxStartTitle', tip='palboxStartTip'},
+    {key='maxPalboxBoxes', default=64, min=1, limit='maxPalboxBoxes', step=1,
+        format='%d', title='palboxCapTitle', tip='palboxCapTip'},
+}
+local byKey = {}
+for _, spec in ipairs(definitions) do byKey[spec.key] = spec end
+
+-- Consumers get their own metadata; a menu cannot mutate calculation defaults.
+-- Resolve the shared limits at call time, as the previous slider setup did.
+function Range.settingFields()
+    local fields = {}
+    for i, definition in ipairs(definitions) do
+        local spec = {}
+        for key,value in pairs(definition) do spec[key] = value end
+        spec.max = Range.limits[spec.limit]
+        spec.step = spec.stepKey and Range[spec.stepKey] or spec.step
+        fields[i] = spec
+    end
+    return fields
+end
+
 local function finite(value)
     return type(value) == "number" and value == value
         and value ~= math.huge and value ~= -math.huge
@@ -25,26 +56,26 @@ function Range.settings(settings)
     if cap == nil and finite(settings.maxRangePercent) then
         cap = math.max(100, math.min(200, settings.maxRangePercent)) - 100
     end
-    if not finite(cap) then cap = 100 end
+    if not finite(cap) then cap = byKey.maxRangeBonusPercent.default end
     local growth = settings.growthPercentPerLevel
-    if not finite(growth) then growth = 4 end
-    growth = math.max(0,math.min(Range.limits.growthPercentPerLevel,growth))
+    if not finite(growth) then growth = byKey.growthPercentPerLevel.default end
+    growth = math.max(byKey.growthPercentPerLevel.min,math.min(Range.limits.growthPercentPerLevel,growth))
     local slots = settings.maxChestBonusSlots
-    if not finite(slots) then slots = 18 end
+    if not finite(slots) then slots = byKey.maxChestBonusSlots.default end
     local limits = Range.limits
-    slots = math.max(0, math.min(limits.maxChestBonusSlots, slots))
+    slots = math.max(byKey.maxChestBonusSlots.min, math.min(limits.maxChestBonusSlots, slots))
     slots = math.floor(slots / Range.chestSlotStep + 0.5) * Range.chestSlotStep
     -- Legacy bonus caps become total caps once; new explicit totals win.
     local maximum = settings.maxPalboxBoxes
     if maximum == nil and finite(settings.maxPalboxBonusPages) then
         maximum = 32 + math.floor(math.max(0, math.min(64, settings.maxPalboxBonusPages)) + 0.5)
     end
-    if not finite(maximum) then maximum = 64 end
-    maximum = math.floor(math.max(1, math.min(limits.maxPalboxBoxes, maximum)) + 0.5)
+    if not finite(maximum) then maximum = byKey.maxPalboxBoxes.default end
+    maximum = math.floor(math.max(byKey.maxPalboxBoxes.min, math.min(limits.maxPalboxBoxes, maximum)) + 0.5)
     local start = settings.startingPalboxBoxes
-    if not finite(start) then start = 32 end
-    start = math.floor(math.max(1, math.min(maximum, start)) + 0.5)
-    return {growthPercentPerLevel=growth, maxRangeBonusPercent=math.max(0, math.min(limits.maxRangeBonusPercent, cap)),
+    if not finite(start) then start = byKey.startingPalboxBoxes.default end
+    start = math.floor(math.max(byKey.startingPalboxBoxes.min, math.min(maximum, start)) + 0.5)
+    return {growthPercentPerLevel=growth, maxRangeBonusPercent=math.max(byKey.maxRangeBonusPercent.min, math.min(limits.maxRangeBonusPercent, cap)),
         maxChestBonusSlots=slots, startingPalboxBoxes=start, maxPalboxBoxes=maximum}
 end
 

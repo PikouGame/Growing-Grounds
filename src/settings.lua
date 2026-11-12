@@ -4,6 +4,9 @@ return function(root, Range, defaults, filesystem, log, clock)
     local fs = filesystem or {open=io.open, rename=os.rename, remove=os.remove}
     local path = root .. 'world-settings.ini'
     local worlds, loaded, loadError = {}, false, nil
+    local fields = Range.settingFields()
+    local readable = {maxRangePercent=true, maxPalboxBonusPages=true}
+    for _,spec in ipairs(fields) do readable[spec.key] = true end
     -- An unreadable file is reported once and tried again at most every five seconds.
     -- Reads recover; saving stays refused until restart, because a menu draft
     -- taken meanwhile holds config.lua values, not this world's saved ones.
@@ -51,9 +54,7 @@ return function(root, Range, defaults, filesystem, log, clock)
                 if section then worlds[section] = {} end
             elseif section then
                 local name, value = line:match('^(%w+)%s*=%s*([%d%.%-]+)%s*$')
-                if name=='growthPercentPerLevel' or name=='maxRangeBonusPercent'
-                    or name=='maxRangePercent' or name=='maxChestBonusSlots'
-                    or name=='maxPalboxBonusPages' or name=='startingPalboxBoxes' or name=='maxPalboxBoxes' then
+                if readable[name] then
                     worlds[section][name] = tonumber(value)
                 end
             end
@@ -91,8 +92,11 @@ return function(root, Range, defaults, filesystem, log, clock)
         table.sort(ids)
         for _,k in ipairs(ids) do
             local value = normalize(nextWorlds[k])
-            lines[#lines+1] = string.format('[%s]\ngrowthPercentPerLevel=%.6g\nmaxRangeBonusPercent=%.6g\nmaxChestBonusSlots=%d\nstartingPalboxBoxes=%d\nmaxPalboxBoxes=%d\n',
-                k, value.growthPercentPerLevel, value.maxRangeBonusPercent, value.maxChestBonusSlots, value.startingPalboxBoxes, value.maxPalboxBoxes)
+            local section = {'['..k..']\n'}
+            for _,spec in ipairs(fields) do
+                section[#section+1] = spec.key..'='..string.format(spec.format,value[spec.key])..'\n'
+            end
+            lines[#lines+1] = table.concat(section)
         end
         local temp, backup = path..'.tmp', path..'.bak'
         local file = assert(fs.open(temp, 'w'))
