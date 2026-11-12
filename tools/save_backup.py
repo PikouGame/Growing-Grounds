@@ -183,10 +183,30 @@ def sync_directory(folder):
             os.close(fd)
 
 
+def rotate_rolling(destination, world_id, keep):
+    """Manual retention, under the caller's folder lock after a verified write."""
+    candidates, removed, warnings = [], [], []
+    for path in destination.glob(f'gg-{world_id}-rolling-*.zip'):
+        try:
+            m = verify(path)
+            require(m['world_id'] == world_id and m['kind'] == 'rolling', 'Mismatched backup identity')
+            candidates.append((datetime.fromisoformat(m['created_utc']), path))
+        except (ValueError, OSError, zipfile.BadZipFile, KeyError) as e:
+            warnings.append(f'Left unverified archive untouched: {path.name}: {e}')
+    for _, old in sorted(candidates)[:-keep]:
+        checkpoint()
+        old.unlink()
+        removed.append(old.name)
+    sync_directory(destination)
+    return removed, warnings
+
+
 def create(world, mod, destination, *, kind='rolling', keep=5, version='unknown',
            reason='manual', stopped=False, max_archive_bytes=MAX_BYTES, _lock_held=False):
+    """Publish a verified archive. keep=None delegates retention to the caller."""
     require(stopped, 'Stop the game/server first and explicitly confirm source-stopped')
-    require(kind in ('baseline', 'rolling') and 1 <= keep <= 100, 'Invalid backup policy')
+    require(kind in ('baseline', 'rolling') and
+            (keep is None or (type(keep) is int and 1 <= keep <= 100)), 'Invalid backup policy')
     world, mod, destination = map(lambda p: Path(p).resolve(), (world, mod, destination))
     world_id = world.name.upper()
     require(re.fullmatch('[0-9A-F]{32}', world_id), 'World folder must be its 32-character ID')
@@ -242,21 +262,9 @@ def create(world, mod, destination, *, kind='rolling', keep=5, version='unknown'
             sync_directory(destination)
         finally:
             temporary.unlink(missing_ok=True)
-        # Only a successfully verified rolling archive can rotate older rolling copies.
-        if kind == 'rolling':
-            candidates = []
-            for p in destination.glob(f'gg-{world_id}-rolling-*.zip'):
-                try:
-                    m = verify(p)
-                    require(m['world_id'] == world_id and m['kind'] == 'rolling', 'Mismatched backup identity')
-                    candidates.append((datetime.fromisoformat(m['created_utc']), p))
-                except (ValueError, OSError, zipfile.BadZipFile, KeyError) as e:
-                    warnings.append(f'Left unverified archive untouched: {p.name}: {e}')
-            for _, old in sorted(candidates)[:-keep]:
-                checkpoint()
-                old.unlink()
-                removed.append(old.name)
-            sync_directory(destination)
+        # The automatic policy owns its retention; do not prune it a second time.
+        if kind == 'rolling' and keep is not None:
+            removed, warnings = rotate_rolling(destination, world_id, keep)
     return {'archive': str(output), 'files': len(manifest['files']), 'removed': removed, 'warnings': warnings}
 
 

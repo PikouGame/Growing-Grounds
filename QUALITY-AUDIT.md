@@ -48,6 +48,20 @@ Le recul d'horloge reste bloquant ; aucune archive existante n'est remplacée.
 Deux régressions, quatre cas en échec avant correction :
 `.local/quality-audit/baseline-regression-before.log`.
 
+### P2 — deux politiques de rétention appliquées à la même sauvegarde
+
+L'appel automatique passait `keep=100` à `create`, puis appliquait sa propre
+rétention. Une politique personnalisée `recent=101` perdait une copie de trop ;
+ces suppressions intermédiaires disparaissaient aussi du résultat `removed`.
+La régression échoue avant correction dans `.local/quality-audit/retention-before.log`.
+`create(keep=None)` délègue maintenant la rétention à l'appelant automatique.
+La rotation manuelle est isolée dans `rotate_rolling`, sans changer sa politique
+par défaut. Cela élimine aussi un passage inutile de vérification des anciennes
+archives à chaque rotation automatique. Aucun gain FPS revendiqué.
+
+Suppression démontrée : import Python `timedelta` inutilisé dans `backup_policy`
+(analyse AST des noms lus et inspection de tous les usages du module).
+
 ## Non vérifié
 
 Validation native en jeu, persistance réelle des Pals, Windows physique,

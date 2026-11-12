@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 
 TOOLS = Path(__file__).parents[1]/'tools'
 sys.path.insert(0, str(TOOLS))
@@ -98,6 +99,30 @@ class PolicyTests(unittest.TestCase):
                 self.assertFalse(result['archive_created'])
         self.assertEqual(bad.read_bytes(), b'broken')
         self.assertEqual(len(list(self.dest.glob('*.zip'))), 2)
+
+    def test_automatic_retention_has_no_second_manual_limit(self):
+        baseline = Path(self.once()['archive'])
+        with zipfile.ZipFile(baseline) as z:
+            entries = {n: z.read(n) for n in z.namelist()}
+        manifest = json.loads(entries['manifest.json'])
+        manifest['kind'] = 'rolling'
+        now = datetime.now(timezone.utc)
+        rolling = []
+        for day in range(1, 102):
+            path = self.dest/f'gg-{self.world.name}-rolling-day{day}.zip'
+            manifest['created_utc'] = (now-timedelta(days=day)).isoformat()
+            entries['manifest.json'] = json.dumps(manifest).encode()
+            with zipfile.ZipFile(path, 'w') as z:
+                for name, data in entries.items():
+                    z.writestr(name, data)
+            rolling.append(path)
+        (self.world/'Level.sav').write_bytes(b'changed-world')
+        result = self.once(policy={'recent': 101, 'interval_seconds': 0})
+        self.assertEqual(result['status'], 'created')
+        self.assertTrue(baseline.exists())
+        self.assertTrue(all(p.exists() for p in rolling[:100]))
+        self.assertFalse(rolling[100].exists())
+        self.assertEqual(result['removed'], [rolling[100].name])
 
 
 if __name__ == '__main__':

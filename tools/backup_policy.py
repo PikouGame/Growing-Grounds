@@ -1,5 +1,5 @@
 """Persistent bounded retention shared by the Windows and Linux companions."""
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 import shutil
 import zipfile
@@ -124,7 +124,7 @@ def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
         for r in planned:
             checkpoint()
             r['path'].unlink()
-        result = archive.create(world, mod, destination, kind=kind, keep=100, version=version,
+        result = archive.create(world, mod, destination, kind=kind, keep=None, version=version,
                                 reason='automatic-policy', stopped=True, _lock_held=True,
                                 max_archive_bytes=min(policy['max_bytes']-used,
                                                       free-policy['reserve_bytes']))
