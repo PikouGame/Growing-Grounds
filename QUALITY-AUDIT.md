@@ -1,9 +1,10 @@
 # Growing Grounds — audit et nettoyage local
 
-État : en cours, branche `codex/gg-quality-audit`, base `cd099f9`.
+État : terminé localement le 12 novembre 2026, branche `codex/gg-quality-audit`,
+base `cd099f9` puis intégration de `38b162c`.
 Périmètre autorisé : source Lua, outils Python, contrats réseau, configuration,
-tests et documentation utile. Fin attendue : corrections et nettoyages locaux
-commités, preuves et limites consignées ici. Aucun déploiement ni publication.
+tests et documentation utile. Corrections et nettoyages locaux committés ; preuves
+et limites consignées ici. Aucun déploiement ni publication.
 
 ## Propriété et protections
 
@@ -20,11 +21,15 @@ commités, preuves et limites consignées ici. Aucun déploiement ni publication
 
 - [x] Lire instructions, contexte et STATUS partagé sans le modifier.
 - [x] Vérifier checkout propre et établir les résultats de référence.
-- [ ] Examiner tous les modules et leurs usages/tests/documentation.
-- [ ] Corriger les défauts démontrés et simplifier les responsabilités dupliquées.
+- [x] Examiner tous les modules et leurs usages/tests/documentation.
+- [x] Corriger les défauts démontrés et simplifier les responsabilités dupliquées.
 - [x] Récupérer le changement stabilisé de croissance/réglages.
-- [ ] Vérifier le résultat complet et les archives de distribution locales.
-- [ ] Finaliser constats priorisés, suppressions justifiées et commits réversibles.
+- [x] Vérifier le résultat complet et les archives de distribution locales.
+- [x] Finaliser constats priorisés, suppressions justifiées et commits réversibles.
+
+Prochaine étape hors de cet audit : le chat principal peut intégrer les commits
+locaux puis organiser sa validation native. Rien n'attend une réponse de PK pour
+terminer ce périmètre. Le runtime actuellement installé n'a pas été changé ici.
 
 ## Preuves
 
@@ -34,11 +39,64 @@ Référence `cd099f9` : 31 tests Python et 14 suites Lua × 2 interpréteurs
 de racine omis), corrigée et conservée dans les journaux ; ce n'était pas un
 échec produit.
 
+Résultat final sur `91717a6` (le dernier commit suivant ne modifie que ce suivi) :
+**41 tests Python**, **14 suites Lua sous 5.5.1 et 5.4.9**, compilation des 21
+fichiers Lua sous les deux versions, trois tests de distribution sous Python
+optimisé, assemblage réel des deux ZIP et `git diff --check` réussis.
+Python exécuté : 3.14.9. Les outils passent aussi l'analyse syntaxique 3.9 ;
+ce n'est pas une exécution sur Python 3.9.
+
+Reçu détaillé : `.local/quality-audit/final.json` (commandes, statuts, versions,
+SHA-256 des sources/tests/docs et manifeste final). Il pointe vers les journaux
+bruts conservés dans le même répertoire. Le paquet manuel compte 83 fichiers,
+le paquet Workshop 85, sans les tests ni ce suivi. Les empreintes finales sont
+distinctes de la preuve d'équivalence de la seule refactorisation de release :
+les corrections ultérieures de budget et documentation changent le contenu.
+
+## Couverture et invariants conservés
+
+- `Scripts/main`, `objects`, `changes` : chargement, gardes, hooks UE4SS,
+  coalescence, timers sur le thread du jeu, caches et repli quand une notification
+  n'est pas disponible. Les hooks dynamiques et signatures de callbacks restent.
+- `range`, `runtime`, `config`, `settings` : autorité serveur, distances de
+  placement, partage de l'espace entre bases, gain/cap indépendants, migration
+  des clés historiques, brouillons et récupération après échec de renommage.
+- `storage`, `palbox` : origine des dimensions, croissance bornée, références
+  natives et réplication, rétention des Pals occupés/verrouillés/ouverts, reset
+  et traitement distinct d'une expansion externe. Leurs mécanismes de durée de
+  vie restent distincts : réplication dédiée pour les Pals, échange de slots
+  d'objets lors d'un reset de coffre. Les fusionner aurait masqué ces différences.
+- `preview` : formats historiques et total-cap, champs bornés/exacts en float,
+  arrivée séparée des champs, rotation de révision, données exclusivement
+  serveur. Les anciens caps/maximums et branches de décodage ne sont pas du
+  code mort ; les tests couvrent leur lecture. Aucun protocole modifié.
+- `ui`, `chest_ui`, `world_settings`, `language`, `texts` : reconstruction,
+  activation, propriété des lignes, dimensions, langues et repli anglais.
+  Vérification mécanique des 17 cultures ; pas de certification linguistique.
+- `motion`, `boundary`, `ring`, `ribbon`, `wave` : préparation bornée, fermeture
+  du menu, ordre vague/rebond/contour, nettoyage et absence de nouvelles traces
+  pendant le balayage visible. Les constantes visuelles sont intentionnelles.
+- Tous les outils Python : archive/restore, politique, annulation, sessions
+  Linux et Windows, appels Win32, setup, runtime embarqué et distribution.
+  Les lectures répétées de la source avant publication vérifient la cohérence
+  des sauvegardes ; elles sont conservées. Seule la rotation automatique
+  redondante a été retirée. Les fixtures natives manuelles sont des points
+  d'entrée utiles, pas des scripts morts.
+- README, INSTALL, BACKUPS, configuration et début du changelog vérifiés contre
+  le code courant. Listings/visuels historiques laissés au chantier design.
+
+## Priorité de revue
+
+Les défauts démontrés ci-dessous sont P2 : budget/baseline/rétention en premier,
+puis cycles de widgets et instructions de migration. Tous sont corrigés ici.
+L'assemblage avait des lacunes de garde, sans paquet incomplet constaté ; elles
+sont distinguées des bugs reproduits. Aucun P0/P1 démontré par cet audit local.
+
 ## Constats et corrections
 
 ### P2 — baseline manquante masquée par une archive roulante
 
-`tools/backup_policy.py:automatic_once` appliquait le délai et le contrôle
+`tools/backup_policy.py:85` (`automatic_once`) appliquait le délai et le contrôle
 « unchanged » avant de vérifier la présence d'une baseline. Une copie roulante
 seule empêchait donc la protection initiale, même après le délai. Sous Linux,
 `baselines_before_first_launch` refuse alors le lancement. Une baseline corrompue
@@ -55,7 +113,7 @@ rétention. Une politique personnalisée `recent=101` perdait une copie de trop 
 ces suppressions intermédiaires disparaissaient aussi du résultat `removed`.
 La régression échoue avant correction dans `.local/quality-audit/retention-before.log`.
 `create(keep=None)` délègue maintenant la rétention à l'appelant automatique.
-La rotation manuelle est isolée dans `rotate_rolling`, sans changer sa politique
+La rotation manuelle est isolée dans `tools/save_backup.py:186` (`rotate_rolling`), sans changer sa politique
 par défaut. Cela élimine aussi un passage inutile de vérification des anciennes
 archives à chaque rotation automatique. Aucun gain FPS revendiqué.
 
@@ -64,7 +122,7 @@ Suppression démontrée : import Python `timedelta` inutilisé dans `backup_poli
 
 ### P2 — ligne de récompense disparue mais encore comptée dans la hauteur
 
-`src/ui.lua:UI.update` gardait la visibilité et la propriété d'une ligne retirée
+`src/ui.lua:264` et `:307` gardaient la visibilité et la propriété d'une ligne retirée
 par reconstruction native si son bonus venait aussi d'être désactivé. Au prochain
 changement visible, `fitHeight` déréférençait cette ligne absente. Reproduit dans
 `.local/quality-audit/ui-before.log`. Nettoyer la propriété de toute ligne absente
@@ -74,7 +132,7 @@ Preuve par simulation du cycle des widgets, pas validation visuelle en jeu.
 
 ### P2 — réglages natifs tardifs et propriété des lignes reconstruites
 
-`src/world_settings.lua:attach` ne marquait pas l'initialisation en attente
+`src/world_settings.lua:86` (`attach`) ne marquait pas l'initialisation en attente
 avant ses premiers retours. Une classe, un panneau ou un exemple natif absent
 au premier appel empêchait donc toute reprise par `refresh`. Le drapeau est
 maintenant posé avant ces vérifications, et le journal distingue l'attente.
@@ -106,7 +164,7 @@ préservent identités, valeurs non enregistrées et ordre des contrôles natifs
 
 ### Distribution — refactorisation et contrôles renforcés
 
-`tools/release.py` exécutait tout l'assemblage dès son import. Les étapes sont
+`tools/release.py:59` et `:101` : le module exécutait tout l'assemblage dès son import. Les étapes sont
 désormais séparées : `validate_sources`, `workshop_info`, `build_release` et
 écriture d'une archive. Le CLI reste identique et l'import est sans écriture.
 Les gardes explicites restent actifs avec `python -O`.
@@ -127,7 +185,7 @@ Les archives restent des candidats privés nommés avec la version existante.
 
 ### P2 — sous-dossiers inconnus exclus du budget d'archives
 
-`tools/backup_policy.py` comptait uniquement les fichiers immédiatement sous le
+`tools/backup_policy.py:70` : le décompte ne couvrait que les fichiers immédiatement sous le
 répertoire d'archives. Un sous-dossier contenant déjà le budget entier permettait
 encore une nouvelle archive. Reproduit avec un budget réduit dans
 `.local/quality-audit/nested-budget-before.log` (`created` au lieu de `storage-limit`).
@@ -137,7 +195,7 @@ et ne supprime rien d'inconnu. Tests Python réussis après correction.
 
 ### P2 — instructions actuelles encore contradictoires sur le gain
 
-README et INSTALL affirmaient encore qu'un ancien `growthPercentPerLevel` était
+`README.md:89` et `INSTALL.txt:21` affirmaient encore qu'un ancien `growthPercentPerLevel` était
 ignoré et que la croissance suivait obligatoirement le nombre de niveaux. Le
 code stabilisé fait l'inverse. Les instructions actuelles sont corrigées, et la
 section historique de la version publiée est explicitement identifiée. Son texte
@@ -145,6 +203,11 @@ historique, les listings publics et les visuels du chantier design restent intac
 
 ## Non vérifié
 
-Validation native en jeu, persistance réelle des Pals, Windows physique,
-Workshop installé, performances/FPS, compatibilité générale avec d'autres mods.
-Les fixtures ne remplacent aucune de ces validations.
+**Non vérifié / Not verified** : validation native en jeu de cette branche,
+persistance réelle des Pals, focus/manette/reconstruction UMG natifs, Windows
+physique et jonctions réelles Windows, relance réelle systemd/Win32 sur cette
+révision, Workshop installé, exécution Python 3.9, performances/FPS et
+compatibilité générale avec d'autres mods. Les fixtures de processus et de
+réplication ne remplacent aucune de ces validations. Aucun nouveau défaut de
+perte de Pals n'a été reproduit ; cela ne constitue pas une preuve de sauvegarde
+native. Les checks en jeu et la présentation restent au chat principal.
