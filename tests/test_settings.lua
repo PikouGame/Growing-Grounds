@@ -387,3 +387,38 @@ W.setup(menu3,a,false);assert(ordered.adds==adds,'reopening never reparents an a
 W.change(ordered.children[4],6);assert(ordered.adds==adds,'slider changes never rebuild native rows')
 assert(E.settings.get(a).growthPercentPerLevel==before,'layout and draft changes do not save')
 print('PASS: group follows native bases/building warning; native order, draft values and style preserved; no repeat reparenting')
+
+-- Setup may arrive before the reflected panel, example or row asset is ready.
+-- The ordinary reconciliation must complete the same draft without reopening.
+for _,missing in ipairs({'panel','example','class'}) do
+    local latePanel=obj('late-panel-'..missing,{children={}})
+    latePanel.GetChildrenCount,latePanel.GetChildAt,latePanel.AddChild=
+        panel.GetChildrenCount,panel.GetChildAt,panel.AddChild
+    local example=obj('late-example-'..missing,{OptionType=1})
+    local lateMenu=obj('late-menu-'..missing,{ScrollBox_DifficultySetting=latePanel,
+        WorldSettings_BaseCampWorkerNum=example,GetOwningPlayer=function() end})
+    local delayed=missing=='panel' and latePanel or missing=='example' and example or objects[rowPath]
+    delayed.alive=false
+    W.setup(lateMenu,a,false)
+    assert(#latePanel.children==0)
+    delayed.alive=true
+    W.refresh()
+    assert(#latePanel.children==5,'late '..missing..' retries without reopening the menu')
+    local count=#latePanel.children
+    W.refresh();assert(#latePanel.children==count,'reconciliation does not duplicate rows')
+end
+print('PASS: late panel/example/class complete setup through ordinary reconciliation')
+
+local removed=ordered.children[5]
+removed:RemoveFromParent()
+W.change(ordered.children[4],7)
+assert(#ordered.children==10 and ordered.children[5]~=removed)
+assert(ordered.children[5].Text_OptionTitle.text==Texts.get(language).rangeCapTitle,
+    'a recreated setting returns to the group instead of the end of the native list')
+assert(ordered.children[9]==random and ordered.children[10]==travel,
+    'repair still preserves native tail order and values')
+local repaired=ordered.children[5]
+local capBefore=repaired.value
+W.change(removed,250)
+assert(repaired.value==capBefore,'events from a detached old setting cannot change the current draft')
+print('PASS: reconstructed settings retain group placement')

@@ -72,6 +72,20 @@ et sa contribution à la hauteur permet aussi sa recréation unique à la réact
 La suite UI passe sous Lua 5.5/5.4 : `ui-after-5.5.log`, `ui-after-5.4.log`.
 Preuve par simulation du cycle des widgets, pas validation visuelle en jeu.
 
+### P2 — réglages natifs tardifs et propriété des lignes reconstruites
+
+`src/world_settings.lua:attach` ne marquait pas l'initialisation en attente
+avant ses premiers retours. Une classe, un panneau ou un exemple natif absent
+au premier appel empêchait donc toute reprise par `refresh`. Le drapeau est
+maintenant posé avant ces vérifications, et le journal distingue l'attente.
+Une ligne reconstruite invalide aussi le placement du groupe et libère l'ancien
+slider : ses événements différés ne doivent plus modifier le brouillon actif.
+Ce nettoyage est centralisé dans `forgetRow`, partagé avec la fermeture du menu.
+Trois preuves d'échec conservées : `settings-before.log`,
+`settings-placement-before.log`, `settings-ownership-before.log` sous
+`.local/quality-audit/`. Suite de réglages réussie sous Lua 5.5/5.4 ; les tests
+préservent identités, valeurs non enregistrées et ordre des contrôles natifs.
+
 ## Non vérifié
 
 Validation native en jeu, persistance réelle des Pals, Windows physique,

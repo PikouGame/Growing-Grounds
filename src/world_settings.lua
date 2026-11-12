@@ -34,6 +34,12 @@ return function(E)
             if E.valid(child) and child:GetFullName()==path then return child end
         end
     end
+    local function forgetRow(path)
+        local entry=path and owned[path]
+        if not entry then return end
+        sliders[entry.slider]=nil
+        owned[path]=nil
+    end
     local function positionGroup(menu,state,panel)
         if state.positioned then return end
         local anchor=E.valid(menu.WorldSettings_MaxBuildingLimitNum) and menu.WorldSettings_MaxBuildingLimitNum
@@ -78,14 +84,18 @@ return function(E)
         state.positioned=true
     end
     function W.attach(menu, state)
+        -- Keep the draft pending even when native assets are not ready yet.
+        -- W.refresh retries it after each ordinary reconciliation.
+        state.initializing = true
         local panel, example = menu.ScrollBox_DifficultySetting, menu.WorldSettings_BaseCampWorkerNum
         if not E.valid(panel) or not E.valid(example) then return end
         local class = object(rowPath)
         if not E.valid(class) then return end
-        state.initializing = true
         for _, spec in ipairs(fields) do
             local row = findChild(panel, state.rows[spec.key])
             if not E.valid(row) then
+                state.positioned = false
+                forgetRow(state.rows[spec.key])
                 row = object('/Script/UMG.Default__WidgetBlueprintLibrary'):Create(menu,class,menu:GetOwningPlayer())
                 assert(E.valid(row), 'Cannot create World Settings row')
                 row.OptionType = example.OptionType
@@ -118,7 +128,8 @@ return function(E)
             previousWorld=E.worldId(),dirty=false}
         screens[name] = state
         W.attach(menu,state)
-        E.log('World Settings: range growth/cap, chest and Palbox start/total rows ready')
+        E.log(state.initializing and 'World Settings: waiting for native widgets'
+            or 'World Settings: range growth/cap, chest and Palbox start/total rows ready')
     end
     function W.change(row, value)
         local entry = owned[row:GetFullName()]
@@ -237,9 +248,7 @@ return function(E)
             local menu = state.menu
             if not E.valid(menu) or menu:GetFullName()~=name then
                 for _,path in pairs(state.rows) do
-                    local entry=owned[path]
-                    if entry then sliders[entry.slider]=nil end
-                    owned[path]=nil
+                    forgetRow(path)
                 end
                 screens[name]=nil
             elseif state.initializing then
