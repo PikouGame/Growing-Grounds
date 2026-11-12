@@ -2,9 +2,9 @@ local root=assert(arg[1],'pass root with trailing slash')
 local Motion=dofile(root..'src/motion.lua')
 local function near(a,b) assert(math.abs(a-b)<0.00001,tostring(a)..' != '..tostring(b)) end
 
--- Brightness: in from nothing, a slow breath, out to nothing.
+-- A terrain-following maximum with no next-level wall.
 local objects,queue,errors,logs={},{},{},{}
-local time,lookups,traces,created,destroyed,sections,imports=0,0,0,0,0,0,0
+local time,lookups,traces,created,destroyed,sections,imports,writes=0,0,0,0,0,0,0,0
 local failMesh,noGround=false,false
 local function obj(p,t)
     t=t or {};t.alive=true
@@ -73,7 +73,7 @@ local function palbox(p)
                 local mid=obj('/World.Marker'..id..'.Material'..layer,{
                     SetTextureParameterValue=function(self,k,v) self[k]=v end,
                     SetVectorParameterValue=function(self,k,v) self[k]=v end,
-                    SetScalarParameterValue=function(self,k,v) self[k]=v end,
+                    SetScalarParameterValue=function(self,k,v) writes=writes+1;self[k]=v end,
                 })
                 self.materials[layer+1]=mid;return mid
             end,
@@ -96,31 +96,11 @@ E.objects={find=function(p) return StaticFindObject(p) end,all=function() menuRe
 E.runtime={snapshot=function() error('the marker is told its radius; it never calculates one') end}
 local B=dofile(root..'src/boundary.lua')(E,Motion)
 local M=dofile(root..'src/marker.lua')(E,{},{})
-assert(M.level(0)==0,'starts from nothing')
-near(M.level(M.fadeIn),0.875+0.125*math.cos(2*math.pi*M.fadeIn/M.period))
-near(M.level(M.period),1);near(M.level(M.period/2),0.75)
-local previous=0
-for i=0,math.floor(M.fadeIn*100) do
-    local level=M.level(i/100)
-    assert(level>=previous-0.02,'no flash on the way in');previous=level
-end
-for i=0,1000 do
-    local level=M.level(M.fadeIn+i/100)
-    assert(level>=0.75-0.00001 and level<=1.00001,'the breath stays between three quarters and full')
-end
-previous=M.level(5,0)
-near(previous,M.level(5))
-for i=1,math.floor(M.fadeOut*1000)-1 do
-    local level=M.level(5+i/1000,i/1000)
-    assert(level<=previous+0.001 and level>=0,'fades out without a rebound');previous=level
-end
-assert(previous<0.01 and M.level(5,M.fadeOut)==nil and M.level(5,M.fadeOut+1)==nil,'ends at nothing, then is gone')
-assert(M.height>=100 and M.alpha>0 and M.alpha<=1 and M.light>0 and M.light<5,
-    'fainter than the celebration, whose trail glows at 5')
-print('PASS: marker brightness fades in, breathes between 0.75 and 1, fades out to nothing')
+assert(M.level(0)==0)
+near(M.level(M.fadeIn),1);near(M.level(50),1)
+near(M.level(5,M.fadeOut/2),0.5)
+assert(M.level(5,M.fadeOut)==nil)
 
--- A marker at the NEXT radius, prepared in bounded batches, shown only while
--- its Base Upgrade screen is open.
 local level,radius=8,4725
 local base=obj('/World.BaseModel',{GetLevel=function() return level end})
 local other=obj('/World.OtherBase',{GetLevel=function() return 3 end})
@@ -131,233 +111,155 @@ local function frame(t)
     time=t;local batch=queue;queue={}
     local beforeTrace,beforeSections=traces,sections
     for _,fn in ipairs(batch) do fn() end
-    assert(traces-beforeTrace<=64,'terrain work must stay bounded per update')
+    assert(traces-beforeTrace<=64,'all bases share 64 terrain traces per update')
     assert(sections-beforeSections<=1,'at most one mesh section per update')
 end
 local function pump(frames) for _=1,frames do frame(time+0.016) end end
-local function shown() return #logs>0 and logs[#logs]:find('next boundary marker shown',1,true)~=nil end
+local function aim(maximum) B.mark(base,screen,4900,maximum) end
+local function reset()
+    B.beginRefresh();B.endRefresh();pump(1);refresh()
+    assert(#queue==0)
+end
 refresh();near(actor.AreaRange.RelativeScale3D.X,94.5)
-B.mark(other,screen,4900)
-assert(#queue==0 and created==0,'a screen for another base marks nothing here')
-B.mark(base,screen,false)
-assert(#queue==0 and created==0,'nothing to announce, nothing prepared')
+E.config.nextBoundaryMarker=true -- obsolete installed configs cannot bring back the blue wall
 B.mark(base,screen,4900)
-assert(#queue==1 and created==0 and traces==0,'aiming only schedules; the work is spread over updates')
+B.mark(other,screen,4900,7000)
+aim(false)
+assert(#queue==0 and created==0,'no maximum or another base: draw nothing, including the next blue ring')
+aim(7000)
+assert(#queue==1 and created==0 and traces==0,'aim only schedules')
 frame(time+0.016);assert(traces==64 and created==0)
-frame(time+0.016);assert(traces==104 and created==0,'one sample every three metres of the NEXT circle')
+pump(9);assert(traces==640 and created==0)
+frame(time+0.016);assert(traces==660 and created==0)
 frame(time+0.016);assert(created==1 and sections==1 and imports==1 and not component.visible)
 near(component.materials[1].AlphaScale01,0)
-logs={};frame(time+0.016)
-assert(component.visible and shown(),'visible once complete')
-assert(logs[1]=='next boundary marker shown at 4900 cm: 104/104 terrain samples')
+frame(time+0.016)
+assert(component.visible and logs[1]=='maximum boundary marker shown at 7000 cm: 660/660 terrain samples')
 local shownAt=time
-near(component.materials[1].AlphaScale01,0);near(component.materials[1].RGBScale01,0)
-near(component.position.X,100);near(component.position.Y,200);near(component.position.Z,300)
-assert(#component.geometry==1 and #component.materials==1,'one mesh section, one material')
 local g=component.geometry[1]
-local n=#g.vertices/2-1
-assert(n==104 and #g.indices==n*6,'full circle including seam')
-for i=1,#g.vertices,2 do
-    local top,bottom=g.vertices[i],g.vertices[i+1]
-    near(math.sqrt(bottom.X*bottom.X+bottom.Y*bottom.Y),4900)
-    near(bottom.Z,height(bottom.X+100,bottom.Y+200)-300+12)
-    near(top.X,bottom.X);near(top.Y,bottom.Y);near(top.Z,bottom.Z+M.height)
-    assert(g.uv[i].Y>0.99 and g.uv[i+1].Y<0.01,'brightest on the ground, fading upwards')
+assert(#g.vertices==660 and #g.indices==1320,'110 separate dashes, two ground quads each')
+near(component.position.X,100);near(component.position.Y,200);near(component.position.Z,300)
+for i,p in ipairs(g.vertices) do
+    near(math.sqrt(p.X*p.X+p.Y*p.Y),7000+(i%2==1 and -20 or 20))
+    near(p.Z,height(p.X+100,p.Y+200)-300+2) -- every vertex is 2 cm above its own terrain hit
+    near(g.uv[i].Y,0.5/512)
 end
-near(actor.AreaRange.RelativeScale3D.X,94.5) -- the real boundary is never moved by the marker
-local steadyTraces,steadySections,steadyLookups,steadyReads=traces,sections,lookups,menuReads
+for i=1,#g.indices,3 do
+    local a,b,c=g.indices[i],g.indices[i+1],g.indices[i+2]
+    assert(math.floor(a/6)==math.floor(b/6) and math.floor(a/6)==math.floor(c/6),'no triangle crosses a gap')
+    local pa,pb,pc=g.vertices[a+1],g.vertices[b+1],g.vertices[c+1]
+    assert((pb.X-pa.X)*(pc.Y-pa.Y)-(pb.Y-pa.Y)*(pc.X-pa.X)>0,'ground faces upwards')
+end
+near(component.materials[1].SoftEdge,1)
+near(component.materials[1].Color01.B,1.4)
+near(actor.AreaRange.RelativeScale3D.X,94.5)
 frame(shownAt+M.fadeIn)
-near(component.materials[1].AlphaScale01,M.alpha*M.level(M.fadeIn))
-near(component.materials[1].RGBScale01,M.light*M.level(M.fadeIn))
+local steadyTraces,steadySections,steadyLookups,steadyReads,steadyWrites=traces,sections,lookups,menuReads,writes
 for i=1,300 do
     frame(time+0.016)
-    local mid=component.materials[1]
-    assert(mid.AlphaScale01>=M.alpha*0.75-0.00001 and mid.AlphaScale01<=M.alpha+0.00001)
-    assert(mid.RGBScale01<=M.light+0.00001)
-    if i%60==0 then refresh();B.mark(base,screen,4900) end -- the 5 s reconciliation while it is open
+    if i%60==0 then refresh();aim(7000) end
 end
-assert(traces==steadyTraces and sections==steadySections and lookups==steadyLookups and created==1,
-    'a steady marker only changes two material values: no traces, meshes, searches or rebuilds')
-assert(menuReads==steadyReads,'the boundary never reads menus for the marker')
-assert(#errors==0,table.concat(errors,';'))
--- Closing the screen fades it out and stops every update.
+near(component.materials[1].AlphaScale01,0.45)
+assert(traces==steadyTraces and sections==steadySections and lookups==steadyLookups and writes==steadyWrites,
+    'steady maximum has no terrain, mesh, lookup or material writes')
+assert(menuReads==steadyReads and created==1 and #errors==0)
 screenActive=false;frame(time+0.016)
 local closedAt=time
-assert(component.alive and component.visible,'the close starts a fade, not a cut')
-frame(closedAt+M.fadeOut/2)
-assert(component.materials[1].AlphaScale01<M.alpha*0.75 and component.materials[1].AlphaScale01>0)
-frame(closedAt+M.fadeOut-0.001);assert(component.alive)
+assert(component.alive and component.visible)
+frame(closedAt+M.fadeOut/2);near(component.materials[1].AlphaScale01,M.alpha/2)
 frame(closedAt+M.fadeOut+0.001)
-assert(destroyed==1 and not component.alive and #queue==0,'gone after the fade; nothing keeps ticking')
-pump(5);assert(#queue==0 and traces==steadyTraces)
-print('PASS: next-radius marker on the terrain, bounded setup, steady without work, fades with its screen')
+assert(not component.alive and destroyed==1 and #queue==0)
+print('PASS: flat sloped-ground dashes with real gaps, no next wall, bounded setup, no steady writes, fade on close')
 
--- The same radius reopened samples fresh terrain; another radius replaces it.
-screenActive=true
-B.mark(base,screen,4900);pump(4)
-assert(created==2 and traces==steadyTraces+104 and component.visible,'reopening scans the current ground again')
-pump(30)
+screenActive=true;aim(7000);pump(40)
+assert(created==2 and traces==steadyTraces+660 and component.visible,'reopening samples fresh terrain')
 local first=component
-B.mark(base,screen,5075);assert(destroyed==2 and not first.alive,'a new next radius replaces the marker')
-pump(4)
-assert(created==3 and component.visible)
-near(math.sqrt(component.geometry[1].vertices[2].X^2+component.geometry[1].vertices[2].Y^2),5075)
--- Nothing left to announce: fades out although the screen stays open.
-pump(30);B.mark(base,screen,false)
-frame(time+0.016);local dismissedAt=time
-assert(component.alive);frame(dismissedAt+M.fadeOut+0.001)
-assert(destroyed==3 and #queue==0)
--- Dismissed or closed before anything was visible: no flash at all.
-B.mark(base,screen,4900);frame(time+0.016)
-B.mark(base,screen,false);frame(time+0.016)
-assert(created==3 and #queue==0,'dismissed during sampling: nothing was ever created')
-B.mark(base,screen,4900);pump(3);assert(created==4 and not component.visible)
-screenActive=false;frame(time+0.016)
-assert(destroyed==4 and #queue==0,'closed before it showed: removed without appearing')
-screenActive=true
--- A destroyed screen cannot strand the marker.
-B.mark(base,screen,4900);pump(40);assert(component.visible)
-screen.alive=false;frame(time+0.016);frame(time+M.fadeOut+0.001)
-assert(destroyed==5 and #queue==0,'a destroyed widget counts as closed')
-screen.alive=true
--- Reopened while fading: a fresh marker, never a half-faded one brought back.
-B.mark(base,screen,4900);pump(40);local fading=component
-screenActive=false;frame(time+0.016);screenActive=true
-assert(fading.alive)
-B.mark(base,screen,4900)
-assert(not fading.alive and destroyed==6,'the fading marker is removed at once')
-pump(4);assert(component~=fading and component.visible)
--- A boundary that snaps (reset, reload) drops the marker with the old state.
-radius=3500;refresh()
-assert(not component.alive and destroyed==7,'a snapped boundary keeps no marker')
-frame(time+0.016);assert(#queue==0)
-radius=4725;B.beginRefresh();B.endRefresh();refresh()
--- A world clock that restarts removes it rather than freezing it.
-B.mark(base,screen,4900);pump(40);assert(component.visible)
-frame(time-30)
-assert(not component.alive and destroyed==8 and #queue==0,'a clock set back removes the marker')
-time=time+60;B.beginRefresh();B.endRefresh();refresh()
--- Dismissed and wanted again before it faded: it must not fade away anyway.
-B.mark(base,screen,4900);pump(40)
-B.mark(base,screen,false);B.mark(base,screen,4900);pump(40)
-assert(component.alive and component.visible,'a marker asked for again stays')
-near(component.materials[1].AlphaScale01,M.alpha*M.level(36*0.016)) -- shown on the 4th of 40 updates
-B.mark(base,screen,false);pump(20);assert(not component.alive and #queue==0)
--- A component destroyed under it ends the marker; it is not rebuilt each update.
-B.mark(base,screen,4900);pump(40)
-local beforeLoss=created
-component.alive=false;pump(3)
-assert(created==beforeLoss and #queue==0,'a lost component is not rebuilt on the spot')
--- Switches.
-local beforeSwitches=created
-E.config.nextBoundaryMarker=false;B.mark(base,screen,4900)
-assert(#queue==0 and created==beforeSwitches,'nextBoundaryMarker=false prepares nothing')
-E.config.nextBoundaryMarker=nil;E.config.resetToVanilla=true;B.mark(base,screen,4900)
-assert(#queue==0 and created==beforeSwitches,'no marker during a reset')
+aim(7200);assert(not first.alive)
+pump(40);assert(created==3 and component.visible)
+near(math.sqrt(component.geometry[1].vertices[1].X^2+component.geometry[1].vertices[1].Y^2),7180)
+aim(false);pump(20);assert(not component.alive and #queue==0)
+local beforeEarly=created
+aim(7000);pump(1);aim(false);pump(1)
+assert(created==beforeEarly and #queue==0,'cancel during sampling creates nothing')
+aim(7000);pump(12);assert(not component.visible and component.alive)
+screenActive=false;pump(1);assert(not component.alive and #queue==0,'close before showing creates no flash')
+screenActive=true;aim(7000);pump(40)
+screen.alive=false;pump(20);assert(not component.alive and #queue==0)
+screen.alive=true;aim(7000);pump(40)
+local fading=component
+screenActive=false;pump(1);screenActive=true;aim(7000)
+assert(not fading.alive,'reopen removes the fading instance')
+pump(40);assert(component.visible)
+radius=3500;refresh();assert(not component.alive,'a snapped radius clears the marker')
+pump(1);radius=4725;reset()
+aim(7000);pump(40);frame(time-30)
+assert(not component.alive and #queue==0,'reset clock removes the marker')
+time=time+60;reset()
+aim(7000);pump(40);aim(false);aim(7000);pump(40)
+assert(component.alive and component.visible,'re-aim before dismissal stays visible')
+component.alive=false
+local beforeLoss=created;pump(3)
+assert(created==beforeLoss and #queue==0,'lost component is not rebuilt automatically')
+E.config.maximumBoundaryMarker=false;aim(7000);assert(#queue==0)
+E.config.maximumBoundaryMarker=nil;E.config.resetToVanilla=true;aim(7000);assert(#queue==0)
 E.config.resetToVanilla=nil
--- Removal of the base or of its Palbox.
-B.mark(base,screen,4900);pump(40);assert(component.visible)
-local beforeRemoval=destroyed
-B.beginRefresh();B.endRefresh()
-assert(destroyed==beforeRemoval+1,'base removal destroys its marker')
-frame(time+0.016);assert(#queue==0)
-refresh();B.mark(base,screen,4900);pump(40);assert(component.visible)
-actor.alive=false;frame(time+0.016);assert(#queue==0,'a removed Palbox stops the updates')
-component.alive=false -- a component dies with its actor
-actor.alive=true;B.beginRefresh();B.endRefresh();refresh()
-assert(#errors==0,table.concat(errors,';'))
--- Two bases marked together share the per-update terrain budget (checked in frame()).
+aim(radius);assert(#queue==0,'already at maximum: no duplicate current boundary')
+B.mark(base,screen,7000,7000);pump(40)
+assert(component.visible,'maximum stays visible when next equals maximum')
+reset();assert(not component.alive)
+aim(7000);pump(40);actor.alive=false;pump(1)
+assert(#queue==0,'removed Palbox stops updates')
+actor.alive=true;reset();assert(#errors==0,table.concat(errors,';'))
+print('PASS: reopening, radius changes, early close, destroyed screen/component, settings, current cap and clock reset')
+
 local second=palbox('/World.Palbox2')
 local secondBase=obj('/World.SecondBase',{GetLevel=function() return 5 end})
-local secondScreen=obj('/World.BaseUpgrade2',{IsActivated=function() return screenActive end})
+local secondScreen=obj('/World.BaseUpgrade2',{IsActivated=function() return true end})
 B.beginRefresh();B.update(actor,base,'base',radius);B.update(second,secondBase,'second',4200);B.endRefresh()
 local beforeShared,sharedCreated=traces,created
-B.mark(base,screen,4900);B.mark(secondBase,secondScreen,4375)
-frame(time+0.016);assert(traces-beforeShared==64,'one shared budget, not one each')
-pump(8)
-assert(traces-beforeShared==104+96 and created==sharedCreated+2,'both markers complete over a few more updates')
-B.beginRefresh();B.endRefresh();frame(time+0.016);refresh()
-assert(#queue==0 and #errors==0,table.concat(errors,';'))
-print('PASS: fresh scan on reopen, replaced on a new radius, dismissal, no flash when cut short, switches, removal')
-
--- An upgrade hands the stage to the celebration.
+aim(7000);B.mark(secondBase,secondScreen,4375,7000)
+frame(time+0.016);assert(traces-beforeShared==64)
+pump(60)
+assert(traces-beforeShared==1320 and created==sharedCreated+2,'two bases share the budget')
+reset()
 E.config.upgradeWave=false
 local beforeUpgrade=created
-B.mark(base,screen,4900);pump(40)
-local marker=component
-assert(marker.visible and created==beforeUpgrade+1)
+aim(7000);pump(40);local marker=component
 level=9;radius=4900;time=time+0.016;refresh()
-assert(marker.alive,'the marker fades rather than vanishing when the upgrade lands')
-frame(time+0.016);local upgradedAt=time
-frame(upgradedAt+M.fadeOut+0.001)
-assert(not marker.alive,'the upgrade itself dismisses the marker, before the rows report anything')
-for _=1,12 do pump(10);B.mark(base,screen,5075) end -- reports keep coming while the screen is open
-assert(created==beforeUpgrade+2 and #component.geometry==2,
-    'only the contour is prepared while the celebration is pending or playing; no second marker')
-B.beginRefresh();B.endRefresh();frame(time+0.016);refresh()
-assert(#queue==0 and #errors==0,table.concat(errors,';'))
--- Afterwards the marker announces the level after that.
-local beforeNext=created
-B.mark(base,screen,5075);pump(4)
-assert(created==beforeNext+1 and component.visible)
-near(math.sqrt(component.geometry[1].vertices[2].X^2+component.geometry[1].vertices[2].Y^2),5075)
-B.beginRefresh();B.endRefresh();frame(time+0.016);refresh()
-print('PASS: an upgrade dismisses the marker, none appears during the celebration, the next level is announced afterwards')
+assert(marker.alive,'upgrade fades the marker')
+pump(20);assert(not marker.alive)
+for _=1,12 do pump(10);aim(7000) end
+assert(created==beforeUpgrade+2 and #component.geometry==2,'only celebration runs during upgrade')
+reset();aim(7000);pump(40);assert(component.visible)
+reset()
+print('PASS: shared setup budget and preserved upgrade celebration')
 
--- A failed setup is cleaned, reported once and not repeated for that radius.
-local beforeFail,beforeDestroyed,beforeTraces=created,destroyed,traces
-failMesh=true;B.mark(base,screen,5075);pump(6)
-assert(created==beforeFail+1 and destroyed==beforeDestroyed+1 and #queue==0,'failed mesh: component destroyed, updates stop')
-assert(#errors==1 and errors[1]:find('next boundary marker',1,true),table.concat(errors,';'))
+local beforeFail,beforeDestroyed=created,destroyed
+failMesh=true;aim(7000);pump(40)
+assert(created==beforeFail+1 and destroyed==beforeDestroyed+1 and #queue==0)
+assert(#errors==1 and errors[1]:find('maximum boundary marker',1,true),table.concat(errors,';'))
 local afterFail=traces
-B.mark(base,screen,5075);pump(6)
-assert(created==beforeFail+1 and traces==afterFail and #queue==0,'the same radius is not retried on every refresh')
-failMesh=false;B.mark(base,screen,5250);pump(6)
-assert(created==beforeFail+2 and component.visible,'another radius is tried again')
-B.beginRefresh();B.endRefresh();frame(time+0.016);refresh()
-errors={};noGround=true
+aim(7000);pump(40);assert(traces==afterFail and #queue==0,'failed radius is not retried each refresh')
+failMesh=false;aim(7200);pump(40);assert(component.visible)
+reset();errors={};noGround=true
 local beforeNoGround=created
-B.mark(base,screen,5250);pump(6)
-assert(created==beforeNoGround and #queue==0 and #errors==1 and errors[1]:find('No terrain under the next boundary',1,true),
-    'no ground under the next boundary: nothing is drawn')
+aim(7000);pump(40)
+assert(created==beforeNoGround and #queue==0 and #errors==1 and errors[1]:find('No terrain under the maximum boundary',1,true))
 noGround=false
-near(actor.AreaRange.RelativeScale3D.X,98)
-print('PASS: failed marker setup is cleaned, reported once, not repeated for the same radius; no ground draws nothing')
+print('PASS: failed setup cleans up once; missing terrain draws nothing')
 
--- Two previews share one terrain budget. The outer preview has real gaps,
--- stays still after fading in and never writes the gameplay boundary.
-B.beginRefresh();B.endRefresh();pump(1);refresh();errors={}
-local beforeBoth,traceBoth=created,traces
-B.mark(base,screen,5075,7000);pump(20)
-assert(created==beforeBoth+2 and traces-traceBoth==112+152,'both bounded samples complete once')
-local nextMarker,outer=objects['/World.Marker'..(beforeBoth+1)],objects['/World.Marker'..(beforeBoth+2)]
-assert(nextMarker.visible and outer.visible and #errors==0)
-local geometry=outer.geometry[1]
-assert(#geometry.indices==152/2*6,'exactly half of the outer ring segments remain')
-for i=1,#geometry.indices,6 do assert(geometry.indices[i]%4==0,'every alternate arc is a gap') end
-near(outer.materials[1].Color01.G,2);near(outer.materials[1].Color01.B,1.4)
-near(actor.AreaRange.RelativeScale3D.X,98)
-local steadyTraces,steadySections=traces,sections
-pump(50)
-near(outer.materials[1].AlphaScale01,0.45)
-assert(traces==steadyTraces and sections==steadySections,'steady preview never resamples or rebuilds')
-screenActive=false;pump(20)
-assert(not outer.alive and not nextMarker.alive and #queue==0,'closing destroys both previews')
-screenActive=true
-local beforeCoincident=created
-B.mark(base,screen,7000,7000);pump(10)
-assert(created==beforeCoincident+1,'matching next and maximum draws just one ring')
-B.mark(base,screen,false,false);pump(20)
-E.config.nextBoundaryMarker=false
-B.mark(base,screen,7000,7000);pump(10)
-assert(created==beforeCoincident+2 and #component.geometry[1].indices==152/2*6,
-    'when next is disabled, maximum remains independently available')
-E.config.maximumBoundaryMarker=false
-B.mark(base,screen,5075,7000);pump(20)
-assert(#queue==0 and not component.alive,'both local switches off stop all visual work')
-E.config.nextBoundaryMarker=nil;E.config.maximumBoundaryMarker=nil
-B.mark(base,screen,5075,7000);pump(10)
-local beforeRemoved=destroyed
-B.beginRefresh();B.endRefresh();pump(1)
-assert(destroyed==beforeRemoved+2 and #queue==0,'removing a base clears both previews')
-print('PASS: dotted maximum, independent switches, shared budgets, no duplicate rings, static geometry and cleanup')
+-- Geometry cannot bridge a void or a cliff, including across the strip width.
+local D=dofile(root..'src/dashes.lua')
+local job={radius=7000,points={}}
+D.prepare(job)
+for i,p in ipairs(job.samplePoints) do job.points[i]={Z=height(p.X,p.Y)+2} end
+local _,good=D.geometry(job)
+job.points[1]=false
+local _,gap=D.geometry(job)
+assert(#gap==#good-3,'only the triangle with the missing corner is omitted')
+job.points[1]={Z=10000}
+local _,cliff=D.geometry(job)
+assert(#cliff==#gap,'a large ground discontinuity cannot turn into a wall')
+local maxJob={radius=14000};D.prepare(maxJob)
+assert(maxJob.count<=1152,'setup size bounded even at maximum configured range')
+print('PASS: terrain holes and cliffs leave gaps; maximum geometry is bounded')

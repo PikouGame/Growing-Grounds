@@ -41,9 +41,7 @@ return function(E,A)
             for _=1,2 do normals[#normals+1]={X=math.cos(angle),Y=math.sin(angle),Z=0} end
             uv[#uv+1]={X=0.5,Y=vTop}
             uv[#uv+1]={X=0.5,Y=vBottom}
-            -- Omit alternate segments for the maximum preview: real gaps,
-            -- without extra components, textures or per-frame mesh changes.
-            if i<job.count and (not job.dotted or i%2==0) and p and job.points[(i+1)%job.count+1] then
+            if i<job.count and p and job.points[(i+1)%job.count+1] then
                 local a=2*i
                 for _,n in ipairs({a,a+1,a+2,a+2,a+1,a+3}) do indices[#indices+1]=n end
             end
@@ -152,7 +150,7 @@ return function(E,A)
         local found=lib:LineTraceSingleForObjects(actor,{X=x,Y=y,Z=job.center.Z+5000},
             {X=x,Y=y,Z=job.center.Z-5000},{0},true,{actor},0,out,true,color,color,0)
         local hit=out.OutHit or out
-        if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+12 end
+        if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+(job.groundLift or 12) end
     end
     -- Terrain heights under the job's circle, in bounded batches. Also returns
     -- the trace library it validated, for any further sampling in this batch.
@@ -164,7 +162,9 @@ return function(E,A)
             local i=job.nextPoint
             job.nextPoint,used=i+1,used+1
             local angle=2*math.pi*i/job.count
-            local z=terrain(lib,job,actor,job.radius*math.cos(angle),job.radius*math.sin(angle))
+            local point=job.samplePoints and job.samplePoints[i+1]
+            local x,y=point and point.X or job.radius*math.cos(angle),point and point.Y or job.radius*math.sin(angle)
+            local z=terrain(lib,job,actor,x,y)
             if z then
                 job.points[i+1]={Z=z}
                 job.hits=job.hits+1

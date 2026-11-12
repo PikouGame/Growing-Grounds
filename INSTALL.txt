@@ -54,8 +54,9 @@ Configuration
 - upgradeRibbon=true: enables glow effects; false disables both wave and rise.
 - upgradeWave=true: enables the Palbox-to-boundary ground wave.
 - upgradeEffectHeight=600: rise height in centimetres (clamped to 100..2000).
-- nextBoundaryMarker=true: while Base Upgrade is open, a soft glow on the ground
-  shows where the boundary will be after the upgrade.
+- maximumBoundaryMarker=true: while Base Upgrade is open, flat turquoise ground
+  dashes show the maximum reachable boundary. The next radius stays in the row.
+  The older nextBoundaryMarker setting is ignored.
 
 Local/co-op hosts can change the range, chest and Palbox bonus caps at the bottom of custom World
 Settings. Values save per world after native confirmation, in world-settings.ini.

@@ -29,11 +29,11 @@ is ready. There is no fixed countdown, no terrain reuse between animations, and
 no speculative scanning while you play. The outward wave lasts 2.4 seconds;
 the rising effect lifts 6 metres by default and gradually softens the terrain relief.
 
-## See the next boundary before you upgrade
+## See how far your base can grow
 
-While Base Upgrade is open, a soft glow on the ground shows where the boundary
-will be after the upgrade: the same radius the range row prints. It fades when
-you close the screen.
+While Base Upgrade is open, turquoise dashes lie flat on the terrain at the
+maximum reachable boundary, including neighbouring-base limits. They fade when
+you close the screen. The range row still shows the next upgrade's radius.
 
 ## Your world's settings
 
@@ -105,13 +105,12 @@ Proton/Wine. Native Windows validation of this beta is still pending.
   Check buildings near the edge and keep a backup before updating. A maximum
   of +136% gives the previous 4% per level exactly; levels above 26 then keep
   growing (82.6 m at level 35) and new Palboxes reserve more room.
-- **The next boundary shows on the ground** while Base Upgrade is open, at the
-  radius the range row prints. `nextBoundaryMarker=false` turns it off.
-- **Turquoise dashes show the maximum boundary** on that same screen, including
+- **Flat turquoise ground dashes show the maximum boundary** while Base Upgrade
+  is open, including
   the space reserved for neighbouring bases. They disappear when the screen
-  closes and do not duplicate the current or next boundary. Disable them with
+  closes and are hidden when the base already reaches that cap. Disable them with
   `maximumBoundaryMarker=false`. Multiplayer requires an updated server to
-  supply this maximum; older servers keep their existing next-level preview.
+  supply this maximum. The next-level values remain in the reward row.
 - **The mod speaks the game's language**: rows, World Settings and tooltips in
   the 17 languages Palworld ships.
 - A world that had switched range off with growth 0 stays off.
@@ -168,7 +167,7 @@ not receive extra growth; other nearby bases may reach a lower cap.
 Gameplay options: `maxRangeBonusPercent`, `maxChestBonusSlots`,
 `maxPalboxBonusPages`, `resetToVanilla`.
 Visual options: `upgradeAnimation`, `upgradeWave`, `upgradeRibbon`,
-`upgradeEffectHeight` (centimetres), `nextBoundaryMarker`.
+`upgradeEffectHeight` (centimetres), `maximumBoundaryMarker`.
 
 There are no mod keyboard shortcuts or hot reload. An old `debug=true` setting
 is ignored. Animations start automatically after a qualifying base upgrade.

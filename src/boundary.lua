@@ -19,11 +19,9 @@ return function(E,Motion)
     end
     local access={path=path,resolve=resolve,forget=function(p) objects[p]=nil end}
     local Ribbon=dofile(E.root..'src/ribbon.lua')(E,access)
-    local Marker=dofile(E.root..'src/marker.lua')(E,access,Ribbon)
-    local Maximum=dofile(E.root..'src/marker.lua')(E,access,Ribbon,true)
-    local markers={{key='marker',visual=Marker},{key='maximumMarker',visual=Maximum}}
-    local function clearMarkers(s) Marker.cleanup(s);Maximum.cleanup(s) end
-    local function active(s) return s.animation or s.ribbon or s.marker or s.maximumMarker end
+    local Maximum=dofile(E.root..'src/marker.lua')(E,access,Ribbon)
+    local function clearMarkers(s) Maximum.cleanup(s) end
+    local function active(s) return s.animation or s.ribbon or s.maximumMarker end
     local function now(actor)
         return resolve('/Script/Engine.Default__KismetSystemLibrary'):GetGameTimeInSeconds(actor)
     end
@@ -110,14 +108,12 @@ return function(E,Motion)
                                 end
                             end
                         end
-                        for _,entry in ipairs(markers) do
-                            local job=s[entry.key]
-                            if job then
-                                local markerOK,used=E.guard(entry.key=='marker' and 'next boundary marker' or 'maximum boundary marker',function()
-                                    return entry.visual.step(s,actor,time,budget,deadline,markerOpen(job))
-                                end)
-                                if markerOK then budget=budget-used else entry.visual.fail(s) end
-                            end
+                        local job=s.maximumMarker
+                        if job then
+                            local markerOK,used=E.guard('maximum boundary marker',function()
+                                return Maximum.step(s,actor,time,budget,deadline,markerOpen(job))
+                            end)
+                            if markerOK then budget=budget-used else Maximum.fail(s) end
                         end
                         if active(s) then pending=true end
                     end)
@@ -137,9 +133,7 @@ return function(E,Motion)
     end
     local function start(s,actor)
         Ribbon.cleanup(s)
-        for _,entry in ipairs(markers) do
-            if s[entry.key] then s[entry.key].dismissed=true end -- celebration takes over
-        end
+        if s.maximumMarker then s.maximumMarker.dismissed=true end -- celebration takes over
         clearScreens(s)
         local ok,found=E.guard('upgrade screen capture',function() return upgradeScreens(s) end)
         s.upgradeScreens=ok and found or nil
@@ -161,25 +155,20 @@ return function(E,Motion)
         s.actor,s.base,s.live=actorPath,base:GetFullName(),true;states[key]=s
         if action=='start' then start(s,actor) elseif not s.animation then scale(actor,s.radius) end
     end
-    -- The reward rows report the next and maximum radius for this base,
-    -- or false for either missing preview. No menu is read and no range is
-    -- calculated here, so an idle base costs nothing.
-    function B.mark(base,screen,radius,maximum)
+    -- Only the maximum is drawn. The next radius remains in the reward row.
+    -- No menu is read and no range is calculated here.
+    function B.mark(base,screen,_radius,maximum)
         local name=base:GetFullName()
         for _,s in pairs(states) do
             local actor=s.base==name and resolve(s.actor)
             if actor and not dedicated(actor) then
                 local enabled=not E.config.resetToVanilla and not s.animation and not s.ribbon
-                local shown=enabled and radius and E.config.nextBoundaryMarker~=false and radius or false
-                if not E.guard('next boundary marker',function() Marker.aim(s,actor,shown,screen) end) then
-                    Marker.fail(s)
-                end
                 local outer=enabled and maximum and E.config.maximumBoundaryMarker~=false
-                    and (not shown or maximum>shown+1) and maximum or false
+                    and maximum>s.radius+1 and maximum or false
                 if not E.guard('maximum boundary marker',function() Maximum.aim(s,actor,outer,screen) end) then
                     Maximum.fail(s)
                 end
-                if s.marker or s.maximumMarker then schedule() end
+                if s.maximumMarker then schedule() end
             end
         end
     end
