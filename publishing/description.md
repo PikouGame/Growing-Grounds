@@ -1,46 +1,31 @@
-## Give your base room to grow
+![Growing Grounds with the game's actual Base Upgrade rewards.](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.1-beta/assets/showcase/refresh/growing-grounds-banner.png)
 
-Grow your base from its first upgrade to its last: **+100% radius** by level 35 with the default settings. The Base Upgrade screen shows your current and next range, chest slots and Palbox boxes. Celebrate each expansion with a blue wave from the Palbox, a gentle bounce and a rising glow.
+Give your base room to grow—and enjoy the moment it does. Growing Grounds adds meaningful rewards to your base upgrades, with current and next values in the game's own menu.
 
-![The blue Palbox wave and upgrade celebration](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/999a446fffa9b154cb22e040a253101908e7cd89/assets/showcase/growing-grounds-upgrade-web.gif)
+![Default radius illustrated to scale: 35 m at level 1, 49 m at level 11, 70 m at level 26.](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.1-beta/assets/showcase/refresh/growing-grounds-range.png)
 
-*Celebration captured in an earlier version, at original speed; initial wait trimmed.*
+Choose your gain per upgrade and maximum bonus independently. Defaults give +4% per upgrade, capped at +100%. Nearby bases can limit expansion. Each upgrade celebrates with the blue wave and rising glow.
 
-## More room for your supplies
+## More room for supplies
 
-Chests gain **18 bonus slots** by default, spread gradually across all base levels. Guild Chests receive the bonus once for their shared inventory. Open a chest to see its original capacity plus its extra slots above the grid.
+Chests gain 18 bonus slots gradually across the base levels. Guild Chests receive the bonus once for their shared inventory. Occupied extra slots stay until emptied when you lower the cap.
 
-![Level-12 Metal Chest: 24 native slots + 6 bonus slots](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.0-beta/assets/showcase/growing-grounds-beta-chest.png)
+![Regular Palbox capacity illustrated: 32 starting boxes to 64 total boxes, with whole boxes unlocking gradually.](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.1-beta/assets/showcase/refresh/growing-grounds-palbox.png)
 
-## More boxes for your Pals
+Start with 32 boxes and grow to 64 total—or choose your own start and maximum, such as 1 → 16. Your guild's progression applies once; extra bases do not multiply it. Occupied, locked or open boxes are kept. Global Palbox storage is unchanged.
 
-Your regular Palbox gains **one extra box per base upgrade**, starting at level 2. The default cap is **32 extra boxes**, reached at level 33. The bonus follows your guild level once; extra bases do not multiply it. **Global Palbox storage is unchanged.**
+## Your world. Your pace.
 
-![Box 50 in an older solo world at base level 19, after saving and reloading](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.0-beta/assets/showcase/growing-grounds-beta-palbox.png)
-
-## Make it your own
-
-Three caps in **World Settings**, or in the dedicated-server config:
-• **Range:** 0 to +300%; default +100%, spread across all base levels and rounded to whole percentages.
-• **Chest slots:** 0 to 42 in steps of six; default 18. Slots still arrive gradually, one at a time.
-• **Palbox boxes:** 0 to 64 extra; default 32. One box per upgrade means level 35 can earn at most 34 extra boxes even with a higher cap.
-
-Set any cap to **0 (Off)** to disable that bonus. Nearby bases can limit range growth. Lowering a storage cap keeps occupied extra slots or boxes until you empty them.
-
-## Updating from 0.1.7 or earlier
-
-**The new range curve can shrink existing bases.** With the default cap, a level-11 base goes from 49 m to 45.2 m. Check buildings near the edge and back up before updating. Old chest caps round to the nearest multiple of six: 20 becomes 18, 40 becomes 42. Keep your config.lua and world-settings.ini.
+Five controls beside the game’s base/building settings: range gain 0–20% per upgrade (default 4%), range cap 0–300% (default 100%), chest bonus 0–42 in steps of six (default 18), and starting/maximum total Palbox boxes 1–96 (default 32 → 64). Dedicated servers use config.lua.
 
 ## Getting started
 
-Install the complete mod on the **host/server and clients**, using your existing compatible **Palworld UE4SS loader**. Update both sides together. Tested with Palworld 1.0.5.102999 and the UE4SS Palworld fork g2281fa31.
+Install on the host/server and clients with a compatible Palworld UE4SS loader. Update both sides and preserve your settings. GG’s automatic-backup companion is removed in 0.2.1-beta; existing archives are kept. If upgrading from 0.2.0-beta, follow the installation guide to remove the old GG launcher and replace the mod folder. Default rewards and menu layout were checked in game through Proton/Wine. Smaller starting Palbox capacities, the latest audit refactor in game, and physical Windows testing remain pending.
 
-**0.2.0-beta:** solo and dedicated-server tests passed through Proton/Wine. Testing this beta on a physical Windows/Steam installation is still pending.
-
-[Installation guide](https://github.com/PikouGame/Growing-Grounds/blob/main/INSTALL.txt) · [Compatibility and known issues](https://github.com/PikouGame/Growing-Grounds#testing-and-current-limits)
+[Installation](https://github.com/PikouGame/Growing-Grounds/blob/main/INSTALL.txt) · [Compatibility and known issues](https://github.com/PikouGame/Growing-Grounds#testing-and-current-limits)
 
 ## Share your experience
 
-We’d love to see what you build! Share your base, leave a comment, or [report a bug](https://github.com/PikouGame/Growing-Grounds/issues) so we can keep improving Growing Grounds together.
+We'd love to see what you build! Share your base, leave a comment, or [report a bug](https://github.com/PikouGame/Growing-Grounds/issues) so we can investigate and improve Growing Grounds together.
 
-*Made with OpenAI Codex and Claude under lelorax’s direction. Gameplay and UI captured in game. Free to use; all rights reserved for GG. Reuploads, published modifications and reuse require permission. Unofficial Palworld mod.*
+Made with OpenAI Codex and Claude under lelorax's direction. Unofficial Palworld mod. Free to use; reuploads, published modifications and reuse require permission.

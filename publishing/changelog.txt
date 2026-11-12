@@ -1,13 +1,23 @@
-Unreleased — independent range controls and total Palbox capacity
+Growing Grounds 0.2.1-beta — choose your progression
 
-- Archive the GG automatic-backup system. Remove its bootstrap, config option, companion, Python runtime and backup-only tools/tests from the active mod and packages. Existing archives and native Palworld backups are preserved. When updating, remove the old GG launch wrapper and replace the mod folder as described in INSTALL.txt.
+- Choose your starting Palbox boxes and TOTAL cap, from 1 to 96. Defaults are 32 at base level 1 and 64 at level 35, spread across the levels. Occupied, locked and open boxes are retained when reducing capacity. Global Palbox is unchanged.
+- Restore independent range gain per upgrade (default 4%, 0–20%) and maximum bonus (default 100%, 0–300%). Five GG controls sit beside the native base/building settings, with the miniature GG mark.
+- Keep chest bonuses spread across base levels: 18 by default, maximum 42 in steps of six. Guild Chests share one bonus.
+- Fix reward-row reconstruction and late/recreated World Settings widgets. Centralize setting definitions without changing migrations, saved format or intended values. Retain packaging validation and integrated reward-flow tests.
+- Archive GG automatic backups and remove their companion, bundled Python, launch bootstrap and backup-only tools. Existing archives and Palworld's own backups are preserved.
+- Refresh the presentation with the native level11 upgrade menu and the approved range/Palbox illustrations.
 
-- Choose the starting number of Palbox boxes (minimum 1) and the TOTAL cap. Defaults: 32 → 64. Whole boxes are spread across all base levels, like chest slots.
-- Restore independent radius gain per upgrade (default4%,0..20) and maximum bonus (default100%,0..300). No imposed34/35-point cap steps. Either zero disables range growth while preserving the other choice.
-- Five World Settings controls beside native base/building settings; the Palbox reward row now shows total boxes. Occupied, locked and open boxes are retained when reducing capacity. Global Palbox unchanged.
-- Older bonus caps migrate to 32 + the old cap. Install the matching version on server and clients. Native validation of this change is pending.
+Updating
+Close the game/server and keep a world backup. If 0.2.0-beta used the GG Proton/server launcher, remove that wrapper while preserving other launch options, and let any pending old backup finish. Preserve config.lua and world-settings.ini / .bak, then REPLACE the old BaseRangeGrowth folder instead of merging it. Do not copy back the old tools/, backup/ or backup-version.txt. Keep existing archive directories. Update host/server and clients together; see INSTALL.txt.
 
-Share how it plays, ask questions or report issues at https://github.com/PikouGame/Growing-Grounds/issues so we can investigate.
+The restored range setting can change existing radii. Review both gain and cap. Legacy Palbox bonus caps migrate to a total of 32 + the old bonus; an explicit total cap takes precedence. Starting with fewer boxes is optional.
+
+Validation
+Default range, chest and total-Palbox rewards, their dedicated-server preview and the five-row menu were checked natively through Proton/Wine. Automated regression checks cover the integrated settings/calculation/replication/UI flow, default equivalence, migrations, storage retention and packaging. The latest audit refactor has not had a native game session; smaller starting Palbox capacities/save-reload, physical Windows, Guild Chest UI and Workshop installation remain unverified. No FPS benchmark is claimed.
+
+We'd love your comments, experiences and bug reports so we can investigate and improve Growing Grounds:
+https://github.com/PikouGame/Growing-Grounds/issues
+https://www.nexusmods.com/palworld/mods/6047?tab=posts
 
 Growing Grounds 0.2.0-beta — more room for your Pals
 

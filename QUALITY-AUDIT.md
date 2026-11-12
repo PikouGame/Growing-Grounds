@@ -1,3 +1,11 @@
+# Integration into 0.2.1-beta
+
+The completed audit and settings centralization (6cc4ed5) are integrated here.
+GG automatic backups were subsequently archived at PK's request: their source,
+refactors and tests remain at codex/archive-automatic-backups-audited / 6cc4ed5,
+but are absent from this release. Python backup test counts below are historical.
+Current release checks and remaining native limits are in the release notes.
+
 # Growing Grounds — audit et nettoyage local
 
 État : terminé localement le 12 novembre 2026, branche `codex/gg-quality-audit`,

@@ -1,0 +1,21 @@
+{
+  "scope": "Only the radius and Palbox cards shown to PK; no hero, other cards or publication approval.",
+  "assets": {
+    "range": {
+      "status": "approved locally by PK; not published",
+      "approved_date": "2026-11-12",
+      "files": {
+        "assets/showcase/refresh/growing-grounds-range.svg": "0906d8d8eef5a2d50347e877ce30801008dc6363ead7459c8598a227429b3119",
+        "assets/showcase/refresh/growing-grounds-range.png": "5a70409cff7f171243fd2e2f5db90cceed89de66ebd04cf12c85b4cc6cc4a418"
+      }
+    },
+    "palbox": {
+      "status": "approved locally by PK; not published",
+      "approved_date": "2026-11-12",
+      "files": {
+        "assets/showcase/refresh/growing-grounds-palbox.svg": "c7da0dc437588bf2c88dd8e838ec50a58120db2bc086c75b39ab78d369ed6727",
+        "assets/showcase/refresh/growing-grounds-palbox.png": "bd0a808fbe116042685d64c5054be2c1d5636bd004b662850b3cdc6602ad7acf"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "state": "",
+  "images": [
+    {
+      "file": "growing-grounds-banner.png",
+      "title": "Growing Grounds",
+      "caption": "Give your base room to grow. Base upgrades show your current and next rewards."
+    },
+    {
+      "file": "growing-grounds-range.png",
+      "title": "More room to build",
+      "caption": "Default radius illustrated to scale: 35 m at level 1, 49 m at level 11, 70 m at level 26."
+    },
+    {
+      "file": "growing-grounds-palbox.png",
+      "title": "More boxes for your Pals",
+      "caption": "Regular Palbox capacity illustrated: 32 starting boxes to 64 total boxes, with whole boxes unlocking gradually."
+    }
+  ]
+}

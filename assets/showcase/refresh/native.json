@@ -1,0 +1,48 @@
+{
+  "kind": "native-umg-render",
+  "state": "Release 0.2.1-beta native level11 example",
+  "file": "assets/showcase/refresh/native/base-upgrade.png",
+  "sha256": "42c63f7af188e4dd1e428332cda348547cb8826e29a1aa5ba91ca4189e7b4f3c",
+  "raw_file": "assets/showcase/refresh/native/base-upgrade.exr",
+  "raw_sha256": "dc4b0331d39c2c7fc727167d509b281a087869f0caad6623af89531301941326",
+  "values_file": "assets/showcase/refresh/native/values.tsv",
+  "values_sha256": "fa8e154ae61ea75c0d11b76cbd0d57a0d86929d733d77d2519626b4303148602",
+  "crop_xyxy": [
+    538,
+    30,
+    1408,
+    990
+  ],
+  "visually_reviewed": true,
+  "base_level": 11,
+  "method": "Native UE5 UMG WidgetComponent -> KismetRenderingLibrary.ExportRenderTarget",
+  "client_source_commit": "0d2a249",
+  "server_source_commit": "38b162c",
+  "capture_date": "2026-11-12",
+  "conversion": [
+    "magick",
+    "base-upgrade.exr",
+    "base-upgrade.png"
+  ],
+  "conversion_note": "Full native RenderTarget converted to PNG without content changes; banner crops transparent margins only.",
+  "observed_reward_values": {
+    "range_bonus_percent": [
+      40,
+      44
+    ],
+    "range_metres": [
+      49,
+      50.4
+    ],
+    "chest_bonus_slots": [
+      5,
+      6
+    ],
+    "palbox_total_boxes": [
+      41,
+      42
+    ]
+  },
+  "source_values_sha256": "fa8e154ae61ea75c0d11b76cbd0d57a0d86929d733d77d2519626b4303148602",
+  "values_normalization": "Original TSV retained."
+}

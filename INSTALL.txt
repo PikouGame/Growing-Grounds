@@ -1,4 +1,4 @@
-Growing Grounds 0.2.0-beta — internal mod ID BaseRangeGrowth
+Growing Grounds 0.2.1-beta — internal mod ID BaseRangeGrowth
 
 Install or update
 1. Save and close the game/server, and back up your world.
@@ -18,15 +18,16 @@ limits. Buildings outside the resulting boundary may lose coverage. Keep a backu
 0.1.3 does not change those gameplay rules. It removes development keyboard
 shortcuts entirely; an old debug=true option is ignored. No test hotkey is needed.
 
-Unreleased development update: independent growthPercentPerLevel is restored
+Updating to 0.2.1-beta: independent growthPercentPerLevel is restored
 alongside the maximum bonus. Existing values are used within 0..20%; a missing
 value defaults to 4%, and 0 keeps range growth off. Unlike published 0.2.0-beta,
 the cap is no longer spread across all base levels. With a 35m base and defaults,
 level 11 is 49m (+40%) and level 26 reaches 70m (+100%). Review both settings
 before loading an existing world: changing either may change its current
 boundary, subject to nearby-base limits. Keep a separate backup before updating.
-The new range controls and starting/total Palbox settings still need native-game
-validation. Install matching development versions on host/server and clients.
+Default controls/rewards were checked natively through Proton/Wine. Smaller
+starting capacities and the latest audit refactor still need native validation.
+Install matching versions on host/server and clients.
 Bonus chest caps now use 0, 6, 12, 18, 24, 30, 36 or 42; default 18. Existing
 caps round to the nearest step (20 -> 18, 40 -> 42). Occupied extra slots remain
 until emptied. Update host/server and clients together for the new 42-slot cap.
@@ -117,9 +118,9 @@ Buildings in the added area may lose coverage. An exact rollback requires the
 pre-install world backup, which also rolls back progress since that backup.
 
 Compatibility and verification
-The new Palbox starting/total-cap progression is an unreleased development change.
-Its native replication, smaller starting sizes and save/reload are NOT VERIFIED
-yet; test it on a world copy. The previous 0.2.0-beta expansion was checked in
+Default total-box rewards and dedicated-server previews were checked natively.
+Smaller starting sizes/save-reload and the latest audit refactor in game are
+NOT VERIFIED yet; test those configurations on a world copy. The previous 0.2.0-beta expansion was checked in
 solo and dedicated-server sessions. Update server and clients together; an older
 client cannot display the new total-cap preview.
 Inspected Palworld v1.0.5.102999; client Steam build 25246127, server 25247047;

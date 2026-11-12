@@ -1,69 +1,24 @@
 # Growing Grounds
 
-Give your base room to grow—and enjoy the moment it does.
+![Growing Grounds with the game's actual Base Upgrade rewards.](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.1-beta/assets/showcase/refresh/growing-grounds-banner.png)
 
-Growing Grounds makes your base's radius grow with its level. Choose both the
-**gain per upgrade** and the **maximum bonus**, independently. Defaults:
-**+4% per upgrade, capped at +100%** (double radius). The Base Upgrade screen
-shows whole-percent rewards with metres: **36% 47.6m → 40% 49m**.
+Give your base room to grow—and enjoy the moment it does. Growing Grounds adds meaningful rewards to your base upgrades, with current and next values in the game's own menu.
 
-Chests grow with your base: **18 bonus slots** by default, arriving steadily
-from your first upgrade to the final base level. Guild Chests receive the bonus
-once for their shared inventory.
+![Default radius illustrated to scale: 35 m at level 1, 49 m at level 11, 70 m at level 26.](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.1-beta/assets/showcase/refresh/growing-grounds-range.png)
 
-Choose how many regular **Palbox boxes** you start with and their **total cap**.
-Defaults: **32 at base level 1 → 64 at the last level**. Whole boxes unlock
-steadily across all base levels. You can instead choose **1 → 16**, or set both
-values equal for a fixed capacity. Each player follows their guild level once;
-extra bases do not multiply storage. The Global Palbox is separate.
+Choose your gain per upgrade and maximum bonus independently. Defaults give +4% per upgrade, capped at +100%. Nearby bases can limit expansion. Each upgrade celebrates with the blue wave and rising glow.
 
-The restored independent range controls and starting/total-cap Palbox feature
-are **unreleased development changes**. The
-published 0.2.0-beta still uses the earlier extra-box cap. New native-game
-validation is pending; automated checks do not establish live save compatibility.
+## More room for supplies
 
-## A little celebration for every upgrade
+Chests gain 18 bonus slots gradually across the base levels. Guild Chests receive the bonus once for their shared inventory. Occupied extra slots stay until emptied when you lower the cap.
 
-A blue wave travels from the Palbox across the terrain. When it reaches the
-boundary, the circle expands with a gentle bounce, then a glowing contour rises
-and fades with its trail.
+![Regular Palbox capacity illustrated: 32 starting boxes to 64 total boxes, with whole boxes unlocking gradually.](https://raw.githubusercontent.com/PikouGame/Growing-Grounds/v0.2.1-beta/assets/showcase/refresh/growing-grounds-palbox.png)
 
-If Base Upgrade is open, the effect prepares after the upgrade is confirmed and
-waits for you to close the screen. It plays once the screen is closed and setup
-is ready. There is no fixed countdown, no terrain reuse between animations, and
-no speculative scanning while you play. The outward wave lasts 2.4 seconds;
-the rising effect lifts 6 metres by default and gradually softens the terrain relief.
+Start with 32 boxes and grow to 64 total—or choose your own start and maximum, such as 1 → 16. Your guild's progression applies once; extra bases do not multiply it. Occupied, locked or open boxes are kept. Global Palbox storage is unchanged.
 
-## Save files
+## Your world. Your pace.
 
-Automatic GG backups are archived and removed from this development build,
-including the companion and bundled Python runtime. Palworld's own backups
-are unchanged. Existing GG archives remain available; this update does not
-remove them. See [INSTALL.txt](INSTALL.txt) when replacing a build that used
-the old companion or Proton launcher.
-
-## Your world's settings
-
-- **Range bonus per upgrade:** 0 to 20%; default 4%. 0 disables range growth without erasing the maximum.
-- **Maximum range bonus:** 0 to +300%; default +100%. A +300% bonus means four times the original radius. This is a ceiling; a low gain may not reach it by level 35.
-- **Bonus chest slots:** 18 by default, spread evenly over all base levels; adjustable from 0 to 42 in steps of six. Guild Chests share one bonus.
-- **Starting Palbox boxes:** 1–96; default 32. This is the total at base level 1.
-- **Maximum total Palbox boxes:** 1–96; default 64, including the starting boxes.
-  Raising the start above the maximum raises the maximum; lowering the maximum
-  below the start lowers the start. Existing occupied, locked or open boxes remain
-  until cleared/closed, even if they exceed the chosen capacity.
-- Local worlds have five Growing Grounds sliders beside the native base/building
-  controls in custom World Settings. Dedicated-server owners configure the same values in `config.lua`.
-- Old `maxPalboxBonusPages` settings migrate to a starting count of 32 and a total
-  cap of 32 + the old bonus. The new spread replaces the old +1-per-upgrade rule.
-  Explicit `maxPalboxBoxes` takes precedence. Update both server and clients.
-- Nearby bases can limit growth further. New Palboxes reserve room for both
-  bases to reach the cap: 140 m between centres with the default 35 m base and
-  +100% bonus cap. Stronger native restrictions remain in place.
-
-For a standard 35 m base with the defaults, level 11 is 49 m (+40%) and
-level 26 reaches the cap of 70 m (+100%), retained through level 35. Each level's
-bonus is a whole percent of the original radius.
+Five controls beside the game’s base/building settings: range gain 0–20% per upgrade (default 4%), range cap 0–300% (default 100%), chest bonus 0–42 in steps of six (default 18), and starting/maximum total Palbox boxes 1–96 (default 32 → 64). Dedicated servers use config.lua.
 
 ## Install or update
 
@@ -92,48 +47,19 @@ See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
-## Published 0.2.0-beta history
+## What changes in 0.2.1-beta
 
-This section describes the published build. The development settings above
-restore independent range growth and replace the Palbox bonus cap with totals.
+Choose your starting and maximum total Palbox boxes; set the range gain and cap
+independently. GG now shares one set of setting definitions across calculations,
+saved settings and sliders. This update also fixes reconstructed reward rows and
+late/recreated settings widgets, and removes the automatic-backup companion.
 
-Three bonuses, native reward rows and the game's own languages.
-The Palbox bonus has been checked in dedicated-server and solo tests through
-Proton/Wine. Native Windows validation of this beta is still pending.
+If upgrading from 0.2.0-beta, preserve your settings, remove the GG launcher
+wrapper and replace the mod folder as explained in [INSTALL.txt](INSTALL.txt).
+Existing archives are kept. The old `automaticBackups` option is ignored.
 
-- **Palbox boxes grow with each base upgrade:** +1 box per upgrade, with a
-  configurable bonus cap of 0–64 (32 by default). Reducing the cap keeps occupied
-  extra boxes until they are emptied.
-- **Chest bonus caps use multiples of six:** 18 by default, up to 42. Existing
-  caps round to the nearest step (20 becomes 18; 40 becomes 42). Slots still
-  arrive gradually, one at a time. Occupied overflow slots remain until emptied.
-- **Open chests show their native and extra capacity** just above the slot grid,
-  for example "24 + 10 slots". The count reflects the actual inventory, including
-  occupied extra slots retained after reducing a cap. The label follows the
-  game's language and disappears when the chest has no extra slots.
-- **The range bonus is spread over all base levels**, like the chest slots.
-  The maximum you choose (+100% by default) is reached at the last base level,
-  35, and every level before it brings its share. The "growth per level"
-  setting is gone: one slider sets the whole curve.
-- **Existing bases follow the new curve right away, and most get smaller.**
-  With the default cap and a 35 m base, level 11 goes from 49 m to 45.2 m
-  (from 52.5 m if your world kept the older 5% growth); from level 2 to 34 the
-  bonus is lower than before, and only the last level gives the full +100%.
-  Check buildings near the edge and keep a backup before updating. A maximum
-  of +136% gives the previous 4% per level exactly; levels above 26 then keep
-  growing (82.6 m at level 35) and new Palboxes reserve more room.
-- **The mod speaks the game's language**: rows, World Settings and tooltips in
-  the 17 languages Palworld ships.
-- That published build included automatic local backups with a shared 1 GiB limit.
-  The system is archived and removed from the current development build.
-- Fixed reward-column alignment at 720p. Removed the experimental dotted and
-  blue next-boundary previews; numeric reward rows and the upgrade celebration remain.
-- A world that had switched range off with growth 0 stays off.
-
-## Earlier versions
-
-The notes of each earlier version are in [publishing/](publishing/), one
-`release-<version>.txt` per version.
+See [release notes](publishing/release-0.2.1-beta.txt) for migration details.
+Historical notes remain in [publishing/](publishing/).
 
 ## Testing and current limits
 
@@ -149,6 +75,12 @@ shrinking and regrowth. An older solo world expanded to 50 boxes at base level
 19. Two Pals placed in box 50 remained in their slots after saving, restoring a
 verified archive and restarting the game. The English Base Upgrade panel's
 five rows were also checked in game.
+
+Default 0.2.1 rewards and the five World Settings controls were checked natively
+through Proton/Wine before the final audit refactor. Its centralized settings and
+widget-lifecycle fixes are covered by automated checks, but this final refactor
+has not yet had a native game session. Smaller starting Palbox capacities and
+their save/reload lifecycle remain unverified.
 
 ### Known limits
 

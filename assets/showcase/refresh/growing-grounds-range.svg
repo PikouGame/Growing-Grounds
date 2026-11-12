@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="720" viewBox="0 0 1280 720">
+<title>Growing Grounds — range</title>
+<desc>Illustrated default radius: 35 m at level 1, 49 m at level 11, 70 m at level 26. No in-game boundary preview is depicted.</desc>
+<defs><radialGradient id="slate" cx="38%" cy="25%" r="94%"><stop offset="0" stop-color="#49627c"/><stop offset="0.52" stop-color="#293e54"/><stop offset="1" stop-color="#0c1c2b"/></radialGradient></defs><rect width="1280" height="720" fill="url(#slate)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="44" height="44" x="66" y="60">
+  <title>Base range: circle with four integrated outward arrows</title>
+  <g fill="#ffffff">
+    <path fill-rule="evenodd" d="M12 4.5a7.5 7.5 0 1 1 0 15a7.5 7.5 0 1 1 0-15ZM12 6.75a5.25 5.25 0 1 0 0 10.5a5.25 5.25 0 1 0 0-10.5Z" />
+    <path d="M12 1 15.75 5.5H8.25ZM23 12 18.5 15.75V8.25ZM12 23 8.25 18.5H15.75ZM1 12 5.5 8.25V15.75Z" />
+  </g>
+</svg>
+<text x="132" y="101" font-family="Fira Sans" font-size="48" font-weight="600" font-style="italic" fill="#ffffff" text-anchor="start">A base that grows with you</text>
+<text x="68" y="150" font-family="Fira Sans" font-size="26" font-weight="500" font-style="normal" fill="#9af5de" text-anchor="start">More room with every upgrade. A cap you choose.</text>
+<text x="66" y="305" font-family="Fira Sans" font-size="132" font-weight="700" font-style="italic" fill="#ffffff" text-anchor="start">+4%</text>
+<text x="70" y="354" font-family="Fira Sans" font-size="34" font-weight="500" font-style="italic" fill="#1ee8c2" text-anchor="start">radius per upgrade</text>
+<text x="70" y="475" font-family="Fira Sans" font-size="79" font-weight="700" font-style="italic" fill="#ffffff" text-anchor="start">+100%</text>
+<text x="70" y="520" font-family="Fira Sans" font-size="30" font-weight="500" font-style="italic" fill="#1ee8c2" text-anchor="start">default maximum bonus</text>
+<path d="M745 122.0A420.0 420.0 0 0 1 1165.0 542L745 542Z" fill="#1ee8c2" fill-opacity=".08"/>
+<path d="M745 332.0A210.0 210.0 0 0 1 955.0 542L745 542Z" fill="#1ee8c2" fill-opacity=".19"/>
+<path d="M745 332.0A210.0 210.0 0 0 1 955.0 542" fill="none" stroke="#9af5de" stroke-width="3" opacity="1"/>
+<path d="M745 323.6A218.39999999999998 218.39999999999998 0 0 1 963.4 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 315.20000000000005A226.79999999999998 226.79999999999998 0 0 1 971.8 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 306.79999999999995A235.20000000000002 235.20000000000002 0 0 1 980.2 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 298.4A243.60000000000002 243.60000000000002 0 0 1 988.6 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 290.0A252.0 252.0 0 0 1 997.0 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 281.6A260.4 260.4 0 0 1 1005.4 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 273.20000000000005A268.79999999999995 268.79999999999995 0 0 1 1013.8 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 264.79999999999995A277.20000000000005 277.20000000000005 0 0 1 1022.2 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 256.4A285.6 285.6 0 0 1 1030.6 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 248.0A294.0 294.0 0 0 1 1039.0 542" fill="none" stroke="#9af5de" stroke-width="3" opacity="1"/>
+<path d="M745 239.60000000000002A302.4 302.4 0 0 1 1047.4 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 231.20000000000005A310.79999999999995 310.79999999999995 0 0 1 1055.8 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 222.79999999999995A319.20000000000005 319.20000000000005 0 0 1 1064.2 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 214.39999999999998A327.6 327.6 0 0 1 1072.6 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 206.0A336.0 336.0 0 0 1 1081.0 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 197.60000000000002A344.4 344.4 0 0 1 1089.4 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 189.20000000000005A352.79999999999995 352.79999999999995 0 0 1 1097.8 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 180.79999999999995A361.20000000000005 361.20000000000005 0 0 1 1106.2 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 172.39999999999998A369.6 369.6 0 0 1 1114.6 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 164.0A378.0 378.0 0 0 1 1123.0 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 155.59999999999997A386.40000000000003 386.40000000000003 0 0 1 1131.4 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 147.20000000000005A394.79999999999995 394.79999999999995 0 0 1 1139.8 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 138.79999999999995A403.20000000000005 403.20000000000005 0 0 1 1148.2 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 130.40000000000003A411.59999999999997 411.59999999999997 0 0 1 1156.6 542" fill="none" stroke="#1ee8c2" stroke-width="1.4" opacity="0.38"/>
+<path d="M745 122.0A420.0 420.0 0 0 1 1165.0 542" fill="none" stroke="#9af5de" stroke-width="3" opacity="1"/>
+<path d="M745 106L745 542" fill="none" stroke="#a6c4d3" stroke-width="1" opacity="0.5"/>
+<path d="M745 542L1195 542" fill="none" stroke="#a6c4d3" stroke-width="1" opacity="0.5"/>
+<path d="M745 542L745 524L727 542Z" fill="#35dabd"/><path d="M745 542L745 524L763 542Z" fill="#74f2d8"/><path d="M745 542L727 542L745 560Z" fill="#06957c"/><path d="M745 542L763 542L745 560Z" fill="#14b89b"/>
+<path d="M955.0 542L955.0 552" fill="none" stroke="#9af5de" stroke-width="2" opacity="1"/>
+<text x="955.0" y="584" font-family="Fira Sans" font-size="28" font-weight="600" font-style="italic" fill="#ffffff" text-anchor="middle">35 m</text>
+<text x="955.0" y="617" font-family="Fira Sans" font-size="23" font-weight="500" font-style="italic" fill="#9af5de" text-anchor="middle">Lv. 1</text>
+<path d="M1039.0 542L1039.0 552" fill="none" stroke="#9af5de" stroke-width="2" opacity="1"/>
+<text x="1039.0" y="584" font-family="Fira Sans" font-size="28" font-weight="600" font-style="italic" fill="#ffffff" text-anchor="middle">49 m</text>
+<text x="1039.0" y="617" font-family="Fira Sans" font-size="23" font-weight="500" font-style="italic" fill="#9af5de" text-anchor="middle">Lv. 11</text>
+<path d="M1165.0 542L1165.0 552" fill="none" stroke="#9af5de" stroke-width="2" opacity="1"/>
+<text x="1165.0" y="584" font-family="Fira Sans" font-size="28" font-weight="600" font-style="italic" fill="#ffffff" text-anchor="middle">70 m</text>
+<text x="1165.0" y="617" font-family="Fira Sans" font-size="23" font-weight="500" font-style="italic" fill="#9af5de" text-anchor="middle">Lv. 26</text>
+<path d="M68 645L1212 645" fill="none" stroke="#a6c4d3" stroke-width="1" opacity="0.3"/><text x="68" y="685" font-family="Fira Sans" font-size="23" font-weight="500" font-style="italic" fill="#a6c4d3" text-anchor="start">Default 35 m base • Nearby bases may limit growth</text>
+</svg>
