@@ -18,14 +18,15 @@ limits. Buildings outside the resulting boundary may lose coverage. Keep a backu
 0.1.3 does not change those gameplay rules. It removes development keyboard
 shortcuts entirely; an old debug=true option is ignored. No test hotkey is needed.
 
-Updating from 0.1.7 or older: the range bonus is now spread over all base
-levels and the growth-per-level setting is gone. Existing bases follow the new
-curve at once and most get smaller: with the default cap and a 35m base, level
-11 goes from 49m to 45.2m (from 52.5m if the world kept 5% growth). Buildings
-beyond the new boundary may lose coverage. Keep a backup. A maximum of +136%
-gives the former 4% per level exactly; levels above 26 then keep growing.
-An old growthPercentPerLevel line is ignored, except 0, which still switches
-the range bonus off.
+Unreleased development update: independent growthPercentPerLevel is restored
+alongside the maximum bonus. Existing values are used within 0..20%; a missing
+value defaults to 4%, and 0 keeps range growth off. Unlike published 0.2.0-beta,
+the cap is no longer spread across all base levels. With a 35m base and defaults,
+level 11 is 49m (+40%) and level 26 reaches 70m (+100%). Review both settings
+before loading an existing world: changing either may change its current
+boundary, subject to nearby-base limits. Keep a separate backup before updating.
+The new range controls and starting/total Palbox settings still need native-game
+validation. Install matching development versions on host/server and clients.
 Bonus chest caps now use 0, 6, 12, 18, 24, 30, 36 or 42; default 18. Existing
 caps round to the nearest step (20 -> 18, 40 -> 42). Occupied extra slots remain
 until emptied. Update host/server and clients together for the new 42-slot cap.

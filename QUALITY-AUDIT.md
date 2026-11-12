@@ -135,6 +135,14 @@ Le décompte inclut maintenant toute l'arborescence, fichiers inconnus et partie
 compris, avec points d'annulation. Il ne suit pas les liens, y compris les cycles,
 et ne supprime rien d'inconnu. Tests Python réussis après correction.
 
+### P2 — instructions actuelles encore contradictoires sur le gain
+
+README et INSTALL affirmaient encore qu'un ancien `growthPercentPerLevel` était
+ignoré et que la croissance suivait obligatoirement le nombre de niveaux. Le
+code stabilisé fait l'inverse. Les instructions actuelles sont corrigées, et la
+section historique de la version publiée est explicitement identifiée. Son texte
+historique, les listings publics et les visuels du chantier design restent intacts.
+
 ## Non vérifié
 
 Validation native en jeu, persistance réelle des Pals, Windows physique,

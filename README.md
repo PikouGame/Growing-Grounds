@@ -90,14 +90,17 @@ for this version's settings and server-supplied next-range preview.
 with the previous cap preserved. New configurations use `maxRangeBonusPercent=100`.
 Existing worlds keep their effective limit; saving World Settings converts the
 old key automatically. Choose a higher cap explicitly if you want more room.
-An old `growthPercentPerLevel` line is ignored, except `0`, which still
-switches the range bonus off.
+Existing `growthPercentPerLevel` values are used again, independently of the
+cap, within 0–20%. `0` keeps range growth off; a missing value defaults to 4%.
 
 See [INSTALL.txt](INSTALL.txt) for configuration and removal.
 Use your existing loader installation; the mod does not bundle UE4SS or require
 PalSchema. Steam Workshop deployment of this mod remains unverified.
 
-## What changes in 0.2.0-beta
+## Published 0.2.0-beta history
+
+This section describes the published build. The development settings above
+restore independent range growth and replace the Palbox bonus cap with totals.
 
 Three bonuses, native reward rows and the game's own languages.
 The Palbox bonus has been checked in dedicated-server and solo tests through
