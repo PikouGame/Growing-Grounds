@@ -9,9 +9,9 @@ commités, preuves et limites consignées ici. Aucun déploiement ni publication
 
 - Ce checkout uniquement. Ni jeu, ni serveur, ni sauvegardes réelles manipulés.
 - Le chat principal possède les runtimes et la présentation native.
-- `codex/gg-palbox-totals` possède actuellement `range`, `runtime`, `settings`,
-  `world_settings`, `texts`, `config` et leurs tests/docs. Lecture seule jusqu'à
-  récupération de son commit stabilisé. Aucun sous-agent.
+- Changement stabilisé `38b162c` de `codex/gg-palbox-totals` récupéré sans conflit
+  en `3c0a8a4` : gain indépendant par niveau et groupe près des réglages natifs.
+  Son checkout reste intact. Aucun sous-agent.
 - Conserver autorité serveur, Pals occupés/verrouillés/ouverts, migrations,
   protocoles historiques, plafond automatique de 1 GiB, annulation sur relance,
   absence d'archivage en partie, publication atomique et restauration vérifiée.
@@ -22,7 +22,7 @@ commités, preuves et limites consignées ici. Aucun déploiement ni publication
 - [x] Vérifier checkout propre et établir les résultats de référence.
 - [ ] Examiner tous les modules et leurs usages/tests/documentation.
 - [ ] Corriger les défauts démontrés et simplifier les responsabilités dupliquées.
-- [ ] Récupérer le changement stabilisé de croissance/réglages ; auditer ce résultat.
+- [x] Récupérer le changement stabilisé de croissance/réglages.
 - [ ] Vérifier le résultat complet et les archives de distribution locales.
 - [ ] Finaliser constats priorisés, suppressions justifiées et commits réversibles.
 
@@ -61,6 +61,16 @@ archives à chaque rotation automatique. Aucun gain FPS revendiqué.
 
 Suppression démontrée : import Python `timedelta` inutilisé dans `backup_policy`
 (analyse AST des noms lus et inspection de tous les usages du module).
+
+### P2 — ligne de récompense disparue mais encore comptée dans la hauteur
+
+`src/ui.lua:UI.update` gardait la visibilité et la propriété d'une ligne retirée
+par reconstruction native si son bonus venait aussi d'être désactivé. Au prochain
+changement visible, `fitHeight` déréférençait cette ligne absente. Reproduit dans
+`.local/quality-audit/ui-before.log`. Nettoyer la propriété de toute ligne absente
+et sa contribution à la hauteur permet aussi sa recréation unique à la réactivation.
+La suite UI passe sous Lua 5.5/5.4 : `ui-after-5.5.log`, `ui-after-5.4.log`.
+Preuve par simulation du cycle des widgets, pas validation visuelle en jeu.
 
 ## Non vérifié
 

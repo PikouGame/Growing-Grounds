@@ -261,9 +261,12 @@ return function(E, Runtime)
                 local child=parent:GetChildAt(index)
                 if child:GetFullName()==attached[key][spec.key] then row=child;break end
             end
-            if enabled[spec.key] and not E.valid(row) then
+            if not E.valid(row) then
                 local old=attached[key][spec.key]
                 if old then owned[old],lastWritten[old]=nil,nil end
+                attached[key][spec.key]=nil
+            end
+            if enabled[spec.key] and not E.valid(row) then
                 local class=object(rowPath)
                 if not E.valid(class) then return end
                 installConstructHook()
@@ -301,6 +304,11 @@ return function(E, Runtime)
                         paint(row,owned[name]);needsLayout=true
                     end
                 end
+            elseif grid.visible[spec.key] then
+                -- Native reconstruction removed this row while its bonus was
+                -- disabled. It no longer occupies any height in the section.
+                grid.visible[spec.key]=false
+                needsLayout=true
             end
         end
         if needsLayout then

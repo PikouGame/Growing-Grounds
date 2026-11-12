@@ -503,3 +503,19 @@ reconstruct(palbox)
 snapshot.palboxCurrent=0;snapshot.palboxNext=1;UI.refresh()
 assert(palbox.visibility==4 and palbox.Text_Num_Pre.value=='0' and palbox.Text_Num_Aft.value=='1')
 print('PASS: fifth reward row layout, Palbox plateau, localization, disable/enable and reconstruction')
+
+-- A native reconstruction can remove a row just as the server disables it.
+-- It no longer contributes to layout or receives Construct repairs.
+local enabledY=rewardSection.Slot.position.Y
+bornChest:RemoveFromParent()
+snapshot.chestCurrent=nil;snapshot.chestNext=nil
+snapshot.palboxCurrent=1 -- another visible value changes in the same refresh
+UI.refresh()
+assert(rewardSection.Slot.position.Y==enabledY+36,'missing disabled row releases its height')
+reconstruct(bornChest)
+assert(bornChest.Text_Efefct.value=='None','a detached disabled row loses ownership')
+local countBefore=created
+snapshot.chestCurrent=9;snapshot.chestNext=10;UI.refresh()
+assert(created==countBefore+1 and rewardSection.Slot.position.Y==enabledY,
+    'reenabling reconstructs exactly one chest row and restores the section height')
+print('PASS: detached disabled reward releases layout and ownership before reenable')
