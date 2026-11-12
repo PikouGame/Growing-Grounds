@@ -195,6 +195,13 @@ local function assertCentred(w)
         end
     end
 end
+-- Reuse the native-widget doubles for cross-module scenarios without executing
+-- this suite or replacing the production painter with a stub.
+if ...=='fixture' then
+    return {env=E,runtime=Runtime,ui=UI,screen=screen,model=model,parent=parent,
+        reconstruct=reconstruct,setLanguage=function(value) language=value end,
+        counters=function() return created,writes,prepasses end}
+end
 UI.refresh()
 assert(created==1 and #parent.children==3 and constructed==8, 'exactly one row and two balanced number/unit/metre groups')
 local w=current()

@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import unittest
 from unittest.mock import patch
 import zipfile
+from backup_control import Cancelled
 
 spec = importlib.util.spec_from_file_location('backup', Path(__file__).parents[1]/'tools/save_backup.py')
 backup = importlib.util.module_from_spec(spec)
@@ -168,6 +169,67 @@ class BackupTests(unittest.TestCase):
         self.assertEqual((destination/'world/Level.sav').read_bytes(), (self.world/'Level.sav').read_bytes())
         self.assertEqual(archive.read_bytes(), original)
         self.assertFalse(list(self.root.glob('.gg-restore-*')))
+
+    def test_cancellation_before_publication_preserves_all_completed_archives(self):
+        baseline = self.create(kind='baseline')
+        healthy = self.create(keep=1)
+        preserved = {p: p.read_bytes() for p in (baseline, healthy)}
+        (self.world/'Level.sav').write_bytes(b'new-world'*10000)
+        inventory, verify, write = backup.inventory, backup.verify, backup.LimitedFile.write
+        for phase in ('inventory-recheck', 'zip-write', 'archive-verification', 'atomic-rename'):
+            with self.subTest(phase=phase):
+                calls = 0
+                def changed_inventory(*args):
+                    nonlocal calls
+                    calls += 1
+                    if calls == 2:
+                        raise Cancelled(phase)
+                    return inventory(*args)
+                def changed_write(stream, data):
+                    nonlocal calls
+                    calls += 1
+                    if calls >= 2:
+                        raise Cancelled(phase)
+                    return write(stream, data)
+                def changed_verify(path):
+                    if Path(path).suffix == '.partial':
+                        raise Cancelled(phase)
+                    return verify(path)
+                changes = {
+                    'inventory-recheck': patch.object(backup, 'inventory', changed_inventory),
+                    'zip-write': patch.object(backup.LimitedFile, 'write', changed_write),
+                    'archive-verification': patch.object(backup, 'verify', changed_verify),
+                    'atomic-rename': patch.object(backup.os, 'rename', side_effect=Cancelled(phase)),
+                }
+                with changes[phase], self.assertRaises(Cancelled):
+                    self.create(keep=1)
+                self.assertEqual(set(self.dest.glob('*.zip')), set(preserved))
+                self.assertFalse(list(self.dest.glob('*.partial')))
+                for path, original in preserved.items():
+                    self.assertEqual(path.read_bytes(), original)
+                    backup.verify(path)
+                with backup.locked(self.dest):
+                    pass  # Cancellation must release the folder lock at every phase.
+
+    def test_cancellation_after_publication_leaves_only_verified_archives(self):
+        baseline = self.create(kind='baseline')
+        healthy = self.create(keep=1)
+        preserved = {p: p.read_bytes() for p in (baseline, healthy)}
+        (self.world/'Level.sav').write_bytes(b'newly-saved-world')
+        sync = backup.sync_directory
+        def after_publication(folder):
+            sync(folder)
+            raise Cancelled('relaunch after verified archive publication')
+        with patch.object(backup, 'sync_directory', after_publication), self.assertRaises(Cancelled):
+            self.create(keep=1)
+        new = set(self.dest.glob('*.zip'))-set(preserved)
+        self.assertEqual(len(new), 1)
+        self.assertFalse(list(self.dest.glob('*.partial')))
+        for path, original in preserved.items():
+            self.assertEqual(path.read_bytes(), original)
+        result = self.root/'completed-before-cancellation'
+        backup.restore_copy(new.pop(), result)
+        self.assertEqual((result/'world/Level.sav').read_bytes(), (self.world/'Level.sav').read_bytes())
 
 
 if __name__ == '__main__':

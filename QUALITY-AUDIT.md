@@ -19,6 +19,44 @@ et limites consignées ici. Aucun déploiement ni publication.
 
 ## Liste courante
 
+Suivi après audit — scénarios automatisés approuvés :
+- [x] Reprendre le checkout et conserver les ajouts stabilisés du logo natif
+  (`451fcf0`, `0d2a249`) sans intervenir sur le runtime.
+- [x] Relier réglages, calcul serveur, réplication simulée et vraies récompenses UI.
+- [x] Tester l'annulation aux étapes sensibles de publication des archives.
+- [x] Vérifier et committer les tests locaux ; conserver la validation native
+  au chat principal. Les autres propositions restent des idées à préciser.
+
+Les ajouts de logo stabilisés du chat principal sont conservés en `0c3a5dd` et
+`4d95b27`. Ils ont été intégrés sans conflit, sans installation ni retouche.
+Les nouveaux scénarios ajoutent uniquement des tests et un mode de réutilisation
+des doubles de widgets existants ; aucune logique de gameplay n'a été modifiée.
+
+Preuves du suivi : `.local/quality-audit/flows/receipt.json`.
+**43 tests Python et 15 suites Lua × 5.5/5.4 réussis**, contrôles de distribution
+en mode optimisé et assemblage réel réussis. Le nouveau parcours relie les vrais
+modules `settings`, `range`, `runtime`, `preview` et `ui`. Il vérifie 24 ordres
+de réception (niveau, rayon, position et échelle du composant), un changement de
+politique persisté/relu, la réouverture pendant une mise à jour incomplète,
+le changement de langue, l'absence de réécriture au repos et le reset serveur.
+Un contrôle négatif dans une copie jetable force un mauvais prochain pourcentage
+dans le décodeur : le nouveau test échoue comme attendu (`negative-control.log`).
+La réception UE4SS et les objets/widgets natifs restent simulés.
+
+Les tests d'annulation injectent `Cancelled` au contrôle de l'inventaire source,
+pendant l'écriture du ZIP, pendant sa vérification et avant son renommage final.
+Chaque cas conserve les octets des archives précédentes, retire le partiel et
+libère le verrou. Une interruption après publication laisse une nouvelle archive
+complète dont la restauration est vérifiée, sans supprimer les précédentes.
+Ces injections complètent le test existant d'annulation coopérative pendant
+l'écriture ; elles ne reproduisent pas une coupure électrique ou une relance
+native Windows/Linux. Aucun nouveau défaut produit démontré par ces scénarios.
+
+Pour la suite native, PK interviendra uniquement sur les manipulations du jeu
+préparées par le chat principal : ouverture/fermeture du menu, observation des
+capacités, puis vérification des Pals après rechargement du monde d'essai.
+Aucune intervention de PK n'est nécessaire pour cette étape automatisée.
+
 - [x] Lire instructions, contexte et STATUS partagé sans le modifier.
 - [x] Vérifier checkout propre et établir les résultats de référence.
 - [x] Examiner tous les modules et leurs usages/tests/documentation.
@@ -39,7 +77,7 @@ Référence `cd099f9` : 31 tests Python et 14 suites Lua × 2 interpréteurs
 de racine omis), corrigée et conservée dans les journaux ; ce n'était pas un
 échec produit.
 
-Résultat final sur `91717a6` (le dernier commit suivant ne modifie que ce suivi) :
+Résultat de l'audit initial sur `91717a6`, consigné dans `c2c05a4` :
 **41 tests Python**, **14 suites Lua sous 5.5.1 et 5.4.9**, compilation des 21
 fichiers Lua sous les deux versions, trois tests de distribution sous Python
 optimisé, assemblage réel des deux ZIP et `git diff --check` réussis.
