@@ -23,6 +23,7 @@ RUNTIME = [
     'src/motion.lua', 'src/boundary.lua', 'src/ring.lua', 'src/ribbon.lua', 'src/wave.lua',
     'src/texts.lua', 'src/language.lua',
     'assets/base-range.svg', 'assets/base-range.png',
+    'assets/gg-mark.svg', 'assets/gg-mark.png',
     'assets/chest-bonus.svg', 'assets/chest-bonus.png',
     'assets/palbox-bonus.svg', 'assets/palbox-bonus.png',
     'assets/contour-gradient.svg', 'assets/contour-gradient.png',

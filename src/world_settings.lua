@@ -83,6 +83,32 @@ return function(E)
         end
         state.positioned=true
     end
+    local markTexture
+    local function mark(row)
+        local renderer=object('/Script/Engine.Default__KismetRenderingLibrary')
+        if not E.valid(renderer) then return end
+        if not E.valid(markTexture) then
+            markTexture=renderer:ImportFileAsTexture2D(row,E.root..'assets/gg-mark.png')
+            assert(E.valid(markTexture),'Cannot load Growing Grounds settings mark')
+        end
+        local title=row.Text_OptionTitle
+        local column=title:GetParent()
+        local canvas=column:GetParent()
+        assert(E.valid(canvas) and canvas:IsA('/Script/UMG.CanvasPanel'),'Unexpected settings title layout')
+        local size=title.Font.Size
+        assert(type(size)=='number' and size>0,'Settings title font size unavailable')
+        local image=StaticConstructObject(object('/Script/UMG.Image'),row.WidgetTree,FName('GG_SettingsMark'))
+        assert(E.valid(image),'Cannot create settings mark')
+        image:SetBrushFromTexture(markTexture,false)
+        image:SetVisibility(4) -- SelfHitTestInvisible: preserve native mouse/keyboard input.
+        local position=column.Slot:GetPosition()
+        local slot=canvas:AddChildToCanvas(image)
+        slot:SetAnchors({Minimum={X=0,Y=0.5},Maximum={X=0,Y=0.5}})
+        slot:SetAlignment({X=0,Y=0.5})
+        slot:SetPosition({X=position.X,Y=0})
+        slot:SetSize({X=size,Y=size})
+        column.Slot:SetPosition({X=position.X+size*1.3,Y=position.Y})
+    end
     function W.attach(menu, state)
         -- Keep the draft pending even when native assets are not ready yet.
         -- W.refresh retries it after each ordinary reconciliation.
@@ -98,6 +124,7 @@ return function(E)
                 forgetRow(state.rows[spec.key])
                 row = object('/Script/UMG.Default__WidgetBlueprintLibrary'):Create(menu,class,menu:GetOwningPlayer())
                 assert(E.valid(row), 'Cannot create World Settings row')
+                E.guard('World Settings mark',function() mark(row) end)
                 row.OptionType = example.OptionType
                 row.IsOverrideSliderStep, row.OverrideSliderStepValue = true, spec.step
                 local path = row:GetFullName()
