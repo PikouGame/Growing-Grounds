@@ -1,5 +1,6 @@
 """Create deterministic, allowlisted release archives for manual and Workshop use."""
 from pathlib import Path
+import ast
 import hashlib
 import json
 import re
@@ -29,11 +30,15 @@ RUNTIME = [
 ]
 DOCS = ['INSTALL.txt', 'LICENSE.txt', 'README.md', 'BACKUPS.txt']
 BUILD = ROOT / 'build'
-BUILD.mkdir(exist_ok=True)
 
 
-def archive(name, entries):
-    output = BUILD / name
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def archive(build, name, entries):
+    output = build / name
     with zipfile.ZipFile(output, 'w') as z:
         for dest, data in sorted(entries.items()):
             entry = zipfile.ZipInfo(dest, (2026, 11, 8, 0, 0, 0))
@@ -41,70 +46,92 @@ def archive(name, entries):
             entry.external_attr = 0o100644 << 16
             z.writestr(entry, data)
     with zipfile.ZipFile(output) as z:
-        assert z.testzip() is None
-        assert set(z.namelist()) == set(entries)
+        require(z.testzip() is None, 'Archive CRC verification failed')
+        require(set(z.namelist()) == set(entries), 'Archive entries differ from the allowlist')
         for name, data in entries.items():
-            assert z.read(name) == data
+            require(z.read(name) == data, 'Archive content mismatch: '+name)
     digest = hashlib.sha256(output.read_bytes()).hexdigest()
     output.with_suffix('.zip.sha256').write_text(f'{digest}  {output.name}\n')
     print(output.name, digest)
     return {'file': output.name, 'sha256': digest, 'files': len(entries)}
 
 
-# Reject accidental reintroduction of developer keyboard controls.
-for name in RUNTIME:
-    if name.endswith('.lua'):
-        assert 'RegisterKeyBind' not in (ROOT / name).read_text(), name
-assert VERSION in (ROOT / 'Scripts/main.lua').read_text()
-assert (ROOT/'backup-version.txt').read_text().strip() == VERSION
-# Every module and image the runtime loads must ship: one left out breaks the mod at load.
-loaded = set()
-for name in RUNTIME:
-    if name.endswith('.lua'):
-        loaded.update(re.findall(r"'((?:src|assets)/[\w-]+\.(?:lua|png))'", (ROOT / name).read_text()))
-missing = sorted(loaded - set(RUNTIME))
-assert not missing, f'loaded at runtime but not in the archive: {missing}'
+def validate_sources(root):
+    require(len(set(RUNTIME+DOCS)) == len(RUNTIME+DOCS), 'Duplicate allowlist entry')
+    require(VERSION in (root/'Scripts/main.lua').read_text(), 'Bootstrap version mismatch')
+    require((root/'backup-version.txt').read_text().strip() == VERSION, 'Backup version mismatch')
+    loaded = set()
+    for name in RUNTIME:
+        if name.endswith('.lua'):
+            source = (root/name).read_text()
+            require('RegisterKeyBind' not in source, 'Developer keyboard control in '+name)
+            loaded.update(re.findall(r"'((?:src|assets)/[\w-]+\.(?:lua|png))'", source))
+            # Reward icons are assembled from assets/ and each row specification.
+            loaded.update('assets/'+icon for icon in re.findall(r"icon='([\w-]+\.png)'", source))
+        elif name.endswith('.py'):
+            for node in ast.walk(ast.parse((root/name).read_text())):
+                modules = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                           else [node.module] if isinstance(node, ast.ImportFrom) else [])
+                for module in modules:
+                    local = 'tools/'+(module or '').replace('.', '/')+'.py'
+                    if (root/local).is_file():
+                        loaded.add(local)
+    missing = sorted(loaded-set(RUNTIME))
+    require(not missing, f'Loaded at runtime but not in the archive: {missing}')
 
-files = {name: (ROOT / name).read_bytes() for name in RUNTIME + DOCS}
-files.update(backup_runtime.entries())
-files['backup/runtime-provenance.json'] = (json.dumps(backup_runtime.provenance(), indent=2)+'\n').encode()
-manual = {'BaseRangeGrowth/'+name: data for name, data in files.items()}
-receipts = [archive(f'Growing-Grounds-{VERSION}.zip', manual)]
 
-# Both rules are required: the dedicated server uses IsServer=true rules.
-# Verify the dependency package name in the installed UE4SS Workshop Info.json
-# before upload; the Steam route has not been tested on this development setup.
-targets = ['./Scripts', './src', './assets', './tools', './backup',
-           './config.lua', './enabled.txt', './backup-version.txt']
-info = {
-    'ModName': 'Growing Grounds', 'PackageName': 'BaseRangeGrowth',
-    'Thumbnail': 'thumbnail.png', 'Version': VERSION, 'DebugMode': False,
-    'MinRevision': 102999, 'Author': 'lelorax',
-    'Dependencies': ['UE4SSExperimentalPW'],
-    'Tags': ['UE4SS', 'Gameplay', 'User Interface'],
-    'InstallRule': [
-        {'Type': 'Lua', 'Targets': targets},
-        {'Type': 'Lua', 'IsServer': True, 'Targets': targets},
-    ],
-}
-workshop = dict(files)
-workshop['Info.json'] = (json.dumps(info, indent=2) + '\n').encode()
-workshop['thumbnail.png'] = (ROOT / 'assets/screenshots/base-range-level8.png').read_bytes()
-stage = BUILD / f'workshop-{VERSION}'
-if stage.exists():
-    shutil.rmtree(stage)
-stage.mkdir()
-for name, data in workshop.items():
-    path = stage / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
-for rule in info['InstallRule']:
-    assert all((stage / target).exists() for target in rule['Targets'])
-receipts.append(archive(f'Growing-Grounds-{VERSION}-workshop.zip', workshop))
-(BUILD / 'release-manifest.json').write_text(json.dumps({
-    'version': VERSION, 'archives': receipts,
-    'workshop_deployment_verified': False,
-    'runtime_sha256': {name: hashlib.sha256(data).hexdigest()
-                       for name, data in files.items() if name not in DOCS},
-    'backup_runtime': backup_runtime.provenance(),
-}, indent=2) + '\n')
+def workshop_info():
+    # Both rules are required: the dedicated server uses IsServer=true rules.
+    # Verify the loader dependency before upload; Workshop installation is untested.
+    targets = ['./Scripts', './src', './assets', './tools', './backup',
+               './config.lua', './enabled.txt', './backup-version.txt']
+    return {
+        'ModName': 'Growing Grounds', 'PackageName': 'BaseRangeGrowth',
+        'Thumbnail': 'thumbnail.png', 'Version': VERSION, 'DebugMode': False,
+        'MinRevision': 102999, 'Author': 'lelorax',
+        'Dependencies': ['UE4SSExperimentalPW'],
+        'Tags': ['UE4SS', 'Gameplay', 'User Interface'],
+        'InstallRule': [
+            {'Type': 'Lua', 'Targets': targets},
+            {'Type': 'Lua', 'IsServer': True, 'Targets': targets},
+        ],
+    }
+
+
+def build_release(root=ROOT, build=BUILD):
+    validate_sources(root)
+    files = {name: (root/name).read_bytes() for name in RUNTIME+DOCS}
+    files.update(backup_runtime.entries())
+    files['backup/runtime-provenance.json'] = (json.dumps(backup_runtime.provenance(), indent=2)+'\n').encode()
+    build.mkdir(parents=True, exist_ok=True)
+    manual = {'BaseRangeGrowth/'+name: data for name, data in files.items()}
+    receipts = [archive(build, f'Growing-Grounds-{VERSION}.zip', manual)]
+
+    info = workshop_info()
+    workshop = dict(files)
+    workshop['Info.json'] = (json.dumps(info, indent=2)+'\n').encode()
+    workshop['thumbnail.png'] = (root/'assets/screenshots/base-range-level8.png').read_bytes()
+    stage = build/f'workshop-{VERSION}'
+    if stage.exists():
+        shutil.rmtree(stage)
+    stage.mkdir()
+    for name, data in workshop.items():
+        path = stage/name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    for rule in info['InstallRule']:
+        require(all((stage/target).exists() for target in rule['Targets']), 'Missing Workshop target')
+    receipts.append(archive(build, f'Growing-Grounds-{VERSION}-workshop.zip', workshop))
+    receipt = {
+        'version': VERSION, 'archives': receipts,
+        'workshop_deployment_verified': False,
+        'runtime_sha256': {name: hashlib.sha256(data).hexdigest()
+                           for name, data in files.items() if name not in DOCS},
+        'backup_runtime': backup_runtime.provenance(),
+    }
+    (build/'release-manifest.json').write_text(json.dumps(receipt, indent=2)+'\n')
+    return receipt
+
+
+if __name__ == '__main__':
+    build_release()

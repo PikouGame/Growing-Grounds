@@ -104,6 +104,27 @@ préservent identités, valeurs non enregistrées et ordre des contrôles natifs
   encore que le gain était ignoré, alors que leurs assertions vérifiaient sa
   conservation. Aucune clé ancienne ni version réseau supprimée.
 
+### Distribution — refactorisation et contrôles renforcés
+
+`tools/release.py` exécutait tout l'assemblage dès son import. Les étapes sont
+désormais séparées : `validate_sources`, `workshop_info`, `build_release` et
+écriture d'une archive. Le CLI reste identique et l'import est sans écriture.
+Les gardes explicites restent actifs avec `python -O`.
+
+Risque latent corrigé, sans fichier manquant constaté dans le paquet courant :
+l'ancien détecteur ne voyait ni les icônes construites via `spec.icon`, ni les
+imports Python locaux. Les tests retirent volontairement un module Lua, un
+module Python et l'icône Palbox de la liste autorisée et vérifient le refus.
+La liste de distribution reste explicite ; aucun dossier de développement ajouté.
+
+Trois tests de distribution réussis, aussi en mode optimisé. Le runtime officiel
+déjà en cache dans le worktree de release a été copié en lecture seule vers ce
+checkout, puis vérifié par son SHA-256 épinglé ; aucun téléchargement.
+Les deux ZIP réels sont **identiques octet par octet avant/après refactorisation**
+(SHA-256 et contenu vérifié), preuve `.local/quality-audit/release-equivalence.json`.
+Les règles client/serveur Workshop sont conservées ; son installation reste non vérifiée.
+Les archives restent des candidats privés nommés avec la version existante.
+
 ## Non vérifié
 
 Validation native en jeu, persistance réelle des Pals, Windows physique,
