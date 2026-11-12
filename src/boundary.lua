@@ -19,9 +19,7 @@ return function(E,Motion)
     end
     local access={path=path,resolve=resolve,forget=function(p) objects[p]=nil end}
     local Ribbon=dofile(E.root..'src/ribbon.lua')(E,access)
-    local Maximum=dofile(E.root..'src/marker.lua')(E,access,Ribbon)
-    local function clearMarkers(s) Maximum.cleanup(s) end
-    local function active(s) return s.animation or s.ribbon or s.maximumMarker end
+    local function active(s) return s.animation or s.ribbon end
     local function now(actor)
         return resolve('/Script/Engine.Default__KismetSystemLibrary'):GetGameTimeInSeconds(actor)
     end
@@ -61,13 +59,6 @@ return function(E,Motion)
             s.animation.waiting=nil;s.animation.start=time
         end
     end
-    local function markerOpen(job)
-        for p in pairs(job.screens) do
-            local screen=resolve(p)
-            if screen and screen:IsActivated() then return true end
-        end
-        return false
-    end
     local schedule
     local function tick()
         queued=false
@@ -78,14 +69,14 @@ return function(E,Motion)
         for key,s in pairs(states) do
             if active(s) then
                 local actor=resolve(s.actor)
-                if not actor then Ribbon.cleanup(s);clearMarkers(s);clearScreens(s);states[key]=nil
+                if not actor then Ribbon.cleanup(s);clearScreens(s);states[key]=nil
                 else
                     local ok=E.guard('boundary animation',function()
                         local time=now(actor)
                         waitForScreen(s,time)
                         if s.animation then
                             if time<s.animation.start then
-                                scale(actor,s.radius,true);Ribbon.cleanup(s);clearMarkers(s);clearScreens(s)
+                                scale(actor,s.radius,true);Ribbon.cleanup(s);clearScreens(s)
                                 Motion.finish(s);return
                             end
                             local radius,t=Motion.sample(s,time)
@@ -108,18 +99,11 @@ return function(E,Motion)
                                 end
                             end
                         end
-                        local job=s.maximumMarker
-                        if job then
-                            local markerOK,used=E.guard('maximum boundary marker',function()
-                                return Maximum.step(s,actor,time,budget,deadline,markerOpen(job))
-                            end)
-                            if markerOK then budget=budget-used else Maximum.fail(s) end
-                        end
                         if active(s) then pending=true end
                     end)
                     if not ok then
                         E.guard('boundary fallback',function() scale(actor,s.radius,true) end)
-                        Ribbon.cleanup(s);clearMarkers(s);clearScreens(s);Motion.finish(s)
+                        Ribbon.cleanup(s);clearScreens(s);Motion.finish(s)
                     end
                 end
             end
@@ -133,7 +117,6 @@ return function(E,Motion)
     end
     local function start(s,actor)
         Ribbon.cleanup(s)
-        if s.maximumMarker then s.maximumMarker.dismissed=true end -- celebration takes over
         clearScreens(s)
         local ok,found=E.guard('upgrade screen capture',function() return upgradeScreens(s) end)
         s.upgradeScreens=ok and found or nil
@@ -151,32 +134,15 @@ return function(E,Motion)
         local previous=states[key]
         local enabled=E.config.upgradeAnimation~=false and not E.config.resetToVanilla and not dedicated(actor)
         local s,action=Motion.observe(previous,base:GetLevel(),radius,now(actor),enabled)
-        if previous and s~=previous then Ribbon.cleanup(previous);clearMarkers(previous);clearScreens(previous) end
+        if previous and s~=previous then Ribbon.cleanup(previous);clearScreens(previous) end
         s.actor,s.base,s.live=actorPath,base:GetFullName(),true;states[key]=s
         if action=='start' then start(s,actor) elseif not s.animation then scale(actor,s.radius) end
-    end
-    -- Only the maximum is drawn. The next radius remains in the reward row.
-    -- No menu is read and no range is calculated here.
-    function B.mark(base,screen,_radius,maximum)
-        local name=base:GetFullName()
-        for _,s in pairs(states) do
-            local actor=s.base==name and resolve(s.actor)
-            if actor and not dedicated(actor) then
-                local enabled=not E.config.resetToVanilla and not s.animation and not s.ribbon
-                local outer=enabled and maximum and E.config.maximumBoundaryMarker~=false
-                    and maximum>s.radius+1 and maximum or false
-                if not E.guard('maximum boundary marker',function() Maximum.aim(s,actor,outer,screen) end) then
-                    Maximum.fail(s)
-                end
-                if s.maximumMarker then schedule() end
-            end
-        end
     end
     function B.beginRefresh() for _,s in pairs(states) do s.live=false end end
     function B.endRefresh()
         for key,s in pairs(states) do
             if not s.live then
-                Ribbon.cleanup(s);clearMarkers(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil
+                Ribbon.cleanup(s);clearScreens(s);objects[s.actor]=nil;states[key]=nil
             end
         end
     end

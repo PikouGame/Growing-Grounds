@@ -15,7 +15,7 @@ RUNTIME = [
     'src/storage.lua', 'src/palbox.lua', 'src/chest_ui.lua',
     'src/preview.lua', 'src/objects.lua', 'src/changes.lua',
     'src/motion.lua', 'src/boundary.lua', 'src/ring.lua', 'src/ribbon.lua', 'src/wave.lua',
-    'src/marker.lua', 'src/dashes.lua', 'src/texts.lua', 'src/language.lua',
+    'src/texts.lua', 'src/language.lua',
     'assets/base-range.svg', 'assets/base-range.png',
     'assets/chest-bonus.svg', 'assets/chest-bonus.png',
     'assets/palbox-bonus.svg', 'assets/palbox-bonus.png',

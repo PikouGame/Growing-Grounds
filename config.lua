@@ -31,7 +31,4 @@ return {
     upgradeWave = true,
     -- Height in centimetres above the sampled terrain profile (kept within 100..2000).
     upgradeEffectHeight = 600,
-    -- While Base Upgrade is open, flat turquoise ground dashes show the maximum
-    -- reachable radius, including neighbouring-base limits. Hidden at that cap.
-    maximumBoundaryMarker = true,
 }

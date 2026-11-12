@@ -150,7 +150,7 @@ return function(E,A)
         local found=lib:LineTraceSingleForObjects(actor,{X=x,Y=y,Z=job.center.Z+5000},
             {X=x,Y=y,Z=job.center.Z-5000},{0},true,{actor},0,out,true,color,color,0)
         local hit=out.OutHit or out
-        if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+(job.groundLift or 12) end
+        if found and hit.ImpactPoint then return hit.ImpactPoint.Z-job.center.Z+12 end
     end
     -- Terrain heights under the job's circle, in bounded batches. Also returns
     -- the trace library it validated, for any further sampling in this batch.
@@ -162,9 +162,7 @@ return function(E,A)
             local i=job.nextPoint
             job.nextPoint,used=i+1,used+1
             local angle=2*math.pi*i/job.count
-            local point=job.samplePoints and job.samplePoints[i+1]
-            local x,y=point and point.X or job.radius*math.cos(angle),point and point.Y or job.radius*math.sin(angle)
-            local z=terrain(lib,job,actor,x,y)
+            local z=terrain(lib,job,actor,job.radius*math.cos(angle),job.radius*math.sin(angle))
             if z then
                 job.points[i+1]={Z=z}
                 job.hits=job.hits+1

@@ -181,18 +181,6 @@ return function(E, Runtime)
         -- Bottom-anchored separator stays put as the section expands upward.
         if stack.Slot:GetSize().Y~=grid.size.Y+extra then stack.Slot:SetSize({X=grid.size.X,Y=grid.size.Y+extra}) end
     end
-    -- Where the boundary will be after the next upgrade, or false when this
-    -- screen has no larger radius to announce.
-    local function nextRadius(state)
-        if state.rangeEnabled==false or state.atMaximum or not state.nextPercent then return false end
-        local radius=state.baseline*state.nextPercent/100
-        return radius>state.radius+1 and radius
-    end
-    local function maximumRadius(state)
-        if state.rangeEnabled==false or not state.maximumPercent then return false end
-        local radius=state.baseline*state.maximumPercent/100
-        return radius>state.radius+1 and radius
-    end
     local function paintRange(row, state, title)
         local before = math.floor(state.currentPercent + 0.5)
         row:SetEffectInfo(before, state.nextPercent or before, state.atMaximum, state.canLevelup)
@@ -255,12 +243,6 @@ return function(E, Runtime)
         -- Preserve the last coherent rewards while the server's three fields
         -- arrive separately. A missing packet is not a disabled chest bonus.
         if state.previewPending then return end
-        -- The ground shows the same next radius as the row, from the same values.
-        if E.boundary and E.boundary.mark then
-            E.guard('boundary previews',function()
-                E.boundary.mark(model,screen,nextRadius(state),maximumRadius(state))
-            end)
-        end
         local key=screen:GetFullName()
         if not columns[key] then
             columns[key]={minimum=math.max(example.Text_Num_Pre:GetParent().WidthOverride,

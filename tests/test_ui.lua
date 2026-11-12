@@ -437,58 +437,8 @@ UI.refresh();reconstruct(current())
 assert(current().Text_Efefct.value=='None', 'release ownership after the screen disappears')
 print('PASS: centred digits with percent suffix, native unit styling, gain-only values, parenthesis-free metres, smaller mint notes, native/minimum-fit arrow positions, font isolation, shared columns, reconstruction, stable refresh, max/missing preview, tree cleanup')
 
--- The ground marker is told the same next radius the range row prints, from
--- the same values, or false when the screen has no larger radius to announce.
-local marks={}
 FindAllOf=function() return {screen} end
-E.boundary={mark=function(base,target,radius,maximum) marks[#marks+1]={base=base,screen=target,radius=radius,maximum=maximum} end}
-local function marked(values)
-    local fresh={}
-    for k,v in pairs(snapshot) do fresh[k]=v end
-    for k,v in pairs(values) do if v=='none' then fresh[k]=nil else fresh[k]=v end end
-    snapshot=fresh
-    local before=#marks
-    UI.refresh()
-    assert(#marks<=before+1,'one report per open screen and refresh')
-    return marks[#marks],#marks-before
-end
-local last,count=marked({baseline=3500,radius=4725,currentPercent=135,nextPercent=140,atMaximum=false,
-    rangeEnabled=true,previewPending=false})
-assert(count==1 and last.base==model and last.screen==screen and last.radius==4900,
-    'the marker gets baseline x next percent, for this screen and its base')
-last=marked({rangeEnabled='none'})
-assert(last.radius==4900,'a server that sent no switch still announces its next radius')
-last=marked({nextPercent=135.02})
-assert(last.radius==false,'a next radius within a centimetre of the current one is not a larger boundary')
-last=marked({nextPercent=135})
-assert(last.radius==false,'neighbours can leave nothing to gain')
-last=marked({nextPercent='none'})
-assert(last.radius==false,'no next value, no marker')
-last=marked({nextPercent=140,atMaximum=true})
-assert(last.radius==false,'nothing after the last level')
-last=marked({atMaximum=false,rangeEnabled=false})
-assert(last.radius==false,'range bonus off, no marker')
-last,count=marked({rangeEnabled=true,previewPending=true})
-assert(count==0,'values still arriving leave the marker as it is')
-last,count=marked({previewPending=false})
-assert(count==1 and last.radius==4900)
-last=marked({maximumPercent=200})
-assert(last.maximum==7000,'maximum uses server-supplied percent and native baseline')
-last=marked({maximumPercent=135})
-assert(last.maximum==false,'maximum already reached draws nothing')
-last=marked({maximumPercent=200,rangeEnabled=false})
-assert(last.maximum==false,'range off hides the maximum too')
-last=marked({maximumPercent='none',rangeEnabled=true})
-assert(last.maximum==false,'an old server does not inherit a local maximum')
-screen.active=false
-last,count=marked({})
-assert(count==0,'a closed screen reports nothing; the marker notices the close itself')
-screen.active=true
-E.boundary={}
 UI.refresh()
-E.boundary=nil
-UI.refresh()
-print('PASS: the reward rows report the next radius to the ground marker, false when there is none, nothing while values arrive')
 
 -- Row titles follow the game's language, also when it changes while the screen
 -- is open; the log keeps its English names.
