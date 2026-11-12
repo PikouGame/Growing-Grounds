@@ -89,20 +89,21 @@ def automatic_once(world, mod, destination, *, stopped=False, version='unknown',
     with archive.locked(destination):
         records, unknown = scan(destination)
         own = [r for r in records if r['manifest']['world_id'] == world.name.upper()]
+        if any(p.name.startswith(f'gg-{world.name.upper()}-baseline-') for p in unknown):
+            return {'status': 'baseline-needs-attention', 'archive_created': False}
+        kind = 'rolling' if any(r['manifest']['kind'] == 'baseline' for r in own) else 'baseline'
         latest = max(own, key=lambda r: r['time']) if own else None
         if latest:
             elapsed = (now-latest['time']).total_seconds()
             if elapsed < 0:
                 return {'status': 'clock-moved-backwards', 'archive_created': False}
-            if elapsed < policy['interval_seconds']:
+            if kind == 'rolling' and elapsed < policy['interval_seconds']:
                 return {'status': 'cooldown', 'archive_created': False,
                         'retry_after_seconds': policy['interval_seconds']-int(elapsed)}
         current = source_files(world, mod)
-        if latest and current == latest['manifest']['files']:
+        # A rolling copy cannot substitute for the protected initial baseline.
+        if kind == 'rolling' and latest and current == latest['manifest']['files']:
             return {'status': 'unchanged', 'archive_created': False}
-        if any(p.name.startswith(f'gg-{world.name.upper()}-baseline-') for p in unknown):
-            return {'status': 'baseline-needs-attention', 'archive_created': False}
-        kind = 'rolling' if any(r['manifest']['kind'] == 'baseline' for r in own) else 'baseline'
         # Conservative upper bound for DEFLATE overhead, ZIP headers and manifest.
         estimate = sum(v['size'] for v in current.values()) * 101 // 100 + len(current)*4096 + 65536
         used = sum(p.stat().st_size for p in destination.iterdir() if p.is_file())

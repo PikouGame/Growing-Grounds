@@ -72,6 +72,33 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(result['status'], 'clock-moved-backwards')
         self.assertEqual(len(list(self.dest.glob('*.zip'))), 1)
 
+    def test_missing_baseline_is_created_even_after_an_unchanged_rolling_copy(self):
+        rolling = Path(policy.archive.create(self.world, self.mod, self.dest,
+                                            stopped=True)['archive'])
+        original = rolling.read_bytes()
+        created = datetime.fromisoformat(policy.archive.verify(rolling)['created_utc'])
+        for minutes in (1, 60):
+            with self.subTest(minutes=minutes):
+                result = self.once(now=created+timedelta(minutes=minutes))
+                self.assertEqual(result['status'], 'created')
+                baseline = Path(result['archive'])
+                self.assertEqual(policy.archive.verify(baseline)['kind'], 'baseline')
+                self.assertEqual(rolling.read_bytes(), original)
+                baseline.unlink()  # Model a missing baseline at both eligibility times.
+
+    def test_corrupt_baseline_is_reported_before_cooldown_or_unchanged_skip(self):
+        rolling = policy.archive.create(self.world, self.mod, self.dest, stopped=True)['archive']
+        created = datetime.fromisoformat(policy.archive.verify(rolling)['created_utc'])
+        bad = self.dest/f'gg-{self.world.name}-baseline-corrupt.zip'
+        bad.write_bytes(b'broken')
+        for minutes in (1, 60):
+            with self.subTest(minutes=minutes):
+                result = self.once(now=created+timedelta(minutes=minutes))
+                self.assertEqual(result['status'], 'baseline-needs-attention')
+                self.assertFalse(result['archive_created'])
+        self.assertEqual(bad.read_bytes(), b'broken')
+        self.assertEqual(len(list(self.dest.glob('*.zip'))), 2)
+
 
 if __name__ == '__main__':
     unittest.main()
