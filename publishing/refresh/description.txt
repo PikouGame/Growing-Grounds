@@ -6,7 +6,7 @@ Give your base room to grow—and enjoy the moment it does. Every base upgrade b
 
 Choose your gain per upgrade and maximum bonus independently. Defaults give +4% per upgrade, capped at +100%. Nearby bases can limit expansion. Each upgrade celebrates with the blue wave and rising glow.
 
-[Image: growing-grounds-chests.png — Chest bonus illustrated: 18 bonus slots spread across the 35 base levels, 6 of them by level 12. A Metal Chest goes from 24 to 42 slots at level 35.]
+[Image: growing-grounds-chests.png — Chest bonus: 18 bonus slots spread across the 35 base levels, 6 of them by level 12. The game's Metal Chest window at base level 12 shows 24 + 6 slots.]
 
 Chests gain up to 18 bonus slots, spread across the base levels. Guild Chests receive the bonus once for their shared inventory. Occupied extra slots stay until emptied when you lower the cap.
 

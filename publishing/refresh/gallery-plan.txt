@@ -55,5 +55,5 @@ The descriptions load their images from GitHub at a pinned ref. New cards are pu
 then regenerate with
   python3 tools/showcase_listings.py --asset-base https://raw.githubusercontent.com/PikouGame/Growing-Grounds/<commit>/assets/showcase/refresh --sync-readme
 and copy publishing/refresh/description.* over publishing/description.* in a second commit.
-This refresh pins the images to e182f0c. Nexus takes description.bbcode, CurseForge
+This refresh pins the images to b5d7701. Nexus takes description.bbcode, CurseForge
 description.md.
