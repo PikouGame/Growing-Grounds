@@ -149,6 +149,30 @@ def range_card(data):
     return svg("range",body,"Illustrated default radius: 35 m at level 1, 49 m at level 11, 70 m at level 26. No in-game boundary preview is depicted.")
 
 
+def chest_card(data):
+    body = top("Room for every supply run", "Chest capacity grows across all base levels.", "assets/chest-bonus.svg")
+    body += [text(66,308,"+18",134,weight=700,italic=True), text(70,356,"bonus slots by level 35",32,TURQ,italic=True)]
+    # Every small square is one actual awarded bonus slot; one column per level.
+    for i,row in enumerate(data["levels"]):
+        for j in range(row["chest"]):
+            body.append(rect(72+i*12,590-(j+1)*10,9,8,WHITE if row["level"]==12 else TURQ))
+    body.append(line(68,593,490,593,MUTED,1.5))
+    for level,label in [(1,"1"),(12,"12"),(35,"35")]:
+        x=76+(level-1)*12
+        body += [line(x,593,x,602,MUTED),text(x,626,label,22,MINT,anchor="middle")]
+    body += [text(520,626,"Base level",22,MUTED,italic=True),text(72+11*12,514,"+6",25,WHITE,600,True,anchor="middle")]
+    # Deliberately a diagram, not a recreated game window.
+    for i in range(42):
+        row,col=divmod(i,6)
+        added=i>=24
+        body.append(rect(772+col*62,200+row*56,50,44,TURQ if added else "#355266",MINT if added else "#668595",1.4))
+    body += [text(746,289,"24",29,WHITE,600,anchor="end"),text(746,321,"original",23,MUTED,anchor="end"),
+             text(746,480,"+18",29,TURQ,600,anchor="end"),text(746,512,"added",23,MINT,anchor="end"),
+             text(951,626,"Metal Chest • 42 slots at level 35",25,MINT,anchor="middle")]
+    body.append(footer("Default progression • Occupied extra slots are kept when lowering the cap"))
+    return svg("chests",body,"Diagram: 18 bonus slots spread across 35 levels; 6 bonus slots at level 12. Metal Chest example has 24 original plus 18 bonus slots at level 35. Not a game screenshot.")
+
+
 def palbox_card(data):
     body = top("Let your Pal collection grow", "Choose your starting boxes and your total capacity.", "assets/palbox-bonus.svg")
     # Endpoints are regular Palbox boxes, one small cell per whole box.
@@ -163,6 +187,23 @@ def palbox_card(data):
              text(587,467,"Whole boxes",24,MINT,anchor="middle"),text(587,499,"unlock gradually",24,MINT,anchor="middle")]
     body.append(footer("Default settings • A smaller start is possible: 1 → 16 • Global Palbox unchanged"))
     return svg("palbox",body,"Illustrated default regular Palbox capacity: 32 starting boxes and 64 total at level 35. The cap includes the start; it is not 64 extra boxes. Not a game screenshot.")
+
+
+def settings_card(data):
+    body = top("Your world. Your pace.", "Five controls beside the game's base and building settings.", "assets/identity/icon.svg")
+    rows=[("Range gain per upgrade","4%","0–20%", "assets/base-range.svg"),
+          ("Maximum range bonus","+100%","0–300%", "assets/base-range.svg"),
+          ("Bonus chest slots","18","0–42 · steps of 6", "assets/chest-bonus.svg"),
+          ("Starting Palbox boxes","32","1–96", "assets/palbox-bonus.svg"),
+          ("Maximum total Palbox boxes","64","1–96", "assets/palbox-bonus.svg")]
+    body += [text(912,207,"DEFAULT",20,MUTED,600,anchor="end"),text(1198,207,"YOUR CHOICE",20,MUTED,600,anchor="end")]
+    for i,(label,default,limits,icon) in enumerate(rows):
+        y=260+i*76
+        body += [vector(icon,72,y-26,30,30),text(123,y,label,30,WHITE,500),
+                 text(912,y,default,35,TURQ,600,anchor="end"),text(1198,y,limits,25,MINT,anchor="end")]
+        if i<4: body.append(line(72,y+27,1205,y+27,MUTED,1,.2))
+    body.append(footer("World Settings for local worlds • config.lua for dedicated servers"))
+    return svg("settings",body,"Reference graphic of the five settings and their defaults/limits; not an imitation of the native World Settings menu.")
 
 
 def compose_banner(panel, path, historical=False):
@@ -225,14 +266,14 @@ def build(manifest=None):
     if manifest is None and (OUT/"native.json").is_file():
         manifest=(OUT/"native.json").resolve()
     data=values()
-    paths=[fn(data) for fn in (range_card,palbox_card)]
+    paths=[fn(data) for fn in (range_card,chest_card,palbox_card,settings_card)]
     if manifest: paths.insert(0,hero(manifest,data))
     approval_path=OUT/"approvals.json"
     approvals=json.loads(approval_path.read_text())["assets"] if approval_path.exists() else {}
     approval_status={}
     for name,item in approvals.items():
         approval_status[name]="approved locally; not published" if all(sha(ROOT/p)==digest for p,digest in item["files"].items()) else "changed since approval; review required"
-    receipt={"state":"Release 0.2.1-beta artwork; publication requested by PK", "approval_status":approval_status,
+    receipt={"state":"Listing refresh draft after 0.2.1-beta; chest and settings cards await PK; not published", "approval_status":approval_status,
              "policy_commit":subprocess.check_output(["git","log","-1","--format=%H","--","src/range.lua","config.lua"],cwd=ROOT,text=True).strip(),
              "source_hashes":{p:sha(ROOT/p) for p in ["src/range.lua","config.lua","assets/identity/wordmark.svg","assets/identity/icon.svg","assets/showcase/source/legacy-20261110/banner-1920.svg"]},
              "values":data,"native_manifest":str(manifest.relative_to(ROOT)) if manifest else None,

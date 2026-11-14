@@ -8,11 +8,15 @@
   "outputs": {
     "assets/showcase/refresh/growing-grounds-banner.png": "aa71a13e027055a7d88c004773ae55b19fd4621e68eb281ec356b4581dd29ff4",
     "assets/showcase/refresh/growing-grounds-banner.svg": "ca2aa966e02982b576f060a37fb5a082ea9d3690fc5d6e5685b389958442c4a9",
+    "assets/showcase/refresh/growing-grounds-chests.png": "a2cfd199dd24d9dab433d9059312a5fc56208578a9e3bd99ad36f74ab5eb2a06",
+    "assets/showcase/refresh/growing-grounds-chests.svg": "4a358f571ee0efaf09efcb01c936b5ff0927fb0c5d0f0b7e4fbd2500221cceec",
     "assets/showcase/refresh/growing-grounds-palbox.png": "bd0a808fbe116042685d64c5054be2c1d5636bd004b662850b3cdc6602ad7acf",
     "assets/showcase/refresh/growing-grounds-palbox.svg": "c7da0dc437588bf2c88dd8e838ec50a58120db2bc086c75b39ab78d369ed6727",
     "assets/showcase/refresh/growing-grounds-range.png": "5a70409cff7f171243fd2e2f5db90cceed89de66ebd04cf12c85b4cc6cc4a418",
     "assets/showcase/refresh/growing-grounds-range.svg": "0906d8d8eef5a2d50347e877ce30801008dc6363ead7459c8598a227429b3119",
-    "assets/showcase/refresh/growing-grounds-rewards.png": "3b099d487c2d3ded9a88b06b77bafee2f93badfe0d05a664cbbf5601f6345ca9"
+    "assets/showcase/refresh/growing-grounds-rewards.png": "3b099d487c2d3ded9a88b06b77bafee2f93badfe0d05a664cbbf5601f6345ca9",
+    "assets/showcase/refresh/growing-grounds-settings.png": "7ee1fedf092414b25eab0184c3cd06a68ad13cf93f31e39e3d1788608c1dce1c",
+    "assets/showcase/refresh/growing-grounds-settings.svg": "6ace6552fb86291e79610b8f49703e182c1e419b2379b0d8db82263f4967f55e"
   },
   "policy_commit": "9844ea8723032077269315022c0af291b70a2484",
   "source_hashes": {
@@ -22,7 +26,7 @@
     "config.lua": "59a917f7f170b7990f5d7dd9b42f38a27f0d5345ad7b654bc69a4daed6cb32ab",
     "src/range.lua": "691a9b434f01ae305625f420a9599c0225314dff5d916447cfd1d53be12c80e3"
   },
-  "state": "Release 0.2.1-beta artwork; publication requested by PK",
+  "state": "Listing refresh draft after 0.2.1-beta; chest and settings cards await PK; not published",
   "values": {
     "chestSlotStep": 6.0,
     "growthPercentPerLevel": 4.0,
