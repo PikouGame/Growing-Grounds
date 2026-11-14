@@ -1,0 +1,59 @@
+Growing Grounds — gallery plan for the listing refresh after 0.2.1-beta
+
+Plan written on 2026-11-14, before the listing refresh was published; PK approved it the same
+day. Hide an image where the site allows it; delete only if PK says so.
+Titles and captions of the five cards are in gallery.json (generated from content.json).
+
+Seen on the public pages on 2026-11-14 (signed out)
+
+Nexus (mod 6047), 6 author images:
+  1. 0.1.7 banner, also the thumbnail: level 10 menu, two bonuses, frame and
+     "Native UI capture, unedited" slogan.
+  2. "0.2.0-beta - Metal Chest: 24 native + 6 bonus slots (base level 12)" — real capture.
+  3. "0.2.0-beta - Palbox Box 50 after saving and reloading (base level 19)" — real capture.
+  4. 0.2.1 banner (level 11 menu, five rows).
+  5. 0.2.1 range card.
+  6. 0.2.1 Palbox card.
+
+CurseForge (project 1791934), 7 images:
+  1-4. 0.1.7 set: banner (level 10), range card "+4% radius per level", chest card
+       "+20 chest slots by level 35", settings card with three sliders and chest cap 20.
+  5-7. 0.2.1 banner, range card, Palbox card.
+
+Proposed
+
+Both sites, same order:
+  1. growing-grounds-banner.png    Growing Grounds
+  2. growing-grounds-range.png     More room to build
+  3. growing-grounds-chests.png    More room for supplies      (new)
+  4. growing-grounds-palbox.png    More boxes for your Pals
+  5. growing-grounds-settings.png  Your world. Your pace.      (new)
+
+Nexus:
+  - Make the 0.2.1 banner the thumbnail and hide the 0.1.7 banner: two banners today, and
+    the thumbnail shows two bonuses out of three.
+  - Keep the Metal Chest capture after the cards, retitled without a version:
+    "In game: Metal Chest with 24 + 6 slots (base level 12)". Still exact with the 0.2.1
+    defaults: 18 x 11 / 34 rounds to 6.
+  - Hide the Palbox Box 50 capture. It was taken under the 0.2.0 rule (one box per
+    upgrade). With the 0.2.1 defaults a level 19 base has 49 boxes, so Box 50 does not exist.
+  - Drop the "0.2.1-beta - " prefix from the card titles: they describe the mod, not a version.
+
+CurseForge:
+  - Hide the four 0.1.7 images. Two contradict the description: 20 chest slots (now 18) and
+    three settings (now five).
+  - Add the chest and settings cards.
+
+Still missing, needs PK in game on 0.2.1
+  - A clean clip of the upgrade celebration (fixed camera, no performance overlay). The only
+    existing clip, assets/showcase/growing-grounds-upgrade-web.gif, is a night capture with the
+    HUD and a performance overlay; it is on neither page.
+  - Real captures of the five World Settings controls, a chest and the Palbox under 0.2.1.
+
+Publishing the description images
+The descriptions load their images from GitHub at a pinned ref. New cards are pushed first;
+then regenerate with
+  python3 tools/showcase_listings.py --asset-base https://raw.githubusercontent.com/PikouGame/Growing-Grounds/<commit>/assets/showcase/refresh --sync-readme
+and copy publishing/refresh/description.* over publishing/description.* in a second commit.
+This refresh pins the images to e182f0c. Nexus takes description.bbcode, CurseForge
+description.md.

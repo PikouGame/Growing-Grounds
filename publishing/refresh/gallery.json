@@ -12,9 +12,19 @@
       "caption": "Default radius illustrated to scale: 35 m at level 1, 49 m at level 11, 70 m at level 26."
     },
     {
+      "file": "growing-grounds-chests.png",
+      "title": "More room for supplies",
+      "caption": "Chest bonus illustrated: 18 bonus slots spread across the 35 base levels, 6 of them by level 12. A Metal Chest goes from 24 to 42 slots at level 35."
+    },
+    {
       "file": "growing-grounds-palbox.png",
       "title": "More boxes for your Pals",
       "caption": "Regular Palbox capacity illustrated: 32 starting boxes to 64 total boxes, with whole boxes unlocking gradually."
+    },
+    {
+      "file": "growing-grounds-settings.png",
+      "title": "Your world. Your pace.",
+      "caption": "The five settings with defaults and limits: range gain 4% (0\u201320%), maximum range bonus +100% (0\u2013300%), bonus chest slots 18 (0\u201342 in steps of 6), starting Palbox boxes 32 and maximum total 64 (1\u201396 each)."
     }
   ]
 }

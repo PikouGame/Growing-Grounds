@@ -1,7 +1,7 @@
 {
   "state": "",
   "summary": "Give your base room to grow: extra range, chest slots and Palbox boxes as you level up. Five adjustable world settings, native rewards and a blue upgrade celebration. For host/server and clients.",
-  "intro": "Give your base room to grow—and enjoy the moment it does. Growing Grounds adds meaningful rewards to your base upgrades, with current and next values in the game's own menu.",
+  "intro": "Give your base room to grow—and enjoy the moment it does. Every base upgrade brings more range, more chest slots and more Palbox boxes, with current and next values shown in the game's own menu.",
   "sections": [
     {
       "title": "More room to build",
@@ -11,7 +11,9 @@
     },
     {
       "title": "More room for supplies",
-      "text": "Chests gain 18 bonus slots gradually across the base levels. Guild Chests receive the bonus once for their shared inventory. Occupied extra slots stay until emptied when you lower the cap."
+      "image": "growing-grounds-chests.png",
+      "alt": "Chest bonus illustrated: 18 bonus slots spread across the 35 base levels, 6 of them by level 12. A Metal Chest goes from 24 to 42 slots at level 35.",
+      "text": "Chests gain up to 18 bonus slots, spread across the base levels. Guild Chests receive the bonus once for their shared inventory. Occupied extra slots stay until emptied when you lower the cap."
     },
     {
       "title": "More boxes for your Pals",
@@ -21,10 +23,12 @@
     },
     {
       "title": "Your world. Your pace.",
-      "text": "Five controls beside the game’s base/building settings: range gain 0–20% per upgrade (default 4%), range cap 0–300% (default 100%), chest bonus 0–42 in steps of six (default 18), and starting/maximum total Palbox boxes 1–96 (default 32 → 64). Dedicated servers use config.lua."
+      "image": "growing-grounds-settings.png",
+      "alt": "The five settings with defaults and limits: range gain 4% (0–20%), maximum range bonus +100% (0–300%), bonus chest slots 18 (0–42 in steps of 6), starting Palbox boxes 32 and maximum total 64 (1–96 each).",
+      "text": "Five controls sit beside the game’s base and building settings: range gain, range cap, chest slots, and starting and maximum Palbox boxes. Dedicated servers use config.lua."
     }
   ],
-  "install": "Install on the host/server and clients with a compatible Palworld UE4SS loader. Update both sides and preserve your settings. GG’s automatic-backup companion is removed in 0.2.1-beta; existing archives are kept. If upgrading from 0.2.0-beta, follow the installation guide to remove the old GG launcher and replace the mod folder. Default rewards and menu layout were checked in game through Proton/Wine. Smaller starting Palbox capacities, the latest audit refactor in game, and physical Windows testing remain pending.",
+  "install": "Install on the host/server and on every client with a compatible Palworld UE4SS loader, and keep both sides on the same version. When updating, keep your config.lua and world-settings files. Coming from 0.2.0-beta? Its backup companion is gone: follow the installation guide. Checked in game through Proton/Wine; native Windows and Palbox starts below 32 are not tested yet.",
   "links": [
     {
       "label": "Installation",
