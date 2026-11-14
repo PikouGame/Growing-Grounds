@@ -149,6 +149,10 @@ def range_card(data):
     return svg("range",body,"Illustrated default radius: 35 m at level 1, 49 m at level 11, 70 m at level 26. No in-game boundary preview is depicted.")
 
 
+CHEST_CAPTURE = "assets/showcase/growing-grounds-beta-chest.png"
+CHEST_CROP = (8, 10, 564, 486)
+
+
 def chest_card(data):
     body = top("Room for every supply run", "Chest capacity grows across all base levels.", "assets/chest-bonus.svg")
     body += [text(66,308,"+18",134,weight=700,italic=True), text(70,356,"bonus slots by level 35",32,TURQ,italic=True)]
@@ -161,16 +165,27 @@ def chest_card(data):
         x=76+(level-1)*12
         body += [line(x,593,x,602,MUTED),text(x,626,label,22,MINT,anchor="middle")]
     body += [text(520,626,"Base level",22,MUTED,italic=True),text(72+11*12,514,"+6",25,WHITE,600,True,anchor="middle")]
-    # Deliberately a diagram, not a recreated game window.
-    for i in range(42):
-        row,col=divmod(i,6)
-        added=i>=24
-        body.append(rect(772+col*62,200+row*56,50,44,TURQ if added else "#355266",MINT if added else "#668595",1.4))
-    body += [text(746,289,"24",29,WHITE,600,anchor="end"),text(746,321,"original",23,MUTED,anchor="end"),
-             text(746,480,"+18",29,TURQ,600,anchor="end"),text(746,512,"added",23,MINT,anchor="end"),
-             text(951,626,"Metal Chest • 42 slots at level 35",25,MINT,anchor="middle")]
+    # PK asked for the game's own Metal Chest window here: a capture at base level 12,
+    # cropped to the window and scaled only. Its last row is the six bonus slots.
+    if data["levels"][11]["chest"]!=6:
+        raise SystemExit("The Metal Chest capture shows 24 + 6 slots at level 12; the defaults no longer give 6.")
+    left,upper,right,lower=CHEST_CROP
+    window=OUT/"growing-grounds-chest-window.png"
+    Image.open(ROOT/CHEST_CAPTURE).crop(CHEST_CROP).save(window)
+    scale=404/(lower-upper)
+    w=round((right-left)*scale); x,y=1212-w,188
+    body.append(f'<image x="{x}" y="{y}" width="{w}" height="404" preserveAspectRatio="none" '
+                f'xlink:href="data:image/png;base64,{base64.b64encode(window.read_bytes()).decode()}"/>')
+    px=lambda value: x+(value-left)*scale
+    py=lambda value: y+(value-upper)*scale
+    # The capture ends on the bonus row's lower edge; the outline closes it.
+    body.append(rect(round(px(30),1),round(py(412),1),round((526-30)*scale,1),round(py(lower)-py(412)-1.5,1),stroke=TURQ,sw=3))
+    native,bonus=py((87+407)/2),py((419+lower)/2)
+    body += [text(x-16,round(native-4),"24",29,WHITE,600,anchor="end"),text(x-16,round(native+26),"original",23,MUTED,anchor="end"),
+             text(x-16,round(bonus-4),"+6",29,TURQ,600,anchor="end"),text(x-16,round(bonus+24),"added",23,MINT,anchor="end"),
+             text(x+w/2,626,"Metal Chest • 24 + 6 slots at level 12",25,MINT,anchor="middle")]
     body.append(footer("Default progression • Occupied extra slots are kept when lowering the cap"))
-    return svg("chests",body,"Diagram: 18 bonus slots spread across 35 levels; 6 bonus slots at level 12. Metal Chest example has 24 original plus 18 bonus slots at level 35. Not a game screenshot.")
+    return svg("chests",body,"18 bonus slots spread across 35 levels; 6 bonus slots at level 12. The Metal Chest window is a game capture at base level 12 (24 + 6 slots), cropped and scaled only; the bonus row is outlined.")
 
 
 def palbox_card(data):
