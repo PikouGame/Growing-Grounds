@@ -8,11 +8,12 @@
   "values_file": "assets/showcase/refresh/native/values.tsv",
   "values_sha256": "fa8e154ae61ea75c0d11b76cbd0d57a0d86929d733d77d2519626b4303148602",
   "crop_xyxy": [
-    538,
+    560,
     30,
-    1408,
+    1364,
     990
   ],
+  "crop_note": "Crop ends left of the window's close button (x 1368-1395), which PK asked to leave out; margins are even on both sides. The menu itself is not retouched.",
   "visually_reviewed": true,
   "base_level": 11,
   "method": "Native UE5 UMG WidgetComponent -> KismetRenderingLibrary.ExportRenderTarget",

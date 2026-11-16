@@ -4,17 +4,17 @@
     "range": "approved locally; not published"
   },
   "native_manifest": "assets/showcase/refresh/native.json",
-  "native_manifest_sha256": "7eba3b3fef461fcd07763b534b7ab9e2cee6b5f52c8f980c40167cc351f58d86",
+  "native_manifest_sha256": "12050f2484747559ee915eeca68a420d5561b535cc969b9b1d44a5974554b6c3",
   "outputs": {
-    "assets/showcase/refresh/growing-grounds-banner.png": "aa71a13e027055a7d88c004773ae55b19fd4621e68eb281ec356b4581dd29ff4",
-    "assets/showcase/refresh/growing-grounds-banner.svg": "ca2aa966e02982b576f060a37fb5a082ea9d3690fc5d6e5685b389958442c4a9",
+    "assets/showcase/refresh/growing-grounds-banner.png": "2cc8d120a2c6fc07e61914603e661a45b8cc84202e840d6101cac4171ed3f8ce",
+    "assets/showcase/refresh/growing-grounds-banner.svg": "76082f999534a4c5e1cc8841f69749e7643629e7aa252e9c6c99c23c598eb287",
     "assets/showcase/refresh/growing-grounds-chests.png": "9ac050df9519c5757ab3424b32800d2c2d39cdf6a4bbed0e323a40877bf63c8e",
     "assets/showcase/refresh/growing-grounds-chests.svg": "e2478924f7f887763d959fd027f01a2e2aaf1b44f07833d2d2edf33c71869fb4",
     "assets/showcase/refresh/growing-grounds-palbox.png": "bd0a808fbe116042685d64c5054be2c1d5636bd004b662850b3cdc6602ad7acf",
     "assets/showcase/refresh/growing-grounds-palbox.svg": "c7da0dc437588bf2c88dd8e838ec50a58120db2bc086c75b39ab78d369ed6727",
     "assets/showcase/refresh/growing-grounds-range.png": "5a70409cff7f171243fd2e2f5db90cceed89de66ebd04cf12c85b4cc6cc4a418",
     "assets/showcase/refresh/growing-grounds-range.svg": "0906d8d8eef5a2d50347e877ce30801008dc6363ead7459c8598a227429b3119",
-    "assets/showcase/refresh/growing-grounds-rewards.png": "3b099d487c2d3ded9a88b06b77bafee2f93badfe0d05a664cbbf5601f6345ca9",
+    "assets/showcase/refresh/growing-grounds-rewards.png": "9c8f53a9621094b813778cce64cea6826cc8374f215b3c8794221eec987454b0",
     "assets/showcase/refresh/growing-grounds-settings.png": "7ee1fedf092414b25eab0184c3cd06a68ad13cf93f31e39e3d1788608c1dce1c",
     "assets/showcase/refresh/growing-grounds-settings.svg": "6ace6552fb86291e79610b8f49703e182c1e419b2379b0d8db82263f4967f55e"
   },
